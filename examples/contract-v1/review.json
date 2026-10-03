@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "review-1",
+  "revision": 1,
+  "created_at": "2026-10-03T00:00:00Z",
+  "updated_at": "2026-10-03T00:00:00Z",
+  "supersedes_id": null,
+  "code_ref": "fixture-code-v1",
+  "data_ref": "fixture-data-v1",
+  "items": [
+    {
+      "id": "split-check",
+      "topic": "data_split",
+      "applicability": "모의 표본 ID 분할",
+      "observation": "예제 로그에 교집합 없음이 기록됨",
+      "assessment": "passed_in_scope",
+      "evidence": [
+        {
+          "kind": "fixture",
+          "ref": "logs/review.txt",
+          "locator": null,
+          "sha256": "2f23a18305e201cff3d6019d728c74fba68a044b505e8e95fb64cba397ae0296"
+        }
+      ],
+      "limitation": "모의 로그 형식 확인만 가능. 실제 데이터 검증 아님.",
+      "next_action": null
+    }
+  ]
+}
