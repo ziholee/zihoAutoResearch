@@ -20,7 +20,20 @@ Current completion target is the reusable tool itself; real ML application is pe
 
 Earlier draft completion entries are historical; they do not authorize implementing the retired execution-platform design.
 
+## CLI foundation — feat/cli-project-foundation
+
+- [x] Add strict JSON storage, atomic writes, project locks and revision checks.
+- [x] Implement init, project set, status and check against the v1 contract.
+- [x] Verify CLI behavior with temporary projects and simulated records; no ML execution.
+- [x] Document installation, supported commands and remaining scope.
+
+Completion: malformed inputs and conflicting updates preserve originals; existing code/instructions remain untouched; structured output and representative fixture checks pass.
+
 ## Review
+- 2026-10-03 CLI foundation: implemented on feat/cli-project-foundation from origin/dev. Python >=3.11, no runtime dependencies; four project commands, strict decimal JSON, atomic replacement, cooperative locks, revision checking, record/evidence validation and packaged program template.
+- Verification: 30 unittest tests passed on macOS/Python 3.14; source distribution and wheel built; wheel installed into a temporary venv and init/status/check plus template creation passed outside the repository. git diff --check passed. Initial tests failed because implementation modules were absent; no existing bug baseline was claimed.
+- Independent review identified JSON help output and escaped Unicode error handling; both addressed. Storage tests cover replacement/fsync failure preservation and lock ownership. Fixtures cover selected experiment, submission hash mismatch and missing evidence warnings.
+- Limits: Windows/Linux execution not tested. No actual ML, external submission or LLM calls. Experiment mutation/state transitions, comparison arithmetic, report generation and LLM skill remain future work; check validates static records only. No PR created in this implementation step.
 - PR #1 follow-up result: clarified the five reviewed contract points and added a README Mermaid architecture diagram separating LLM judgment, CLI record management, and later user-project execution.
 - Follow-up validation: eight exact-decimal boundary cases, five JSON examples, evidence/submission hashes and linkage, all four template experiment kinds, and Markdown links/whitespace passed. CLI enforcement of output paths/hashes is still an implementation acceptance requirement, not runtime-tested behavior. Mermaid structure was reviewed in source; visual rendering has not been independently checked.
 - PR #1 follow-up plan: address all five reviewed points without adding new platform features. Require submission hashes at artifact registration, restrict report writes/overwrites, clarify project ID generation versus validation, specify exact decimal threshold comparisons, and align report kinds with all four experiment kinds. Validate document/example consistency and decimal boundary cases, then update the existing PR branch.
@@ -58,3 +71,6 @@ Earlier draft completion entries are historical; they do not authorize implement
 - This documentation does not select an implementation stack or claim a working research loop.
 - Documentation review checked the agreed product scope, conceptual graph, and explicit separation of open implementation decisions. Git staged whitespace validation passed; no executable code was changed.
 - Delivery: commit these documents to main, push to origin, and verify the remote commit. The final delivery result is reported in the chat after the push.
+
+## Delivery — CLI foundation
+- User requested commit and PR targeting dev. Re-ran all 30 tests and git diff --check successfully before delivery. Exclude incidental .DS_Store; publish the feature branch for review without merging.
