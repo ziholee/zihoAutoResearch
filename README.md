@@ -52,7 +52,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-설계·Markdown 템플릿·v1 CLI/파일 계약·모의 JSON 예제가 있습니다. CLI와 LLM용 스킬은 아직 구현되지 않았습니다. 템플릿만으로 검사가 자동 수행되거나 모델 성능이 보장되지는 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`를 구현했습니다. LLM용 스킬, 실험·제출 기록 변경 명령, 수치 비교와 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
 - [현재 제품 정의](docs/product-direction.md)
 - [v1 사용 흐름·CLI·파일 계약](docs/cli-and-file-contract.md)
@@ -63,4 +63,40 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 - [실험 기록 템플릿](templates/experiment.md)
 - [작업 기록](tasks/todo.md)
 
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 v1 계약에 따라 스킬과 CLI를 구현하고 샘플 파일·가짜 실행 결과로 기능을 검증하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 실험 기록·상태 전이·판정 명령을 구현하고 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+
+## 설치와 기본 사용
+
+Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. 저장소에서 가상환경을 만든 뒤 설치합니다.
+
+```sh
+python -m venv .venv
+# Linux/macOS
+source .venv/bin/activate
+# Windows PowerShell에서는 .venv\Scripts\Activate.ps1
+python -m pip install .
+zar init --project /path/to/ml-project
+zar status --project /path/to/ml-project
+```
+
+초기화는 `.autoresearch/`만 생성하고 기존 코드·루트 `program.md`·`AGENTS.md`를 보존합니다. `--project`를 생략하면 현재 폴더를 사용하며 상위 폴더를 탐색하지 않습니다.
+
+생성된 `.autoresearch/project.json`을 별도 파일로 복사해 목표·비교 조건·명령·예산·수정 허용 경로를 채웁니다. `environment.os`는 사용자가 `windows`, `linux`, `macos`, `other` 중 선택하고 `runtime`, `device`도 직접 기록합니다. 기록된 명령은 실행하지 않습니다.
+
+```sh
+zar project set --project /path/to/ml-project --file edited-project.json
+zar status --project /path/to/ml-project --json
+zar check --project /path/to/ml-project --json
+```
+
+`project set`은 현재 revision의 전체 수정본을 받아 검증 후 revision을 올립니다. ID·생성 시각은 유지하고 updated_at은 CLI가 기록합니다. 같은 comparison ID의 조건을 바꾸려면 새 ID를 지정합니다. 미완성 설정도 저장할 수 있으며 `status`는 누락을 보여주고 `check`는 종료 코드 3을 반환합니다. 성공은 0, 인자·형식 오류는 2, 상태·참조 충돌은 3, 파일·잠금 오류는 4입니다.
+
+CLI는 `.autoresearch/.lock`으로 동시 접근을 조정하며 잠금이 있으면 자동 삭제하지 않습니다. 중단으로 잠금이 남으면 실행 중인 CLI가 없는지 확인한 뒤 수동으로 복구합니다. `init`은 프로젝트 루트의 `.autoresearch.init.lock`을 사용합니다. CLI 밖의 동시 파일 편집은 보호하지 않습니다.
+
+`check`는 저장된 review/experiment/submission 파일도 검사합니다. 파일 근거의 누락·해시 미기록·변경과 확인하지 못한 코드/데이터 최신성은 진단으로 표시하고 URL에 접속하지 않습니다. 실제 ML 실행이나 제출 없이 테스트합니다.
+
+```sh
+python -m unittest discover -s tests -v
+```
+
+현재 실행 검증 환경은 macOS입니다. Windows/Linux 실기기 동작은 아직 확인하지 않았습니다. 아키텍처 그림은 후속 기능까지 포함한 v1 목표 구조입니다.
