@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "id": "project-demo",
+  "revision": 3,
+  "created_at": "2026-10-03T00:00:00Z",
+  "updated_at": "2026-10-03T00:00:25Z",
+  "name": "모의 계약 예제",
+  "objective": "실제 학습 없이 파일 계약 검토",
+  "comparison": {
+    "id": "comparison-1",
+    "dataset_ref": "fixture-data-v1",
+    "split_ref": "fixture-split-v1",
+    "metric": "rmse",
+    "direction": "minimize",
+    "evaluation_ref": "fixture-evaluator-v1",
+    "min_delta": 0.01
+  },
+  "environment": {
+    "os": "linux",
+    "runtime": "python",
+    "device": "cpu"
+  },
+  "commands": [
+    {
+      "name": "train",
+      "argv": [
+        "python",
+        "train.py"
+      ],
+      "cwd": "."
+    }
+  ],
+  "budget": {
+    "max_experiments": 3,
+    "max_run_seconds": 60
+  },
+  "editable_paths": [
+    "train.py"
+  ],
+  "selected_experiment_id": "exp-baseline",
+  "next_action": "후보의 개선 근거를 추가 확인한다. 실제 ML 실행은 하지 않는다."
+}

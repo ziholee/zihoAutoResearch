@@ -1,0 +1,5 @@
+SIMULATED SERVER RECEIPT - no external submission
+external_id=fixture-entry-1
+leaderboard=public
+metric=rmse
+score=1.15
