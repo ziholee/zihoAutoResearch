@@ -56,9 +56,11 @@
 | `zar experiment compare <base-id> <candidate-id>` | 로컬 비교 조건을 검사하고 차이 표시. 코드 변경·판단 저장 없음 |
 | `zar experiment decide <id> --file <json>` | revision·판단·근거·후속 행동을 담은 입력으로 판단 저장. keep/discard가 실제 파일을 변경하지 않음 |
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
-| `zar report --output <path>` | 현재 기록을 Markdown으로 생성. 기존 파일이 있으면 오류; 명시적 `--overwrite`로 파생 보고서만 교체 |
+| `zar report --output <path>` | `.autoresearch/reports/` 기준 상대 경로에 Markdown 생성. 기존 파일이 있으면 오류; `--overwrite`는 아래 소유 표식이 있는 보고서만 교체 |
 
 project set으로 `selected_experiment_id`를 바꿀 수 있습니다. 해당 실험이 유효하고 keep 판단이며 현재 비교 조건에 속하는지 검사합니다. 이것은 기록상 선택이며 작업 폴더의 코드를 바꾸지 않습니다. decide와 선택 갱신은 별도 한 파일 변경이므로 중간 상태에도 “keep 후보이나 아직 선택되지 않음”을 표시할 수 있습니다.
+
+report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 경로만 받습니다. 절대 경로·`..`·심볼릭 링크 등으로 reports 밖에 쓰는 경로는 거부하며 reports 폴더 자체와 상위 저장 경로도 링크로 다른 위치에 연결돼 있으면 거부합니다. 출력의 첫 줄은 `<!-- zar-report:v1 project_id=<현재 프로젝트 ID> -->`입니다. `--overwrite`는 동일 프로젝트의 이 표식이 있는 일반 파일에만 허용합니다. 표식 없는 사용자 문서와 JSON 원본은 덮어쓰지 않습니다. 경로·표식 조건 위반은 종료 코드 3이며 파일을 변경하지 않습니다.
 
 기본 출력은 사람이 읽는 텍스트입니다. `--json`을 주면 성공·실패 모두 stdout에 `{ok, data, diagnostics}` 객체 하나를 출력합니다. diagnostics 항목은 `{severity, code, path, message}`입니다. JSON 모드에 설명 문장·색상·로그를 섞지 않습니다.
 
@@ -67,7 +69,7 @@ project set으로 `selected_experiment_id`를 바꿀 수 있습니다. 해당 �
 ## 4. 공통 파일 규칙
 
 - UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다.
-- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. ID는 작성자가 지정하고 CLI가 중복·경로 이탈을 검사합니다.
+- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
 - 생성 입력에는 본문과 id를 제공합니다. CLI가 만드는 메타데이터는 schema_version·revision·created_at·updated_at 네 필드입니다. 실행 시각·제출 시각은 관측한 작성자가 제공하며 CLI가 추정하지 않습니다. project set/experiment update는 현재 파일 전체의 수정본을 받습니다. 수정 시 CLI가 revision을 1 증가시키고 updated_at을 갱신합니다.
 - ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실험에는 새 ID를 씁니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
 - 경로는 대상 프로젝트 기준 `/` 구분 상대 경로를 기본으로 합니다. 기존 외부 데이터 경로는 절대 경로도 기록할 수 있으나 이동 시 가용성 재검사 대상입니다. 기록 경로에 `..`나 저장 폴더 밖 쓰기는 허용하지 않습니다.
@@ -129,13 +131,13 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 
 생성 본문에는 kind, hypothesis, parent_id, baseline_id, code_ref, config_ref, command, review_ids와 id를 제공합니다. CLI는 comparison/environment를 현재 프로젝트에서 복사하고 execution을 planned로 초기화하며 decision은 null로 둡니다. parent/baseline은 이미 존재해야 하고 자기 참조는 금지합니다. baseline은 baseline_id가 null이고, performance/confirmation은 같은 비교 구간의 baseline_id가 필수입니다. validity_fix는 새 비교 구간이면 baseline_id가 null일 수 있습니다.
 
-Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 null 또는 64자리 소문자 16진수, evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
+Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 64자리 소문자 16진수 또는 null입니다. 단, `role=submission`은 최초 등록부터 sha256이 필수이며 null을 거부합니다. evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
 
 상태 전이: planned → running → succeeded/failed/interrupted/unknown. unknown → running/succeeded/failed/interrupted는 확인 근거가 필요합니다. 이미 완료된 결과 입력은 planned → 종료 상태를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. 종료 상태의 원시 결과(status·시각·exit_code·score·evidence·note)는 불변입니다.
 
 종료 후에도 experiment update로 artifacts에 새 항목을 추가할 수 있습니다. 기존 항목 수정·삭제는 금지하며 파일 버전이 달라지면 새 경로로 추가합니다. 각 산출물의 code_ref/config_ref는 해당 실험과 같고 생성 근거 evidence가 필요합니다. 다른 코드에서 생성한 산출물은 그 코드의 별도 실험에 기록합니다. 이는 작성한 계보를 검사하는 것이며 CLI가 모델 생성 과정을 독립적으로 입증한다는 뜻은 아닙니다.
 
-succeeded는 시작/종료 시각, exit_code 0, 유한 score, 결과 evidence가 필요합니다. 실패/중단/unknown에서는 score가 null이고 이유 note가 필요합니다. 종료 상태는 finished_at이 필요하고 planned/running/unknown은 finished_at이 null입니다. 시작 시각은 planned만 null일 수 있습니다. artifacts의 sha256은 null 가능하며 미확인으로 표시합니다.
+succeeded는 시작/종료 시각, exit_code 0, 유한 score, 결과 evidence가 필요합니다. 실패/중단/unknown에서는 score가 null이고 이유 note가 필요합니다. 종료 상태는 finished_at이 필요하고 planned/running/unknown은 finished_at이 null입니다. 시작 시각은 planned만 null일 수 있습니다. submission 이외 artifacts의 sha256은 null 가능하며 미확인으로 표시합니다. 제출 파일은 해시를 확보한 뒤 등록하므로 나중에 null을 수정하는 별도 절차는 두지 않습니다.
 
 Decision은 `{status, validity, reason, evidence, next_action}`입니다. status는 `keep|discard|hold`, validity는 `valid|invalid|not_comparable`. reason은 비어 있지 않은 string, evidence는 Evidence 배열, next_action은 string 또는 null입니다. decide 입력은 `{revision, decision}`입니다. DecisionHistory는 `{decided_at, decision}`이며 decided_at은 CLI가 기록한 UTC RFC 3339입니다. 최초 판단부터 매 판단을 history에 추가하고, 최상위 decision은 항상 마지막 항목의 decision과 같아야 합니다. 기존 history 항목은 불변입니다.
 
@@ -148,6 +150,8 @@ keep은 succeeded·valid이고 근거가 있어야 합니다. hold는 다음 확
 compare는 두 실험이 succeeded, score 존재, 모든 Comparison 필드와 environment 동일, 알려진 invalid/not_comparable 판단 없음일 때 수치 차이를 계산합니다. `raw_delta = candidate - base`, `improvement = direction이 maximize면 raw_delta, minimize면 -raw_delta`입니다.
 
 결과는 개선 폭과 min_delta 충족 여부를 보여주며 자동 keep하지 않습니다. 반복 변동·코드 복잡도·도메인 타당성은 스킬이 근거로 판단합니다. min_delta가 0이어도 동률을 개선으로 출력하지 않습니다. 조건이 다르면 비교 불가 사유를 반환하고 점수 차이를 개선 증거로 출력하지 않습니다.
+
+점수와 min_delta는 JSON 숫자 토큰의 십진 값을 보존해 파싱하고, 차이·경계 비교는 반올림 없는 십진 연산으로 수행합니다. 이진 부동소수점으로 변환한 뒤 다시 십진수로 복원하지 않습니다. 판정식은 `improvement > 0 AND improvement >= min_delta`입니다. 정확히 경계와 같은 개선은 충족하며, epsilon이나 표시용 반올림으로 판정하지 않습니다. 예를 들어 1.2 → 1.1의 최소화 개선은 정확히 0.1이므로 min_delta=0.1을 충족합니다. 저장·JSON 출력도 같은 십진 값을 보존하고, 사람이 읽는 표시를 줄이더라도 판정에는 원래 값을 사용합니다.
 
 | 제출 필드 | 자료형과 의미 |
 |---|---|
@@ -178,9 +182,12 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - 설정 누락, 중복 ID, 잘못된 JSON/버전/유한하지 않은 점수, 오래된 revision 거부.
 - planned → running → 성공/실패/unknown 기록 및 잘못된 전이 거부.
 - 낮을수록/높을수록 좋은 지표의 비교, 분할/환경 차이의 비교 불가 처리.
+- min_delta와 같은 값·바로 아래/위 값·동률·악화·지수 표기 숫자를 십진 값 기준으로 비교.
 - 근거 없는 keep 거부, hold의 선택 보존, decide가 Git·코드를 수정하지 않는 동작.
 - 리뷰 근거 변경과 누락 표시, 제출 파일/실험/점수 연결과 정정 이력 보존.
+- 해시 없는 submission artifact 등록 거부와 기존 해시를 가진 제출 예제의 호환성 확인.
 - report 재생성과 JSON 원본 일관성, 중간 쓰기 실패 시 원본 보존.
+- reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
 각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. JSON Schema와 CLI 검증 코드는 다음 구현 단계에서 이 계약을 그대로 구현합니다.

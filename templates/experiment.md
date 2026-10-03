@@ -4,7 +4,7 @@ v1에서는 experiments/<id>.json이 원본이며 이 문서는 읽기용 보고
 
 ## 의도와 비교 대상
 
-- 유형: 타당성 수정 / 성능 실험 / 확인 실행
+- 유형: 기준 실험(baseline) / 타당성 수정(validity_fix) / 성능 실험(performance) / 확인 실행(confirmation)
 - 가설과 예상 관측:
 - 부모 실험·비교 기준 실험:
 - 비교 구간 ID:
