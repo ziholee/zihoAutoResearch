@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "id": "submission-1",
+  "revision": 1,
+  "created_at": "2026-10-03T00:02:00Z",
+  "updated_at": "2026-10-03T00:02:00Z",
+  "supersedes_id": null,
+  "experiment_id": "exp-candidate",
+  "competition": "fixture-competition",
+  "external_id": "fixture-entry-1",
+  "artifact": {
+    "path": "submission-example.txt",
+    "sha256": "667f8188c829fe4a7e1eb9d6709006d863f99e9816a4b2dca54b9729a968053c"
+  },
+  "leaderboard": "public",
+  "metric": "rmse",
+  "direction": "minimize",
+  "score": 1.15,
+  "submitted_at": "2026-10-03T00:01:00Z",
+  "observed_at": "2026-10-03T00:02:00Z",
+  "evidence": [
+    {
+      "kind": "fixture",
+      "ref": "logs/submission.txt",
+      "locator": null,
+      "sha256": "0886eea81133062359f8d9bee82bf6178041d9e96bcc6a3ed20579d640ff1082"
+    }
+  ]
+}
