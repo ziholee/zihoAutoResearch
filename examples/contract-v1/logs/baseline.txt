@@ -1,0 +1,4 @@
+SIMULATED RESULT - not ML execution
+metric=rmse
+score=1.2
+exit_code=0

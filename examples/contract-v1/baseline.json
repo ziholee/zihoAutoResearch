@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "id": "exp-baseline",
+  "revision": 3,
+  "created_at": "2026-10-03T00:00:00Z",
+  "updated_at": "2026-10-03T00:00:20Z",
+  "kind": "baseline",
+  "hypothesis": "모의 기준 결과",
+  "parent_id": null,
+  "baseline_id": null,
+  "comparison": {
+    "id": "comparison-1",
+    "dataset_ref": "fixture-data-v1",
+    "split_ref": "fixture-split-v1",
+    "metric": "rmse",
+    "direction": "minimize",
+    "evaluation_ref": "fixture-evaluator-v1",
+    "min_delta": 0.01
+  },
+  "environment": {
+    "os": "linux",
+    "runtime": "python",
+    "device": "cpu"
+  },
+  "code_ref": "fixture-code-v1",
+  "config_ref": "fixture-config-v1",
+  "command": {
+    "name": "train",
+    "argv": [
+      "python",
+      "train.py"
+    ],
+    "cwd": "."
+  },
+  "review_ids": [
+    "review-1"
+  ],
+  "execution": {
+    "status": "succeeded",
+    "started_at": "2026-10-03T00:00:00Z",
+    "finished_at": "2026-10-03T00:00:10Z",
+    "exit_code": 0,
+    "score": 1.2,
+    "evidence": [
+      {
+        "kind": "fixture",
+        "ref": "logs/baseline.txt",
+        "locator": null,
+        "sha256": "5bef69c6f0e9e12caa380bb6fdfcc4ca3ee76bcd0fdd84d38189b09682c5d41c"
+      }
+    ],
+    "artifacts": [],
+    "note": "가짜 결과 입력 예제. 학습을 실행하지 않음."
+  },
+  "decision": {
+    "status": "keep",
+    "validity": "valid",
+    "reason": "모의 기준 등록",
+    "evidence": [
+      {
+        "kind": "fixture",
+        "ref": "logs/baseline.txt",
+        "locator": null,
+        "sha256": "5bef69c6f0e9e12caa380bb6fdfcc4ca3ee76bcd0fdd84d38189b09682c5d41c"
+      }
+    ],
+    "next_action": null
+  },
+  "decision_history": [
+    {
+      "decided_at": "2026-10-03T00:00:20Z",
+      "decision": {
+        "status": "keep",
+        "validity": "valid",
+        "reason": "모의 기준 등록",
+        "evidence": [
+          {
+            "kind": "fixture",
+            "ref": "logs/baseline.txt",
+            "locator": null,
+            "sha256": "5bef69c6f0e9e12caa380bb6fdfcc4ca3ee76bcd0fdd84d38189b09682c5d41c"
+          }
+        ],
+        "next_action": null
+      }
+    }
+  ]
+}
