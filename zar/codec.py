@@ -41,7 +41,7 @@ def loads(text):
     return value
 
 
-def dumps(value):
+def dumps(value, *, ensure_ascii=False):
     """Serialize JSON without rounding Decimal values through binary floats."""
     def encode(item):
         if item is None:
@@ -61,7 +61,7 @@ def dumps(value):
                 raise ValueError("Non-finite float")
             return json.dumps(item, allow_nan=False)
         if isinstance(item, str):
-            return json.dumps(item, ensure_ascii=False)
+            return json.dumps(item, ensure_ascii=ensure_ascii)
         if isinstance(item, list):
             return "[" + ", ".join(map(encode, item)) + "]"
         if isinstance(item, dict):
