@@ -135,6 +135,8 @@ Execution은 `{status, started_at, finished_at, exit_code, score, evidence, arti
 
 상태 전이: planned → running → succeeded/failed/interrupted/unknown. unknown → running/succeeded/failed/interrupted는 기존 execution.evidence와 구별되는 새 확인 근거가 필요합니다. 이미 완료된 결과 입력은 planned → 종료 상태를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. 종료 상태의 원시 결과(status·시각·exit_code·score·evidence·note)는 불변입니다.
 
+experiment update는 모든 상태에서 기존 execution.evidence의 삭제·교체·순서 변경을 거부합니다. 미종료 상태에서는 새 항목만 뒤에 추가할 수 있습니다. 미종료 기록의 잘못된 근거는 원문을 보존하고 note에 대상과 정정 이유를 명시한 뒤 새 근거를 추가합니다. 종료 후 evidence는 계속 불변입니다. 이 검사는 기록 보존과 새 항목 유무만 보장하며 근거 내용의 진실성을 입증하지 않습니다.
+
 종료 후에도 experiment update로 artifacts에 새 항목을 추가할 수 있습니다. 기존 항목 수정·삭제는 금지하며 파일 버전이 달라지면 새 경로로 추가합니다. 각 산출물의 code_ref/config_ref는 해당 실험과 같고 생성 근거 evidence가 필요합니다. 다른 코드에서 생성한 산출물은 그 코드의 별도 실험에 기록합니다. 이는 작성한 계보를 검사하는 것이며 CLI가 모델 생성 과정을 독립적으로 입증한다는 뜻은 아닙니다.
 
 succeeded는 시작/종료 시각, exit_code 0, 유한 score, 결과 evidence가 필요합니다. 실패/중단/unknown에서는 score가 null이고 이유 note가 필요합니다. 종료 상태는 finished_at이 필요하고 planned/running/unknown은 finished_at이 null입니다. 시작 시각은 planned만 null일 수 있습니다. submission 이외 artifacts의 sha256은 null 가능하며 미확인으로 표시합니다. 제출 파일은 해시를 확보한 뒤 등록하므로 나중에 null을 수정하는 별도 절차는 두지 않습니다.
