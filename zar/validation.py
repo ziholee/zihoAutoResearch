@@ -225,7 +225,7 @@ def validate_document(doc, kind):
     return v.errors
 
 
-def inspect_project(root, project):
+def inspect_project(root, project, *, experiment=None):
     root = Path(root)
     store = root / '.autoresearch'
     result = validate_document(project, 'project')
@@ -237,12 +237,16 @@ def inspect_project(root, project):
         if directory.is_symlink() or not directory.is_dir():
             result.append(diagnostic('io', directory, 'Record directory must be an existing ordinary directory'))
             continue
-        for path in sorted(directory.glob('*.json')):
-            if path.is_symlink() or not path.is_file():
+        entries = list(directory.glob('*.json'))
+        proposed_path = directory / (experiment['id'] + '.json') if kind == 'experiment' and experiment else None
+        if proposed_path is not None and proposed_path not in entries:
+            entries.append(proposed_path)
+        for path in sorted(entries):
+            if path.is_symlink() or (path != proposed_path and not path.is_file()):
                 result.append(diagnostic('io', path, 'Record must be an ordinary file'))
                 continue
             try:
-                doc = loads(path.read_text(encoding='utf-8'))
+                doc = experiment if path == proposed_path else loads(path.read_text(encoding='utf-8'))
             except (ValueError, UnicodeError) as exc:
                 result.append(diagnostic('json', path, str(exc)))
                 continue

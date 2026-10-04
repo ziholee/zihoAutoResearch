@@ -52,7 +52,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`를 구현했습니다. LLM용 스킬, 실험·제출 기록 변경 명령, 수치 비교와 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가, 실험 비교·판정과 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
 - [현재 제품 정의](docs/product-direction.md)
 - [v1 사용 흐름·CLI·파일 계약](docs/cli-and-file-contract.md)
@@ -63,7 +63,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 - [실험 기록 템플릿](templates/experiment.md)
 - [작업 기록](tasks/todo.md)
 
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 실험 기록·상태 전이·판정 명령을 구현하고 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 실험 비교·판정 명령을 구현하고 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
 
 ## 설치와 기본 사용
 
@@ -100,3 +100,20 @@ python -m unittest discover -s tests -v
 ```
 
 현재 실행 검증 환경은 macOS입니다. Windows/Linux 실기기 동작은 아직 확인하지 않았습니다. 아키텍처 그림은 후속 기능까지 포함한 v1 목표 구조입니다.
+
+## 실험 생성과 관측 결과 기록
+
+설정을 채운 프로젝트에서 [생성 입력 예제](examples/experiment-create.json)를 복사하고 실험 ID·가설·코드/설정 식별자·명령을 실제 프로젝트에 맞게 수정합니다.
+
+```sh
+zar experiment create --project /path/to/ml-project --file experiment-create.json
+zar experiment update exp-baseline-1 --project /path/to/ml-project --file experiment-update.json
+```
+
+`create`는 현재 comparison/environment를 복사하고 `planned` 기록을 만듭니다. 설정 누락, 실험 수 한도, 중복 ID와 존재하지 않는 참조는 거부합니다. `update` 입력은 생성된 `.autoresearch/experiments/exp-baseline-1.json`의 **전체 수정본**입니다. 현재 revision을 유지하고 execution에 실제 관측값을 채우면 CLI가 revision과 updated_at을 갱신합니다.
+
+- `planned → running → succeeded/failed/interrupted/unknown`을 기록합니다. 이미 종료한 실행은 시작·종료 시각과 근거를 갖춰 planned에서 바로 종료 상태로 기록할 수 있습니다.
+- `unknown`을 해소하려면 기존 근거와 구별되는 확인 근거를 추가합니다. 새 실행은 새 ID로 기록합니다.
+- 계획·이미 기록한 실행 시각·판단은 update로 바꿀 수 없습니다. 종료 결과는 고정하며 산출물만 새 경로로 추가할 수 있습니다. 제출용 산출물은 SHA-256 해시가 필요합니다.
+
+이 명령은 프로세스를 시작하거나 실행 상태를 자동 탐지하지 않습니다. 실험을 생성·갱신해도 project.json의 선택 실험은 바뀌지 않습니다. 새 실험 파일은 소유자 전용 권한으로 생성되고, 이후 갱신은 기존 파일 권한을 유지합니다.
