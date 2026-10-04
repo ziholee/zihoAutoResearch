@@ -1,0 +1,11 @@
+{
+  "id": "exp-baseline-1",
+  "kind": "baseline",
+  "hypothesis": "기존 파이프라인의 기준 결과를 기록한다",
+  "parent_id": null,
+  "baseline_id": null,
+  "code_ref": "replace-with-code-version",
+  "config_ref": "replace-with-config-version",
+  "command": {"name": "train", "argv": ["python", "train.py"], "cwd": "."},
+  "review_ids": []
+}

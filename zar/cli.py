@@ -9,8 +9,9 @@ import sys
 from uuid import uuid4
 
 from .codec import loads, dumps
+from .experiments import prepare_create, validate_update
 from .storage import atomic_write, project_lock
-from .validation import validate_document, inspect_project, readiness_missing
+from .validation import ID, validate_document, inspect_project, readiness_missing
 
 
 class Failure(Exception):
@@ -114,6 +115,41 @@ def state(root, project):
                 next_action=project['next_action'])
 
 
+def save_experiment(args, root, project):
+    # Caller holds the project lock throughout validation and the single-file write.
+    store = root / '.autoresearch'
+    enforce(inspect_project(root, project))
+    body = read_document(Path(args.file))
+    if args.action == 'create':
+        missing = readiness_missing(project)
+        if missing:
+            reject('not_ready', 'project.json', 'Required settings: ' + ', '.join(missing))
+        count = len(list((store / 'experiments').glob('*.json')))
+        if count >= project['budget']['max_experiments']:
+            reject('conflict', 'budget.max_experiments', 'Experiment budget has been reached.')
+        candidate, errors = prepare_create(body, project, now())
+        enforce(errors)
+        path = store / 'experiments' / (candidate['id'] + '.json')
+        if path.exists() or path.is_symlink():
+            reject('conflict', path, 'Experiment ID already exists.')
+    else:
+        if not ID.fullmatch(args.id):
+            reject('arguments', 'id', 'Invalid experiment ID.', 2)
+        path = store / 'experiments' / (args.id + '.json')
+        if not path.is_file():
+            reject('conflict', path, 'Experiment does not exist.')
+        current = read_document(path)
+        enforce(validate_update(current, body))
+        candidate = body
+        candidate['revision'] += 1
+        candidate['updated_at'] = now()
+        enforce(validate_document(candidate, 'experiment'))
+    diagnostics = inspect_project(root, project, experiment=candidate)
+    enforce(diagnostics)
+    atomic_write(path, dumps(candidate))
+    return {'experiment': candidate}, diagnostics
+
+
 def execute(args):
     root = Path(args.project).expanduser().resolve()
     if args.command == 'init':
@@ -123,6 +159,8 @@ def execute(args):
     with project_lock(store):
         project = read_document(store / 'project.json')
         enforce(validate_document(project, 'project'))
+        if args.command == 'experiment':
+            return save_experiment(args, root, project)
         if args.command == 'project':
             candidate = read_document(Path(args.file))
             enforce(validate_document(candidate, 'project'))
@@ -169,9 +207,22 @@ def parse(arguments):
     actions = project.add_subparsers(dest='action', required=True, parser_class=Parser)
     setter = actions.add_parser('set')
     setter.add_argument('--file', required=True)
+    experiment = commands.add_parser('experiment')
+    experiment_actions = experiment.add_subparsers(dest='action', required=True, parser_class=Parser)
+    create = experiment_actions.add_parser('create')
+    create.add_argument('--file', required=True)
+    update = experiment_actions.add_parser('update')
+    update.add_argument('id')
+    update.add_argument('--file', required=True)
     args = parser.parse_args(remaining)
     args.json, args.project = global_args.json, global_args.project
     return args
+
+
+def emit_text(text):
+    """Keep human output usable when a terminal cannot encode recorded text."""
+    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    print(text.encode(encoding, errors='backslashreplace').decode(encoding))
 
 
 def main(argv=None):
@@ -180,7 +231,8 @@ def main(argv=None):
     code, data, diagnostics = 0, None, []
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
-            data = {'commands': ['init', 'project set --file <json>', 'status', 'check'],
+            data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
+                                 'experiment create --file <json>', 'experiment update <id> --file <json>'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
         else:
@@ -195,20 +247,24 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if 'project' in data:
+            if 'experiment' in data:
+                experiment = data['experiment']
+                emit_text(f"Experiment: {experiment['id']} (revision {experiment['revision']})")
+                emit_text('Execution: ' + experiment['execution']['status'])
+            elif 'project' in data:
                 project = data['project']
-                print(f"Project: {project['id']} (revision {project['revision']})")
+                emit_text(f"Project: {project['id']} (revision {project['revision']})")
                 if 'initialized' in data:
-                    print('Initialized.' if data['initialized'] else 'Already initialized; preserved existing files.')
+                    emit_text('Initialized.' if data['initialized'] else 'Already initialized; preserved existing files.')
             else:
-                print(f"Project: {data['project_id']} (revision {data['revision']})")
-                print('Ready: ' + ('yes' if data['ready'] else 'no'))
-                print('Missing: ' + (', '.join(data['missing']) or 'none'))
-                print('Selected experiment: ' + (data['selected_experiment_id'] or 'none'))
-                print('Last experiment: ' + (data['last_experiment_id'] or 'none'))
-                print('Unfinished: ' + (', '.join(f"{e['id']} ({e['status']})" for e in data['unfinished']) or 'none'))
-                print('Unselected keep: ' + (', '.join(data['unselected_keep_ids']) or 'none'))
-                print('Next action: ' + (data['next_action'] or 'unset'))
+                emit_text(f"Project: {data['project_id']} (revision {data['revision']})")
+                emit_text('Ready: ' + ('yes' if data['ready'] else 'no'))
+                emit_text('Missing: ' + (', '.join(data['missing']) or 'none'))
+                emit_text('Selected experiment: ' + (data['selected_experiment_id'] or 'none'))
+                emit_text('Last experiment: ' + (data['last_experiment_id'] or 'none'))
+                emit_text('Unfinished: ' + (', '.join(f"{e['id']} ({e['status']})" for e in data['unfinished']) or 'none'))
+                emit_text('Unselected keep: ' + (', '.join(data['unselected_keep_ids']) or 'none'))
+                emit_text('Next action: ' + (data['next_action'] or 'unset'))
         for item in diagnostics:
-            print(f"{item['severity']}: {item['path']}: {item['message']}")
+            emit_text(f"{item['severity']}: {item['path']}: {item['message']}")
     return code
