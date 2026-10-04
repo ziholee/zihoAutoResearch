@@ -33,6 +33,7 @@ class LifecycleTests(ExperimentHarness):
         self.update(doc)
         saved=json.loads(self.record().read_text()); self.assertIsNone(saved['execution']['started_at'])
         doc=self.success(saved)
+        doc['execution']['evidence'] = evidence + doc['execution']['evidence']
         self.update(doc)
         self.assertEqual(json.loads(self.record().read_text())['execution']['status'],'succeeded')
 

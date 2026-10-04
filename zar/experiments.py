@@ -57,6 +57,9 @@ def validate_update(current, candidate):
     if old['status'] == 'unknown' and new['status'] != 'unknown':
         if not any(item not in old['evidence'] for item in new['evidence']):
             conflict('execution.evidence', 'Resolving unknown requires new confirmation evidence.')
+    previous_evidence = old['evidence']
+    if new['evidence'][:len(previous_evidence)] != previous_evidence:
+        conflict('execution.evidence', 'Existing evidence cannot be removed, reordered or changed.')
     previous = old['artifacts']
     if new['artifacts'][:len(previous)] != previous:
         conflict('execution.artifacts', 'Existing artifacts cannot be removed, reordered or changed.')
