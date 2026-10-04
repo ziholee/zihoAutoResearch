@@ -18,3 +18,7 @@
 - A termination request is not proof that external work has stopped. Define cleanup, unknown-job handling, and the conditions for reporting completion.
 - State tables must name successor states for uncertainty and deferral; distinguish initial baseline registration from replacement of an existing best result.
 - When separating evaluation from research, define the evidence returned to the agent and the handoff to final testing, not just the separation principle.
+
+## 2026-10-03 — Deliver a working increment first
+- Keep foundational CLI work bounded to the requested commands. Do not add future mutation workflows to a foundation milestone.
+- Delegate through small, immediately usable interfaces. Require an early working artifact when other code depends on it; unintegrated parallel work does not reduce delivery time.
