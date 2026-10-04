@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import shutil
 import sys
-import tempfile
 from uuid import uuid4
 
 from .codec import loads, dumps
@@ -83,7 +82,9 @@ def initialize(root):
                        comparison=None, environment=dict(os=None, runtime=None, device=None),
                        commands=[], budget=dict(max_experiments=None, max_run_seconds=None),
                        editable_paths=[], selected_experiment_id=None, next_action=None)
-        temporary = Path(tempfile.mkdtemp(prefix='.autoresearch-init-', dir=root))
+        staging = root / ('.autoresearch-init-' + str(uuid4()))
+        staging.mkdir(mode=0o777)  # OS applies the user's umask, as for normal directories.
+        temporary = staging
         for name in ('reviews', 'experiments', 'submissions', 'reports'):
             (temporary / name).mkdir()
         (temporary / 'project.json').write_text(dumps(project), encoding='utf-8')
@@ -191,7 +192,7 @@ def main(argv=None):
         code = 4
         diagnostics = [diagnostic('io', exc.filename or '', str(exc))]
     if json_mode:
-        print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics)))
+        print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
             if 'project' in data:

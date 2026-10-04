@@ -1,6 +1,7 @@
 """Cooperative locks and same-filesystem atomic replacement."""
 from contextlib import contextmanager
 import os
+import stat
 from pathlib import Path
 import tempfile
 
@@ -14,6 +15,8 @@ def atomic_write(path: Path, text: str) -> None:
             stream.write(text)
             stream.flush()
             os.fsync(stream.fileno())
+        if path.exists():
+            os.chmod(temporary, stat.S_IMODE(path.stat().st_mode))
         os.replace(temporary, path)
     finally:
         if temporary is not None:

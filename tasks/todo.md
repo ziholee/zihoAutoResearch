@@ -74,3 +74,10 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 
 ## Delivery — CLI foundation
 - User requested commit and PR targeting dev. Re-ran all 30 tests and git diff --check successfully before delivery. Exclude incidental .DS_Store; publish the feature branch for review without merging.
+
+## PR #2 review follow-up — 2026-10-04
+- Plan: reproduce legacy-encoding output failure and POSIX file/directory permission changes; apply focused fixes, run full regression suite, commit and update PR branch.
+- Review disposition: accept all three inline comments (two underlying issues). Preserve existing file mode on replacement; initialize directories with OS-applied umask without changing the process-global umask. New standalone atomic-write files remain private; the current CLI uses this helper only for existing project.json.
+- JSON terminal output uses ASCII escaping without changing Unicode values or Decimal precision; stored JSON remains UTF-8.
+- Reproduction: all three new regression tests failed before changes, matching the review findings.
+- Verification: all 33 unittest tests and git diff --check passed on macOS. cp1252 output simulated in a subprocess; native Windows execution remains unverified. No ML execution. Publish fixes on the existing PR #2 branch; merging is not part of this review follow-up.
