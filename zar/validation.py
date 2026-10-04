@@ -149,7 +149,7 @@ class Validator:
 
     def execution(self, value, path):
         if not self.obj(value, 'status started_at finished_at exit_code score evidence artifacts note', path): return
-        self.enum(value['status'], 'planned running succeeded failed interrupted unknown', path + '.status')
+        self.enum(value['status'], 'planned running succeeded failed interrupted unknown cancelled', path + '.status')
         for k in ('started_at','finished_at'): self.scalar(value[k], 'time', path + '.' + k, True)
         self.scalar(value['exit_code'], 'int', path + '.exit_code', True)
         self.scalar(value['score'], 'number', path + '.score', True)
@@ -158,7 +158,10 @@ class Validator:
         self.array(value['artifacts'], self.artifact, path + '.artifacts')
         self.order(value['started_at'], value['finished_at'], path)
         status = value['status']
-        if (status == 'planned') != (value['started_at'] is None): self.error(path, 'Only planned execution has no start time', 'conflict')
+        if status in ('planned', 'cancelled') and value['started_at'] is not None: self.error(path, 'Never-run states cannot have a start time', 'conflict')
+        if status in ('running', 'succeeded', 'failed', 'interrupted') and value['started_at'] is None: self.error(path, 'Observed execution requires a start time', 'conflict')
+        if status == 'cancelled' and (value['exit_code'] is not None or value['score'] is not None or value['artifacts'] or not value['note']): self.error(path, 'Cancellation requires a reason and no execution results or artifacts', 'conflict')
+        if status == 'unknown' and value['started_at'] is None and (not value['evidence'] or value['exit_code'] is not None or value['artifacts']): self.error(path, 'Unconfirmed start requires evidence and no exit code/artifacts', 'conflict')
         if (status in ('succeeded','failed','interrupted')) != (value['finished_at'] is not None): self.error(path, 'Terminal state requires finish time; other states prohibit it', 'conflict')
         if status == 'succeeded' and (type(value['exit_code']) is not int or value['exit_code'] != 0 or value['score'] is None): self.error(path, 'Success requires exit_code 0 and score', 'conflict')
         if status in ('failed','interrupted','unknown') and (value['score'] is not None or not value['note']): self.error(path, 'Failed/interrupted/unknown requires null score and reason', 'conflict')
@@ -172,6 +175,9 @@ def validate_document(doc, kind):
               'experiment':'kind hypothesis parent_id baseline_id comparison environment code_ref config_ref command review_ids execution decision decision_history',
               'submission':'supersedes_id experiment_id competition external_id artifact leaderboard metric direction score submitted_at observed_at evidence'}
     if kind not in fields: return [diagnostic('schema', '$', 'Unknown record kind')]
+    # v1 compatibility: old experiment documents may omit correction (equivalent to null).
+    if kind == 'experiment' and isinstance(doc, dict) and 'correction' in doc:
+        fields[kind] += ' correction'
     if not v.obj(doc, META + ' ' + fields[kind], '$'): return v.errors
     if type(doc['schema_version']) is not int or doc['schema_version'] != 1: v.error('$.schema_version', 'Only schema_version 1 is supported')
     v.scalar(doc['id'], 'id', '$.id')
@@ -192,6 +198,11 @@ def validate_document(doc, kind):
         for k in ('code_ref','data_ref'): v.scalar(doc[k], 'str', '$.' + k)
         v.array(doc['items'], v.finding, '$.items', True)
     elif kind == 'experiment':
+        correction = doc.get('correction')
+        if correction is not None and v.obj(correction, 'supersedes_id reason evidence', '$.correction'):
+            v.scalar(correction['supersedes_id'], 'id', '$.correction.supersedes_id')
+            v.scalar(correction['reason'], 'str', '$.correction.reason')
+            v.array(correction['evidence'], v.evidence, '$.correction.evidence', True)
         v.enum(doc['kind'], 'baseline validity_fix performance confirmation', '$.kind')
         for k in ('hypothesis','code_ref','config_ref'): v.scalar(doc[k], 'str', '$.' + k)
         for k in ('parent_id','baseline_id'): v.scalar(doc[k], 'id', '$.' + k, True)
@@ -312,9 +323,46 @@ def inspect_project(root, project, *, experiment=None):
     superseded = {d['supersedes_id'] for d in records['review'].values() if d['supersedes_id']}
     for doc in records['review'].values(): issue(doc, 'Current code/data freshness is not independently verified', 'freshness_unknown', 'warning')
     experiments = records['experiment']
+    corrected = {}
+    plan_fields = ('kind', 'hypothesis', 'parent_id', 'baseline_id', 'comparison', 'environment',
+                   'code_ref', 'config_ref', 'command', 'review_ids')
+    terminal = ('succeeded', 'failed', 'interrupted')
+    for doc in experiments.values():
+        correction = doc.get('correction')
+        if not correction:
+            continue
+        ref = correction['supersedes_id']
+        original = experiments.get(ref)
+        if original is None or ref == doc['id']:
+            issue(doc, 'Correction references a missing or identical experiment')
+        else:
+            if any(doc[k] != original[k] for k in plan_fields):
+                issue(doc, 'Correction must retain the same execution plan')
+            if doc['execution']['status'] not in terminal or original['execution']['status'] not in terminal:
+                issue(doc, 'Correction requires completed executions')
+            previous_artifacts = original['execution']['artifacts']
+            if doc['execution']['artifacts'][:len(previous_artifacts)] != previous_artifacts:
+                issue(doc, 'Correction must retain original artifacts')
+        if ref in corrected:
+            issue(doc, 'Experiment correction history branches')
+        corrected[ref] = doc['id']
+        seen = {doc['id']}
+        cursor = ref
+        while cursor in experiments:
+            if cursor in seen:
+                issue(doc, 'Experiment correction history contains a cycle')
+                break
+            seen.add(cursor)
+            ancestor = experiments[cursor].get('correction')
+            cursor = ancestor['supersedes_id'] if ancestor else None
+    for original_id, replacement in corrected.items():
+        if original_id in experiments:
+            issue(experiments[original_id], 'Superseded by correction: ' + replacement, 'experiment_superseded', 'warning')
     for doc in experiments.values():
         for field in ('parent_id','baseline_id'):
             ref = doc[field]
+            if ref in corrected:
+                issue(doc, 'Referenced experiment was corrected; reassess before reuse: ' + ref, 'reference_superseded', 'warning')
             if ref is not None and (ref not in experiments or ref == doc['id']): issue(doc, 'Invalid ' + field)
             seen = {doc['id']}; cursor = ref
             while cursor in experiments:
@@ -330,11 +378,13 @@ def inspect_project(root, project, *, experiment=None):
     selected = project.get('selected_experiment_id')
     if selected is not None:
         doc = experiments.get(selected)
-        if not doc or doc['execution']['status'] != 'succeeded' or not doc['decision'] or doc['decision']['status'] != 'keep' or doc['decision']['validity'] != 'valid' or doc['comparison'] != project['comparison']:
+        if selected in corrected or not doc or doc['execution']['status'] != 'succeeded' or not doc['decision'] or doc['decision']['status'] != 'keep' or doc['decision']['validity'] != 'valid' or doc['comparison'] != project['comparison']:
             issue(project, 'Selected experiment must be a succeeded valid keep in the current comparison')
     tuples = {}
     for doc in records['submission'].values():
         exp = experiments.get(doc['experiment_id'])
+        if doc['experiment_id'] in corrected:
+            issue(doc, 'Submission retains a superseded experiment reference', 'reference_superseded', 'warning')
         if not exp or exp['execution']['status'] != 'succeeded': issue(doc, 'Submission requires a succeeded experiment')
         elif not any(a['role'] == 'submission' and all(a[k] == doc['artifact'][k] for k in ('path','sha256')) for a in exp['execution']['artifacts']): issue(doc, 'Submission artifact does not match experiment artifact')
         file_check(doc['artifact']['path'], doc['artifact']['sha256'], paths[doc['id']], True)

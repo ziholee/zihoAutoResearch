@@ -9,7 +9,8 @@ import sys
 from uuid import uuid4
 
 from .codec import loads, dumps
-from .experiments import prepare_create, validate_update
+from .experiments import prepare_create, validate_update, prepare_correction, superseded_ids, budget_used
+from .git_tracking import snapshot, GitStateError
 from .storage import atomic_write, project_lock
 from .validation import ID, validate_document, inspect_project, readiness_missing
 
@@ -103,14 +104,16 @@ def initialize(root):
 
 def state(root, project):
     experiments = [read_document(p) for p in sorted((root / '.autoresearch/experiments').glob('*.json'))]
+    superseded = superseded_ids(experiments)
     latest = max(experiments, key=lambda e: (datetime.fromisoformat(e['created_at'].replace('Z', '+00:00')), e['id']), default=None)
     missing = readiness_missing(project)
     return dict(project_id=project['id'], revision=project['revision'], ready=not missing,
-                missing=missing, selected_experiment_id=project['selected_experiment_id'],
+                missing=missing, budget_used=budget_used(experiments),
+                superseded_experiment_ids=sorted(superseded), selected_experiment_id=project['selected_experiment_id'],
                 last_experiment_id=latest['id'] if latest else None,
                 unfinished=[dict(id=e['id'], status=e['execution']['status']) for e in experiments
                             if e['execution']['status'] in ('planned', 'running', 'unknown')],
-                unselected_keep_ids=[e['id'] for e in experiments if e['decision'] and
+                unselected_keep_ids=[e['id'] for e in experiments if e['id'] not in superseded and e['decision'] and
                                      e['decision']['status'] == 'keep' and e['id'] != project['selected_experiment_id']],
                 next_action=project['next_action'])
 
@@ -120,15 +123,22 @@ def save_experiment(args, root, project):
     store = root / '.autoresearch'
     enforce(inspect_project(root, project))
     body = read_document(Path(args.file))
+    records = [read_document(p) for p in (store / 'experiments').glob('*.json')]
+    superseded = superseded_ids(records)
     if args.action == 'create':
         missing = readiness_missing(project)
         if missing:
             reject('not_ready', 'project.json', 'Required settings: ' + ', '.join(missing))
-        count = len(list((store / 'experiments').glob('*.json')))
+        count = budget_used(records)
         if count >= project['budget']['max_experiments']:
             reject('conflict', 'budget.max_experiments', 'Experiment budget has been reached.')
         candidate, errors = prepare_create(body, project, now())
         enforce(errors)
+        if args.git_head:
+            git_state = inspect_git(root)
+            if not git_state['code_clean']:
+                reject('conflict', 'git', 'Commit or set aside code/config changes before --git-head. Run zar git status.')
+            candidate['code_ref'] = git_state['code_ref']
         path = store / 'experiments' / (candidate['id'] + '.json')
         if path.exists() or path.is_symlink():
             reject('conflict', path, 'Experiment ID already exists.')
@@ -139,21 +149,41 @@ def save_experiment(args, root, project):
         if not path.is_file():
             reject('conflict', path, 'Experiment does not exist.')
         current = read_document(path)
-        enforce(validate_update(current, body))
-        candidate = body
-        candidate['revision'] += 1
-        candidate['updated_at'] = now()
-        enforce(validate_document(candidate, 'experiment'))
+        if current['id'] in superseded:
+            reject('conflict', path, 'This experiment has been superseded; use the active correction.')
+        if args.action == 'correct':
+            if project['selected_experiment_id'] == current['id']:
+                reject('conflict', path, 'Deselect this experiment before correcting its result.')
+            candidate, errors = prepare_correction(current, body, now())
+            enforce(errors)
+            path = store / 'experiments' / (candidate['id'] + '.json')
+            if path.exists() or path.is_symlink():
+                reject('conflict', path, 'Correction requires an unused experiment ID.')
+        else:
+            enforce(validate_update(current, body))
+            candidate = body
+            candidate['revision'] += 1
+            candidate['updated_at'] = now()
+            enforce(validate_document(candidate, 'experiment'))
     diagnostics = inspect_project(root, project, experiment=candidate)
     enforce(diagnostics)
     atomic_write(path, dumps(candidate))
     return {'experiment': candidate}, diagnostics
 
 
+def inspect_git(root):
+    try:
+        return snapshot(root)
+    except GitStateError as exc:
+        reject('conflict', 'git', str(exc))
+
+
 def execute(args):
     root = Path(args.project).expanduser().resolve()
     if args.command == 'init':
         return initialize(root)
+    if args.command == 'git':
+        return inspect_git(root), []
     store = root / '.autoresearch'
     safe_layout(store)
     with project_lock(store):
@@ -211,9 +241,16 @@ def parse(arguments):
     experiment_actions = experiment.add_subparsers(dest='action', required=True, parser_class=Parser)
     create = experiment_actions.add_parser('create')
     create.add_argument('--file', required=True)
+    create.add_argument('--git-head', action='store_true', help='bind code_ref to clean Git HEAD')
     update = experiment_actions.add_parser('update')
     update.add_argument('id')
     update.add_argument('--file', required=True)
+    correct = experiment_actions.add_parser('correct')
+    correct.add_argument('id')
+    correct.add_argument('--file', required=True)
+    git_parser = commands.add_parser('git')
+    git_actions = git_parser.add_subparsers(dest='action', required=True, parser_class=Parser)
+    git_actions.add_parser('status')
     args = parser.parse_args(remaining)
     args.json, args.project = global_args.json, global_args.project
     return args
@@ -232,7 +269,8 @@ def main(argv=None):
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
-                                 'experiment create --file <json>', 'experiment update <id> --file <json>'],
+                                 'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
+                                 'experiment correct <id> --file <json>', 'git status'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
         else:
@@ -247,7 +285,15 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if 'experiment' in data:
+            if 'repository' in data:
+                emit_text('Repository: ' + data['repository'])
+                emit_text('HEAD: ' + data['head'])
+                emit_text('Code clean: ' + ('yes' if data['code_clean'] else 'no'))
+                for category in ('code_changes', 'record_changes'):
+                    emit_text(category + ':')
+                    for change in data[category]:
+                        emit_text(change['status'] + ' ' + change['path'])
+            elif 'experiment' in data:
                 experiment = data['experiment']
                 emit_text(f"Experiment: {experiment['id']} (revision {experiment['revision']})")
                 emit_text('Execution: ' + experiment['execution']['status'])
@@ -264,6 +310,8 @@ def main(argv=None):
                 emit_text('Last experiment: ' + (data['last_experiment_id'] or 'none'))
                 emit_text('Unfinished: ' + (', '.join(f"{e['id']} ({e['status']})" for e in data['unfinished']) or 'none'))
                 emit_text('Unselected keep: ' + (', '.join(data['unselected_keep_ids']) or 'none'))
+                emit_text('Budget used: ' + str(data['budget_used']))
+                emit_text('Superseded experiments: ' + (', '.join(data['superseded_experiment_ids']) or 'none'))
                 emit_text('Next action: ' + (data['next_action'] or 'unset'))
         for item in diagnostics:
             emit_text(f"{item['severity']}: {item['path']}: {item['message']}")
