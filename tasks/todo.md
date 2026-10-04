@@ -81,3 +81,30 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - JSON terminal output uses ASCII escaping without changing Unicode values or Decimal precision; stored JSON remains UTF-8.
 - Reproduction: all three new regression tests failed before changes, matching the review findings.
 - Verification: all 33 unittest tests and git diff --check passed on macOS. cp1252 output simulated in a subprocess; native Windows execution remains unverified. No ML execution. Publish fixes on the existing PR #2 branch; merging is not part of this review follow-up.
+
+## Experiment recording — 2026-10-04
+- Scope: experiment create/update only; no training, comparison, decision or submission commands.
+- Branch: feat/experiment-recording based on PR #2 head 5dcf804; origin/dev still lacked PR #2 at initial fetch despite reported merge. Recheck before delivery.
+- Plan: add failing public CLI tests, implement generated snapshots and readiness/budget guards, immutable plans and valid execution transitions, then verify all tests and document usage.
+- Completion: failed mutations preserve originals; experiment writes do not change project selection; completed results remain immutable and artifacts append-only.
+- Initial verification: 8 of 9 new tests failed because experiment commands were absent; the malformed-input test already returned the expected argument exit code and is not counted as a behavior reproduction.
+- Completed: experiment create/update, snapshot copying, readiness/budget checks, state transitions, new evidence for unknown resolution, immutable plans/decisions/terminal results and append-only artifacts. Added reusable create input and README usage.
+- Verification: 45 tests passed; diff whitespace check passed; wheel/sdist built; installed wheel exercised init/project set/experiment create/update/check outside the repository. Independent review found no blocking issues in this scope. No actual ML execution; native Windows/Linux remain unverified.
+- Remote recheck still reports PR #2 OPEN with mergedAt=null and dev at a6ff623. Follow-up work remains local on feat/experiment-recording pending actual base integration; no merge was performed.
+
+## Delivery — experiment recording
+- PR #2 merge confirmed at fe40b97 on origin/dev. User requested commit and PR for feat/experiment-recording.
+- Pre-delivery verification: all 45 tests and git diff --check passed. Commit this increment, align with merged dev and publish a PR targeting dev; exclude incidental .DS_Store.
+
+## Critical review — experiment recording
+- Independent read-only review of fe40b97..5108ea6 found no blocking state/revision/immutability defects. Parent review reproduced a text-output UnicodeEncodeError after a successful experiment save under cp1252; added a failing regression then escaped unencodable characters in human output. JSON output and stored Unicode are unchanged.
+- Direction assessment: still a dependency-free record helper; no process runner, Docker or LLM service. The end-to-end research workflow remains incomplete until review recording, comparisons/decisions and the agent skill exist.
+- Follow-up design concern: save_experiment scans/hashes the complete history twice; large artifacts/history can make each update expensive. Separate mutation-local validation from explicit full evidence checks before large real-project use. No large-data performance benchmark was run.
+- Contract wording to clarify: §4's prohibition on '..' should distinguish JSON storage destinations (ID confined) from read-only command/evidence/artifact references. Independent review reported this as a low-priority ambiguity, not a storage escape finding; no path behavior was changed.
+- Final verification after review fix: all 46 unittest tests and git diff --check passed; publish both implementation and focused output fix in the dev-targeted PR.
+
+## PR #4 evidence retention follow-up — 2026-10-04
+- Scope: accept the evidence deletion/reuse review finding; defer file-mode changes because shared-user access is not a current requirement. Preserve 0600 for new atomic files.
+- Plan: add a failing public CLI regression; require append-only execution evidence on updates; document nonterminal correction by retained evidence plus note/new source; run full suites and publish to PR #4, then integrate into dependent PR #9.
+- Reproduction: the new regression failed because running/unknown evidence deletion was accepted, allowing old evidence to be reused as new confirmation. No actual ML execution.
+- Verification: all 47 tests passed on PR #4 branch, including rejected deletion/replacement/reordering preserving original bytes, old-evidence-only resolution rejection and appended confirmation success; git diff --check passed. Native Windows/Linux not tested.

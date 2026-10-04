@@ -1,0 +1,66 @@
+"""Pure experiment creation and update rules; never execute a command."""
+from copy import deepcopy
+
+from .validation import Validator, diagnostic, validate_document
+
+CREATE_FIELDS = 'id kind hypothesis parent_id baseline_id code_ref config_ref command review_ids'
+TERMINAL = {'succeeded', 'failed', 'interrupted'}
+TRANSITIONS = {
+    'planned': {'planned', 'running', *TERMINAL},
+    'running': {'running', 'unknown', *TERMINAL},
+    'unknown': {'unknown', 'running', *TERMINAL},
+    **{state: {state} for state in TERMINAL},
+}
+
+
+def prepare_create(body, project, stamp):
+    validator = Validator()
+    validator.obj(body, CREATE_FIELDS, '$')
+    if validator.errors:
+        return None, validator.errors
+    candidate = deepcopy(body)
+    candidate.update(schema_version=1, revision=1, created_at=stamp, updated_at=stamp,
+                     comparison=deepcopy(project['comparison']), environment=deepcopy(project['environment']),
+                     execution=dict(status='planned', started_at=None, finished_at=None, exit_code=None,
+                                    score=None, evidence=[], artifacts=[], note=None),
+                     decision=None, decision_history=[])
+    return candidate, validate_document(candidate, 'experiment')
+
+
+def validate_update(current, candidate):
+    errors = validate_document(candidate, 'experiment')
+    if errors:
+        return errors
+
+    def conflict(path, message):
+        errors.append(diagnostic('conflict', path, message))
+
+    # Only execution is caller-editable; revision is an optimistic concurrency token.
+    for field in current:
+        if field not in ('execution', 'updated_at') and candidate[field] != current[field]:
+            conflict(field, f'{field} must match the stored record.')
+    old, new = current['execution'], candidate['execution']
+    if new['status'] not in TRANSITIONS[old['status']]:
+        conflict('execution.status', 'Invalid execution state transition.')
+    for field in ('started_at', 'finished_at'):
+        if old[field] is not None and old[field] != new[field]:
+            conflict('execution.' + field, 'An observed timestamp cannot be changed.')
+    if old['status'] in TERMINAL:
+        for field in old:
+            if field != 'artifacts' and old[field] != new[field]:
+                conflict('execution.' + field, 'Completed execution results are immutable.')
+    if old['status'] == 'planned' and new['status'] in TERMINAL and not new['evidence']:
+        conflict('execution.evidence', 'Recording a completed run requires observation evidence.')
+    if old['status'] == 'unknown' and new['status'] != 'unknown':
+        if not any(item not in old['evidence'] for item in new['evidence']):
+            conflict('execution.evidence', 'Resolving unknown requires new confirmation evidence.')
+    previous_evidence = old['evidence']
+    if new['evidence'][:len(previous_evidence)] != previous_evidence:
+        conflict('execution.evidence', 'Existing evidence cannot be removed, reordered or changed.')
+    previous = old['artifacts']
+    if new['artifacts'][:len(previous)] != previous:
+        conflict('execution.artifacts', 'Existing artifacts cannot be removed, reordered or changed.')
+    paths = [artifact['path'] for artifact in new['artifacts']]
+    if len(paths) != len(set(paths)):
+        conflict('execution.artifacts', 'Each artifact version requires a distinct path.')
+    return errors
