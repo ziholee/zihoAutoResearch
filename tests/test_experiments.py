@@ -120,6 +120,36 @@ class ExperimentTests(ExperimentHarness):
         doc = json.loads(self.record().read_text()); doc['execution']['started_at'] = '2026-01-01T00:00:01Z'
         self.update(doc, expected=3)
 
+    def test_execution_evidence_cannot_be_erased_and_reused_to_resolve_unknown(self):
+        self.register()
+        doc = json.loads(self.record().read_text())
+        evidence = [{'kind':'user_report','ref':ref,'locator':None,'sha256':None}
+                    for ref in ('initial observation', 'lost process observation')]
+        doc['execution'].update(status='running', started_at='2026-01-01T00:00:00Z',
+                                evidence=evidence)
+        self.update(doc)
+        for status in ('running', 'unknown'):
+            if status == 'unknown':
+                doc = json.loads(self.record().read_text())
+                doc['execution'].update(status='unknown', note='lost observation')
+                self.update(doc)
+            before = self.record().read_bytes()
+            for replacement in ([], evidence[:1], list(reversed(evidence)),
+                                [dict(evidence[0], ref='replacement'), evidence[1]]):
+                with self.subTest(status=status, replacement=replacement):
+                    doc = json.loads(before)
+                    doc['execution']['evidence'] = replacement
+                    self.update(doc, expected=3)
+                    self.assertEqual(self.record().read_bytes(), before)
+        doc = self.success(json.loads(self.record().read_text()))
+        doc['execution']['evidence'] = evidence
+        self.update(doc, expected=3)
+        doc['execution']['evidence'] = evidence + [
+            {'kind':'user_report','ref':'new confirmed result','locator':None,'sha256':None}]
+        self.update(doc)
+        self.assertEqual(json.loads(self.record().read_text())['execution']['evidence'],
+                         doc['execution']['evidence'])
+
     def test_artifacts_are_append_only_and_submission_hash_required(self):
         self.register()
         self.update(self.success(json.loads(self.record().read_text())))
