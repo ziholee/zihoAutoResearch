@@ -102,3 +102,9 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - Follow-up design concern: save_experiment scans/hashes the complete history twice; large artifacts/history can make each update expensive. Separate mutation-local validation from explicit full evidence checks before large real-project use. No large-data performance benchmark was run.
 - Contract wording to clarify: §4's prohibition on '..' should distinguish JSON storage destinations (ID confined) from read-only command/evidence/artifact references. Independent review reported this as a low-priority ambiguity, not a storage escape finding; no path behavior was changed.
 - Final verification after review fix: all 46 unittest tests and git diff --check passed; publish both implementation and focused output fix in the dev-targeted PR.
+
+## PR #4 evidence retention follow-up — 2026-10-04
+- Scope: accept the evidence deletion/reuse review finding; defer file-mode changes because shared-user access is not a current requirement. Preserve 0600 for new atomic files.
+- Plan: add a failing public CLI regression; require append-only execution evidence on updates; document nonterminal correction by retained evidence plus note/new source; run full suites and publish to PR #4, then integrate into dependent PR #9.
+- Reproduction: the new regression failed because running/unknown evidence deletion was accepted, allowing old evidence to be reused as new confirmation. No actual ML execution.
+- Verification: all 47 tests passed on PR #4 branch, including rejected deletion/replacement/reordering preserving original bytes, old-evidence-only resolution rejection and appended confirmation success; git diff --check passed. Native Windows/Linux not tested.
