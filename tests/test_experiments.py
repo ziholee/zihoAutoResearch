@@ -4,7 +4,7 @@ import json
 from test_cli import CliHarness
 
 
-class ExperimentTests(CliHarness):
+class ExperimentHarness(CliHarness):
     def setUp(self):
         super().setUp()
         doc = self.ready(self.init())
@@ -32,6 +32,8 @@ class ExperimentTests(CliHarness):
                                 evidence=[{'kind':'user_report','ref':'simulated result','locator':None,'sha256':None}])
         return doc
 
+
+class ExperimentTests(ExperimentHarness):
     def test_create_copies_settings_and_preserves_project(self):
         before = self.stored.read_bytes()
         self.register()

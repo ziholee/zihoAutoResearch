@@ -102,3 +102,31 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - Follow-up design concern: save_experiment scans/hashes the complete history twice; large artifacts/history can make each update expensive. Separate mutation-local validation from explicit full evidence checks before large real-project use. No large-data performance benchmark was run.
 - Contract wording to clarify: §4's prohibition on '..' should distinguish JSON storage destinations (ID confined) from read-only command/evidence/artifact references. Independent review reported this as a low-priority ambiguity, not a storage escape finding; no path behavior was changed.
 - Final verification after review fix: all 46 unittest tests and git diff --check passed; publish both implementation and focused output fix in the dev-targeted PR.
+
+## Git-based research history — 2026-10-04
+- Goal: build on code commits and follow-up evidence/result commits, with no Docker or custom execution service.
+- Plan: read-only Git status; opt-in experiment create --git-head binds clean code/config HEAD; document tracked records versus external data/artifacts; update both program templates and all current design docs; test in temporary Git repositories only.
+- Compatibility: schema v1 code_ref remains a string; Git-backed records use git:<full SHA>. Legacy/manual code_ref remains accepted and is not Git-verified. No automatic git add/commit/checkout/reset/push in the CLI.
+- Completion checks: staged/unstaged/untracked code blocks creation, record-only changes do not block it, HEAD stays unchanged, missing repository/commit is diagnosed; docs and templates agree on the two-commit flow.
+- Initial three regression tests failed because Git commands/flags were absent.
+- Completed docs: canonical Git history guide, README architecture/commands, product direction, workflow, environment connection, CLI contract, experiment report template, both program templates and fixture explanation.
+- Independent review found trailing-space repository paths were trimmed; reproduced with a failing test and fixed by removing only Git's final newline. Documented Git-visible cleanliness and ignored/external input limits.
+- Verification: 51 tests passed; 33 local Markdown links and packaged/source template equality passed; wheel/sdist built; installed wheel exercised Git status and --git-head creation with updated instructions outside the repository. The separate result-commit test preserves the original code SHA. No ML executed. Windows/Linux native execution remains unverified.
+
+## Design verification — Git history document set
+- Used shower skill with a context-free reviewer reading an isolated copy of all eight focused documents (712 lines). Reviewer opened no neighboring source files. Verdict: needs work; intended lightweight Git/JSON/agent responsibility split was correctly understood.
+- High-priority gaps: no correction lineage for a mistyped immutable terminal experiment result; unknown requires a known start timestamp although guidance includes unknown execution/start; abandoned planned records have no non-executed closure and continue consuming the creation budget.
+- Document inconsistencies: workflow asks for metric/time settings in program.md while contract/template prohibit duplicated JSON settings; report template fields lack explicit JSON-source/missing-value mappings.
+- Additional operating gap: preserve unrelated user changes versus whole-repository clean requirement has no documented worktree/defer path. Do not silently commit or reset those changes.
+- Evidence: inspected state/validation code and confirmed never-run interrupted closure is rejected for absent start/finish times. Checked 26 local design links and source/package program template equality. No ML execution; no claim of full runtime or defect-free verification.
+- Review only: no design decisions or implementation changed in this audit. Recommended next work is defining correction, unknown-start and planned-cancellation semantics before extending the research loop, then aligning the document source-of-truth and report mapping.
+
+## Lifecycle fixes and research delivery — 2026-10-04
+- Dedicated branch feat/git-history-lifecycle carries uncommitted Git tracking work and fixes from the design audit. PR #4 remains open; new PR will identify that prerequisite while targeting dev.
+- Plan: regression-test no-start unknown/cancel and append-only corrections; keep records and original refs; define budget/selection semantics; align all docs and report field mapping; verify package and independent review; create separate PR and research-backed issues.
+- TDD: six lifecycle regressions failed before implementation. No ML execution is authorized or needed.
+- Compatibility: experiment.correction is the only optional v1 extension (omission means null); new records include it. Corrections point to original execution records and do not consume another run; cancelled never-run plans release their budget slot.
+- Research: checked primary arXiv pages through September 2026 and official autoresearch repository; created issues #5–#8 with evidence, dates, acceptance criteria and explicit lightweight non-goals. Investigation targets research search trees/DAGs rather than unrelated GNN modeling.
+- Independent lifecycle review found optional correction omission could raise KeyError; added a failing regression and fixed null/omission compatibility. Report mapping now displays raw evidence references without inventing values from arbitrary logs.
+- Final verification: all 61 tests passed; 43 local documentation links and source/package template equality passed; git diff --check passed. Wheel/sdist built, and an isolated installed-wheel smoke check passed unknown-start recovery, success, correction, cancellation, original-byte preservation, budget accounting and packaged instructions. No ML executed; native Windows/Linux remain unverified.
+- Research deliverables: https://github.com/ziholee/zihoAutoResearch/issues/5 (lineage), /issues/6 (failure memory), /issues/7 (comparison), /issues/8 (candidate selection). Primary-source findings and application limits are recorded in docs/research-update-2026-10.md.
