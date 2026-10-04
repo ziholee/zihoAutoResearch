@@ -2,7 +2,7 @@
 
 상태: 구현 기준 v1 · 2026-10-03
 
-이 문서는 만들 CLI의 계약입니다. `init`, `project set`, `status`, `check`와 JSON 저장·검증 기반을 구현했습니다. 나머지 명령은 후속 구현 범위입니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 만들 CLI의 계약입니다. `init`, `project set`, `status`, `check`, `experiment create/update`와 JSON 저장·검증 기반을 구현했습니다. 나머지 명령은 후속 구현 범위입니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -133,7 +133,7 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 
 Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 64자리 소문자 16진수 또는 null입니다. 단, `role=submission`은 최초 등록부터 sha256이 필수이며 null을 거부합니다. evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
 
-상태 전이: planned → running → succeeded/failed/interrupted/unknown. unknown → running/succeeded/failed/interrupted는 확인 근거가 필요합니다. 이미 완료된 결과 입력은 planned → 종료 상태를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. 종료 상태의 원시 결과(status·시각·exit_code·score·evidence·note)는 불변입니다.
+상태 전이: planned → running → succeeded/failed/interrupted/unknown. unknown → running/succeeded/failed/interrupted는 기존 execution.evidence와 구별되는 새 확인 근거가 필요합니다. 이미 완료된 결과 입력은 planned → 종료 상태를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. 종료 상태의 원시 결과(status·시각·exit_code·score·evidence·note)는 불변입니다.
 
 종료 후에도 experiment update로 artifacts에 새 항목을 추가할 수 있습니다. 기존 항목 수정·삭제는 금지하며 파일 버전이 달라지면 새 경로로 추가합니다. 각 산출물의 code_ref/config_ref는 해당 실험과 같고 생성 근거 evidence가 필요합니다. 다른 코드에서 생성한 산출물은 그 코드의 별도 실험에 기록합니다. 이는 작성한 계보를 검사하는 것이며 CLI가 모델 생성 과정을 독립적으로 입증한다는 뜻은 아닙니다.
 
@@ -190,4 +190,4 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
-각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 변경의 상태 전이, 비교·보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
+각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이는 구현했으며, 비교·판정·보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.

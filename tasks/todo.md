@@ -81,3 +81,17 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - JSON terminal output uses ASCII escaping without changing Unicode values or Decimal precision; stored JSON remains UTF-8.
 - Reproduction: all three new regression tests failed before changes, matching the review findings.
 - Verification: all 33 unittest tests and git diff --check passed on macOS. cp1252 output simulated in a subprocess; native Windows execution remains unverified. No ML execution. Publish fixes on the existing PR #2 branch; merging is not part of this review follow-up.
+
+## Experiment recording — 2026-10-04
+- Scope: experiment create/update only; no training, comparison, decision or submission commands.
+- Branch: feat/experiment-recording based on PR #2 head 5dcf804; origin/dev still lacked PR #2 at initial fetch despite reported merge. Recheck before delivery.
+- Plan: add failing public CLI tests, implement generated snapshots and readiness/budget guards, immutable plans and valid execution transitions, then verify all tests and document usage.
+- Completion: failed mutations preserve originals; experiment writes do not change project selection; completed results remain immutable and artifacts append-only.
+- Initial verification: 8 of 9 new tests failed because experiment commands were absent; the malformed-input test already returned the expected argument exit code and is not counted as a behavior reproduction.
+- Completed: experiment create/update, snapshot copying, readiness/budget checks, state transitions, new evidence for unknown resolution, immutable plans/decisions/terminal results and append-only artifacts. Added reusable create input and README usage.
+- Verification: 45 tests passed; diff whitespace check passed; wheel/sdist built; installed wheel exercised init/project set/experiment create/update/check outside the repository. Independent review found no blocking issues in this scope. No actual ML execution; native Windows/Linux remain unverified.
+- Remote recheck still reports PR #2 OPEN with mergedAt=null and dev at a6ff623. Follow-up work remains local on feat/experiment-recording pending actual base integration; no merge was performed.
+
+## Delivery — experiment recording
+- PR #2 merge confirmed at fe40b97 on origin/dev. User requested commit and PR for feat/experiment-recording.
+- Pre-delivery verification: all 45 tests and git diff --check passed. Commit this increment, align with merged dev and publish a PR targeting dev; exclude incidental .DS_Store.
