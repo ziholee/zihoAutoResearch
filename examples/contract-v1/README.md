@@ -12,6 +12,8 @@
 
 예제의 경로 기준은 이 폴더입니다. CLI의 실제 저장 배치에서는 JSON이 .autoresearch 하위에 들어가도 근거 경로는 프로젝트 루트 기준입니다. logs/와 submission-example.txt는 이 모의 프로젝트의 근거 파일입니다.
 
-기대 해석: 로컬 RMSE는 1.2 → 1.1로 개선 폭 약 0.1이지만 자동 채택하지 않습니다. 현재 선택은 exp-baseline이고 후보는 hold입니다. 제출 점수 1.15는 로컬 점수와 따로 표시합니다. 이 예제는 CLI 실행 테스트 결과가 아닙니다.
+기대 해석: 로컬 RMSE는 1.2 → 1.1로 개선 폭 약 0.1이지만 자동 채택하지 않습니다. 현재 선택은 exp-baseline이고 후보는 hold입니다. 제출 점수 1.15는 로컬 점수와 따로 표시합니다. 이 수치는 실제 ML 실행 결과가 아닙니다. 현재 CLI 회귀 테스트에서 이 파일들의 형식·참조·근거 연결을 검사합니다.
 
 revision 예시: 기준은 create(1) → 결과 update(2) → decide(3), 후보는 이 과정 후 제출 artifact 추가 update(4)입니다. 제출의 submitted_at/observed_at은 생성 입력에 포함합니다.
+
+이 예제의 code_ref는 모의 수동 식별자입니다. 실제 Git 흐름에서는 [Git 연구 이력](../../docs/git-research-history.md)에 따라 `experiment create --git-head`로 전체 커밋 SHA를 연결합니다.

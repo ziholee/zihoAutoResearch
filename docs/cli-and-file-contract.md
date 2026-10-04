@@ -1,8 +1,8 @@
 # v1 사용 흐름·CLI·파일 계약
 
-상태: 구현 기준 v1 · 2026-10-03
+상태: 구현 기준 v1 · 2026-10-04
 
-이 문서는 만들 CLI의 계약입니다. `init`, `project set`, `status`, `check`, `experiment create/update`와 JSON 저장·검증 기반을 구현했습니다. 나머지 명령은 후속 구현 범위입니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 만들 CLI의 계약입니다. `init`, `project set`, `status`, `check`, `experiment create/update/correct`, `git status`, `experiment create --git-head`와 JSON 저장·검증 기반을 구현했습니다. 나머지 명령은 후속 구현 범위입니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -35,14 +35,14 @@
 ```
 
 - JSON은 설정·점수·상태·근거 참조의 원본입니다. Markdown을 읽어 JSON을 자동 수정하지 않습니다.
-- `program.md`는 프로젝트 해석·연구 절차·불확실성·다음 행동을 적는 편집 가능한 지침입니다. 지표·예산·선택 ID·명령은 `project.json`을 참조하며 값의 별도 사본을 유지하지 않습니다.
-- `reports/`는 언제든 JSON에서 재생성합니다. 보고서 수정은 원본 상태에 반영되지 않습니다.
+- `program.md`는 프로젝트 해석·연구 절차·불확실성을 적는 편집 가능한 지침입니다. 지표·예산·선택 ID·명령·다음 행동은 `project.json`을 참조하며 값의 별도 사본을 유지하지 않습니다.
+- `reports/`는 [필드별 원본 매핑](report-field-mapping.md)에 따라 JSON에서 재생성합니다. 출처 없는 값은 “미기록”으로 표시합니다. 보고서 수정은 원본 상태에 반영되지 않습니다.
 - 코드·데이터·모델·로그는 기존 위치에 두고 경로·내용 식별자로 연결합니다. CLI가 대용량 파일을 복사하거나 모델을 로드하지 않습니다.
 - 기존 루트 `program.md`, `AGENTS.md`, 사용자 코드와 설정은 자동 수정하지 않습니다. 스킬은 기존 지침도 읽고 충돌을 드러냅니다.
 
 ## 3. 명령
 
-모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `init` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
+모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `init`, `git status` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
 
 | 명령 | 정확한 동작 |
 |---|---|
@@ -50,9 +50,12 @@
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
 | `zar status` | 준비 상태, 누락, 선택 실험, 마지막 실험, planned/running/unknown, 다음 행동 표시 |
 | `zar check` | 모든 JSON의 형식·참조·상태·근거 가용성 검사. ML 타당성을 자동 판정하는 명령이 아님 |
+| `zar git status` | init 전에도 읽기 전용으로 저장소·HEAD·코드 변경과 연구 기록 변경을 조회 |
+| `zar experiment create --git-head --file <json>` | 코드 변경이 없는 HEAD를 확인해 code_ref를 git:<전체 SHA>로 대체하고 planned 기록 생성 |
 | `zar review add --file <json>` | 새 점검 기록 생성. 같은 ID의 덮어쓰기 금지 |
 | `zar experiment create --file <json>` | planned 상태의 새 실험 생성. 동일 ID는 오류 |
 | `zar experiment update <id> --file <json>` | 현재 레코드의 수정본으로 실행 상태/관측 갱신. revision 일치 필수; 판단은 변경하지 않음 |
+| `zar experiment correct <id> --file <json>` | 종료 관측의 오기를 원본 보존 정정 레코드로 기록. 새 ID·원본 revision·새 execution·reason·evidence 필수 |
 | `zar experiment compare <base-id> <candidate-id>` | 로컬 비교 조건을 검사하고 차이 표시. 코드 변경·판단 저장 없음 |
 | `zar experiment decide <id> --file <json>` | revision·판단·근거·후속 행동을 담은 입력으로 판단 저장. keep/discard가 실제 파일을 변경하지 않음 |
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
@@ -68,10 +71,10 @@ report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 �
 
 ## 4. 공통 파일 규칙
 
-- UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다.
+- UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다. 호환 예외는 experiment.correction 하나로, 과거 v1 레코드의 생략을 null로 취급합니다. 새 레코드에는 correction을 기록합니다.
 - 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
 - 생성 입력에는 본문과 id를 제공합니다. CLI가 만드는 메타데이터는 schema_version·revision·created_at·updated_at 네 필드입니다. 실행 시각·제출 시각은 관측한 작성자가 제공하며 CLI가 추정하지 않습니다. project set/experiment update는 현재 파일 전체의 수정본을 받습니다. 수정 시 CLI가 revision을 1 증가시키고 updated_at을 갱신합니다.
-- ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실험에는 새 ID를 씁니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
+- ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실행에는 새 실험 ID를 씁니다. 실행을 다시 하지 않고 종료 관측만 정정할 때는 아래 correct 명령으로 별도의 정정 ID를 연결합니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
 - 경로는 대상 프로젝트 기준 `/` 구분 상대 경로를 기본으로 합니다. 기존 외부 데이터 경로는 절대 경로도 기록할 수 있으나 이동 시 가용성 재검사 대상입니다. 기록 경로에 `..`나 저장 폴더 밖 쓰기는 허용하지 않습니다.
 - 근거 객체 `Evidence`는 `{kind, ref, locator, sha256}`입니다. kind는 `file|url|user_report|fixture`, locator와 sha256은 null 가능. file/fixture는 경로, url은 URL, user_report는 전달한 사람/메시지 등 추적 가능한 출처입니다.
 - 해시 미기록·파일 부재·사용자 전달은 검증 수준을 낮춰 표시합니다. `check`는 URL에 접속하지 않습니다. 파일을 직접 확인하지 않은 정보를 검증됨으로 올리지 않습니다.
@@ -98,7 +101,7 @@ Command는 `{name, argv, cwd}`입니다. name은 `train|validate|predict|other`,
 
 실험 생성에 필요한 설정은 objective, comparison, runtime, 적어도 하나의 명령, 두 budget 값, editable_paths입니다. 누락 중에도 init·status·review 기록은 가능합니다. command나 보호 범위를 포함한 승인된 작업 범위는 스킬이 사용자 지시와 함께 확인합니다.
 
-max_experiments는 이 프로젝트 기록 안의 생성된 실험 수 한도이며 baseline·실패·확인 실행도 포함합니다. create 시 한도 도달을 검사합니다. max_run_seconds는 스킬이 외부 실행에 적용할 요청 한도이고 CLI가 프로세스를 감시·강제 종료한다고 보장하지 않습니다. 한도 변경은 project set에 명시적으로 기록하며 스킬이 임의로 늘리지 않습니다.
+max_experiments는 예약·시도한 실행 수 한도이며 baseline·planned·running·unknown·실패·확인 실행도 포함합니다. correction이 null/생략이고 상태가 cancelled가 아닌 레코드 수로 계산합니다. 미실행 취소는 슬롯을 반환하고 정정 레코드는 새 실행으로 세지 않습니다. 원본 종료 기록은 정정된 뒤에도 한 번 계산합니다. create 시 한도 도달을 검사합니다. max_run_seconds는 스킬이 외부 실행에 적용할 요청 한도이고 CLI가 프로세스를 감시·강제 종료한다고 보장하지 않습니다. 한도 변경은 project set에 명시적으로 기록하며 스킬이 임의로 늘리지 않습니다.
 
 comparison을 바꾸면 선택 ID는 null 또는 새 비교 구간에 속하는 keep ID여야 합니다. 기존 실험의 comparison 사본은 바뀌지 않습니다. environment만 바꾼 경우도 새 실험에는 현재 환경 사본을 저장하고, 다른 환경끼리의 자동 수치 비교는 보류합니다.
 
@@ -128,22 +131,34 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 | `execution` | 아래 Execution 객체 |
 | `decision` | null 또는 아래 Decision 객체 |
 | `decision_history` | DecisionHistory 배열. 생성 시 []; CLI만 갱신 |
+| `correction` | null 또는 `{supersedes_id, reason, evidence}`. 기존 v1의 생략은 null; correct만 생성하고 update로 변경 불가 |
 
 생성 본문에는 kind, hypothesis, parent_id, baseline_id, code_ref, config_ref, command, review_ids와 id를 제공합니다. CLI는 comparison/environment를 현재 프로젝트에서 복사하고 execution을 planned로 초기화하며 decision은 null로 둡니다. parent/baseline은 이미 존재해야 하고 자기 참조는 금지합니다. baseline은 baseline_id가 null이고, performance/confirmation은 같은 비교 구간의 baseline_id가 필수입니다. validity_fix는 새 비교 구간이면 baseline_id가 null일 수 있습니다.
 
-Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 64자리 소문자 16진수 또는 null입니다. 단, `role=submission`은 최초 등록부터 sha256이 필수이며 null을 거부합니다. evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
+Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown|cancelled`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 64자리 소문자 16진수 또는 null입니다. 단, `role=submission`은 최초 등록부터 sha256이 필수이며 null을 거부합니다. evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
 
-상태 전이: planned → running → succeeded/failed/interrupted/unknown. unknown → running/succeeded/failed/interrupted는 기존 execution.evidence와 구별되는 새 확인 근거가 필요합니다. 이미 완료된 결과 입력은 planned → 종료 상태를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. 종료 상태의 원시 결과(status·시각·exit_code·score·evidence·note)는 불변입니다.
+상태 전이: planned → running/unknown/cancelled, running → succeeded/failed/interrupted/unknown. planned → unknown은 시작 전달/확인 실패의 note와 evidence를 요구합니다. unknown → running/succeeded/failed/interrupted는 기존 execution.evidence와 구별되는 새 확인 근거가 필요합니다. unknown → cancelled는 시작 시각이 null이고 새 근거로 미실행이 확인될 때만 허용합니다. cancelled는 미실행 종료 상태이며 부활할 수 없습니다. 이미 완료된 결과 입력은 planned → succeeded/failed/interrupted를 허용하되 실제 실행 시각·출처를 요구합니다. 동일 학습을 다시 실행하면 새 실험 ID를 만듭니다. succeeded/failed/interrupted/cancelled가 종료 상태입니다. 종료 원시 결과(status·시각·exit_code·score·evidence·note)는 update로 변경할 수 없습니다. 취소는 artifacts도 빈 배열입니다. 오기는 correct로 새 정정 기록에 남깁니다.
 
 종료 후에도 experiment update로 artifacts에 새 항목을 추가할 수 있습니다. 기존 항목 수정·삭제는 금지하며 파일 버전이 달라지면 새 경로로 추가합니다. 각 산출물의 code_ref/config_ref는 해당 실험과 같고 생성 근거 evidence가 필요합니다. 다른 코드에서 생성한 산출물은 그 코드의 별도 실험에 기록합니다. 이는 작성한 계보를 검사하는 것이며 CLI가 모델 생성 과정을 독립적으로 입증한다는 뜻은 아닙니다.
 
-succeeded는 시작/종료 시각, exit_code 0, 유한 score, 결과 evidence가 필요합니다. 실패/중단/unknown에서는 score가 null이고 이유 note가 필요합니다. 종료 상태는 finished_at이 필요하고 planned/running/unknown은 finished_at이 null입니다. 시작 시각은 planned만 null일 수 있습니다. submission 이외 artifacts의 sha256은 null 가능하며 미확인으로 표시합니다. 제출 파일은 해시를 확보한 뒤 등록하므로 나중에 null을 수정하는 별도 절차는 두지 않습니다.
+succeeded는 시작/종료 시각, exit_code 0, 유한 score, 결과 evidence가 필요합니다. 실패/중단/unknown에서는 score가 null이고 이유 note가 필요합니다. succeeded/failed/interrupted는 finished_at이 필요하고 planned/running/unknown/cancelled는 finished_at이 null입니다. planned/cancelled의 시작 시각은 null이며 unknown은 시작 자체가 미확인이면 null을 허용합니다. running/succeeded/failed/interrupted는 확인된 시작 시각이 필요합니다. 시작 미확인 unknown은 evidence가 필요하며 exit_code는 null, artifacts는 []입니다. cancelled는 미실행 사유 note가 필수이고 시작·종료 시각·exit_code·score는 null, artifacts는 []입니다. submission 이외 artifacts의 sha256은 null 가능하며 미확인으로 표시합니다. 제출 파일은 해시를 확보한 뒤 등록하므로 나중에 null을 수정하는 별도 절차는 두지 않습니다.
 
 Decision은 `{status, validity, reason, evidence, next_action}`입니다. status는 `keep|discard|hold`, validity는 `valid|invalid|not_comparable`. reason은 비어 있지 않은 string, evidence는 Evidence 배열, next_action은 string 또는 null입니다. decide 입력은 `{revision, decision}`입니다. DecisionHistory는 `{decided_at, decision}`이며 decided_at은 CLI가 기록한 UTC RFC 3339입니다. 최초 판단부터 매 판단을 history에 추가하고, 최상위 decision은 항상 마지막 항목의 decision과 같아야 합니다. 기존 history 항목은 불변입니다.
 
 keep은 succeeded·valid이고 근거가 있어야 합니다. hold는 다음 확인 사항을 남기고 기존 선택을 바꾸지 않습니다. invalid/not_comparable은 keep 불가입니다. 잘못된 비교 기준을 고쳐 점수가 낮아진 validity_fix는 새 유효 기준으로 keep할 수 있고, 이전 무효 점수와의 감소는 discard 사유가 아닙니다.
 
-종료 상태가 아닌 실험은 decide할 수 없습니다. 이미 선택된 실험을 invalid/discard 등으로 재판정하려면 project set으로 선택을 해제한 뒤 변경합니다. 판단의 번복이 원래 실행 결과를 수정하지 않습니다.
+decide는 succeeded/failed/interrupted에만 허용합니다. planned/running/unknown/cancelled는 판단 대상이 아닙니다. 이미 선택된 실험을 invalid/discard 등으로 재판정하려면 project set으로 선택을 해제한 뒤 변경합니다. 판단의 번복이 원래 실행 결과를 수정하지 않습니다.
+
+
+### 종료 관측의 원본 보존 정정
+
+`experiment correct <old-id> --file <json>`의 입력은 `{id, revision, execution, reason, evidence}`입니다. id는 새 정정 ID, revision은 대상 원본의 현재 값입니다. reason은 비어 있지 않은 문자열, evidence는 비어 있지 않은 Evidence 배열입니다. 대상과 새 execution 모두 succeeded/failed/interrupted여야 합니다. 실제 재실행은 correct가 아니라 create를 씁니다.
+
+CLI는 원본의 모든 계획 필드(comparison/environment/code_ref/config_ref/command/review_ids 포함)를 복사하고 새 메타데이터와 correction을 생성합니다. 원본은 그대로 보존됩니다. 새 execution의 artifacts는 원본과 같아야 하며 추가 산출물은 이후 update로 붙입니다. 새 decision은 null, decision_history는 []입니다. 원본 판단은 새 결과로 자동 승계하지 않습니다.
+
+correction.supersedes_id는 같은 실행 계획을 가진 종료 실험을 참조합니다. 후속 정정이 없는 활성 기록만 정정하며 분기·순환·같은 ID·중복 ID는 거부합니다. 원본이 현재 선택이면 project set으로 선택을 해제한 뒤 정정합니다. 대체된 기록은 update할 수 없습니다. 기존 parent/baseline/submission 참조를 자동 변경하지 않고 대체됨과 재확인 필요를 진단합니다. status는 정정으로 대체된 ID와 실제 횟수 예산 사용량을 표시하고, 대체된 keep을 활성 후보로 제시하지 않습니다.
+
+schema_version 1의 호환 확장으로 correction 생략은 null입니다. 기존 파일 자동 변환은 하지 않지만 새 필드·상태를 읽으려면 이 기능을 포함한 CLI가 필요합니다. 이전 CLI는 새 기록을 거부할 수 있습니다.
 
 ## 8. 비교와 submissions/<id>.json
 
@@ -191,3 +206,9 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
 각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이는 구현했으며, 비교·판정·보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
+
+## 11. Git 이력 연결
+
+[Git 연구 이력 계약](git-research-history.md)을 따릅니다. schema_version 1의 code_ref 문자열을 유지하고 Git 연결 실험에는 `git:<전체 커밋 SHA>`를 사용합니다. `--git-head` 없는 수동 식별자는 기존과 같이 허용하지만 Git 검증을 의미하지 않습니다. Git 조회 명령은 project.json 초기화 전에도 사용할 수 있습니다.
+
+코드·설정 커밋 → planned 기록 → 기존 환경 실행 → 결과·판단 기록 커밋 순서입니다. 결과 기록 커밋 SHA를 JSON 안에 자기 참조로 넣지 않습니다. CLI는 자동 커밋·브랜치 전환·되돌리기·push를 수행하지 않고 실행 시점의 코드 일치를 보증하지 않습니다. check는 JSON 계약과 근거 파일을 검사하며 과거 Git SHA의 존재 여부를 검증하는 기능은 아직 없습니다.
