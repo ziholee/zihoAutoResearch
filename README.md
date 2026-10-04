@@ -2,7 +2,7 @@
 
 **LLM이 기존 ML 프로젝트를 이해하고 전처리·학습·검증을 점검하며, 코드 수정과 실험을 반복하도록 돕는 가벼운 연구 도구.**
 
-사용자가 선택한 기존 환경과 실행 명령을 활용합니다. 대회에서는 주최측 데이터·평가 지표·제출 규칙을 읽고, 로컬 검증 결과와 제출 점수를 실험 변경에 연결합니다. Docker나 별도 실행 플랫폼은 초기 범위에 포함하지 않습니다.
+사용자가 선택한 기존 환경과 실행 명령을 활용하며, Git 코드 커밋과 후속 실험 기록 커밋을 연결해 연구 이력을 쌓습니다. 대회에서는 주최측 데이터·평가 지표·제출 규칙을 읽고, 로컬 검증 결과와 제출 점수를 실험 변경에 연결합니다. Docker나 별도 실행 플랫폼은 초기 범위에 포함하지 않습니다.
 
 ## 작업 흐름
 
@@ -44,6 +44,10 @@ flowchart TD
     S -->|범위 내 코드 수정| F
     S -->|맡겨진 범위에서 실행| X
     O -->|관측 근거| S
+    G[Git: 코드·설정 커밋과 결과 기록 커밋]
+    F -->|버전 보존| G
+    J -->|후속 커밋| G
+    G -->|코드 SHA 연결| C
     L[사용자가 확인한 대회 제출 점수] -->|실험과 파일에 연결| C
     R -->|결과와 다음 행동| U
 ```
@@ -52,8 +56,11 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가, 실험 비교·판정과 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update/correct`, `git status`, `experiment create --git-head`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가, 실험 비교·판정과 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
+- [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
+- [보고서 필드별 원본 매핑](docs/report-field-mapping.md)
+- [Git 기반 연구 이력과 사용 순서](docs/git-research-history.md)
 - [현재 제품 정의](docs/product-direction.md)
 - [v1 사용 흐름·CLI·파일 계약](docs/cli-and-file-contract.md)
 - [실제 학습 없이 확인하는 모의 파일 예제](examples/contract-v1/README.md)
@@ -117,3 +124,28 @@ zar experiment update exp-baseline-1 --project /path/to/ml-project --file experi
 - 계획·이미 기록한 실행 시각·판단은 update로 바꿀 수 없습니다. 종료 결과는 고정하며 산출물만 새 경로로 추가할 수 있습니다. 제출용 산출물은 SHA-256 해시가 필요합니다.
 
 이 명령은 프로세스를 시작하거나 실행 상태를 자동 탐지하지 않습니다. 실험을 생성·갱신해도 project.json의 선택 실험은 바뀌지 않습니다. 새 실험 파일은 소유자 전용 권한으로 생성되고, 이후 갱신은 기존 파일 권한을 유지합니다.
+
+## Git 커밋으로 쌓는 연구 이력
+
+코드·설정을 커밋한 뒤 다음 명령으로 실험을 연결합니다. CLI는 Git 조회만 수행합니다.
+
+```sh
+zar git status --project /path/to/ml-project --json
+zar experiment create --git-head --project /path/to/ml-project --file /path/to/experiment-create.json
+```
+
+`--git-head`는 입력 code_ref를 `git:<전체 HEAD SHA>`로 대체하며 커밋되지 않은 코드·설정 변경이 있으면 거부합니다. `.autoresearch/`의 기록 변경은 허용합니다. 입력 파일은 대상 프로젝트 밖이나 `.autoresearch/drafts/`에 두세요. 실행 결과 JSON은 코드 커밋을 계속 가리키며, 기존 에이전트가 별도의 결과 기록 커밋으로 보존합니다.
+
+추적할 파일·잠금 제외 규칙·실행 직전 확인·검사 한계는 [Git 연구 이력](docs/git-research-history.md)에 정리했습니다. 과거 JSON 예제의 수동 code_ref는 실제 Git SHA가 아닙니다.
+
+## 미실행 취소·시작 미확인·관측 정정
+
+- 실행하지 않은 planned는 `experiment update`로 `cancelled`와 사유 note를 남깁니다. 시작·종료·점수·exit code는 null, artifacts는 []입니다. 미완료 목록에서 닫히고 횟수 예산을 반환합니다.
+- 실행 시작 여부를 모르면 note/evidence와 함께 `unknown`을 기록하며 시작 시각을 추정하지 않습니다. 확인 전 재실행하지 않고, 새 근거로 실행 상태를 해소합니다.
+- 완료 결과의 오기는 원본을 덮어쓰지 않고 새 정정 ID로 연결합니다.
+
+```sh
+zar experiment correct exp-baseline-1 --project /path/to/ml-project --file correction.json
+```
+
+정정 입력은 `{id, revision, execution, reason, evidence}`이며 원본 revision과 새 ID를 제공합니다. 같은 실행 계획·산출물을 보존하고 결과만 정정합니다. 새 실행 횟수는 늘지 않으며 새 판단은 비어 있습니다. 선택된 원본은 먼저 선택 해제해야 합니다. 자세한 상태·정정 규칙은 [파일 계약](docs/cli-and-file-contract.md), 향후 보고서의 출처는 [필드 매핑](docs/report-field-mapping.md)을 따릅니다.
