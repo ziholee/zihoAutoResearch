@@ -173,3 +173,20 @@ class ExperimentTests(CliHarness):
         self.assertFalse(json.loads(output.getvalue())['ok'])
         self.assertEqual(list((self.stored.parent/'experiments').iterdir()), [])
         self.assertFalse((self.stored.parent/'.lock').exists())
+
+    def test_text_output_with_unicode_warning_does_not_fail_after_save(self):
+        import os
+        import subprocess
+        import sys
+        from test_cli import REPO
+        self.register()
+        doc = self.success(json.loads(self.record().read_text()))
+        doc['execution']['evidence'] = [dict(kind='fixture', ref='없는-로그.txt', locator=None, sha256=None)]
+        source = self.write_input(doc)
+        result = subprocess.run([sys.executable, '-m', 'zar', 'experiment', 'update', 'exp-1',
+                                 '--file', str(source), '--project', str(self.project)],
+                                env={**os.environ, 'PYTHONIOENCODING':'cp1252', 'PYTHONPATH':str(REPO)},
+                                capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(b'warning:', result.stdout)
+        self.assertEqual(json.loads(self.record().read_text())['revision'], 2)

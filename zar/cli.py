@@ -219,6 +219,12 @@ def parse(arguments):
     return args
 
 
+def emit_text(text):
+    """Keep human output usable when a terminal cannot encode recorded text."""
+    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
+    print(text.encode(encoding, errors='backslashreplace').decode(encoding))
+
+
 def main(argv=None):
     arguments = list(sys.argv[1:] if argv is None else argv)
     json_mode = '--json' in arguments
@@ -243,22 +249,22 @@ def main(argv=None):
         if data is not None:
             if 'experiment' in data:
                 experiment = data['experiment']
-                print(f"Experiment: {experiment['id']} (revision {experiment['revision']})")
-                print('Execution: ' + experiment['execution']['status'])
+                emit_text(f"Experiment: {experiment['id']} (revision {experiment['revision']})")
+                emit_text('Execution: ' + experiment['execution']['status'])
             elif 'project' in data:
                 project = data['project']
-                print(f"Project: {project['id']} (revision {project['revision']})")
+                emit_text(f"Project: {project['id']} (revision {project['revision']})")
                 if 'initialized' in data:
-                    print('Initialized.' if data['initialized'] else 'Already initialized; preserved existing files.')
+                    emit_text('Initialized.' if data['initialized'] else 'Already initialized; preserved existing files.')
             else:
-                print(f"Project: {data['project_id']} (revision {data['revision']})")
-                print('Ready: ' + ('yes' if data['ready'] else 'no'))
-                print('Missing: ' + (', '.join(data['missing']) or 'none'))
-                print('Selected experiment: ' + (data['selected_experiment_id'] or 'none'))
-                print('Last experiment: ' + (data['last_experiment_id'] or 'none'))
-                print('Unfinished: ' + (', '.join(f"{e['id']} ({e['status']})" for e in data['unfinished']) or 'none'))
-                print('Unselected keep: ' + (', '.join(data['unselected_keep_ids']) or 'none'))
-                print('Next action: ' + (data['next_action'] or 'unset'))
+                emit_text(f"Project: {data['project_id']} (revision {data['revision']})")
+                emit_text('Ready: ' + ('yes' if data['ready'] else 'no'))
+                emit_text('Missing: ' + (', '.join(data['missing']) or 'none'))
+                emit_text('Selected experiment: ' + (data['selected_experiment_id'] or 'none'))
+                emit_text('Last experiment: ' + (data['last_experiment_id'] or 'none'))
+                emit_text('Unfinished: ' + (', '.join(f"{e['id']} ({e['status']})" for e in data['unfinished']) or 'none'))
+                emit_text('Unselected keep: ' + (', '.join(data['unselected_keep_ids']) or 'none'))
+                emit_text('Next action: ' + (data['next_action'] or 'unset'))
         for item in diagnostics:
-            print(f"{item['severity']}: {item['path']}: {item['message']}")
+            emit_text(f"{item['severity']}: {item['path']}: {item['message']}")
     return code

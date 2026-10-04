@@ -95,3 +95,10 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 ## Delivery — experiment recording
 - PR #2 merge confirmed at fe40b97 on origin/dev. User requested commit and PR for feat/experiment-recording.
 - Pre-delivery verification: all 45 tests and git diff --check passed. Commit this increment, align with merged dev and publish a PR targeting dev; exclude incidental .DS_Store.
+
+## Critical review — experiment recording
+- Independent read-only review of fe40b97..5108ea6 found no blocking state/revision/immutability defects. Parent review reproduced a text-output UnicodeEncodeError after a successful experiment save under cp1252; added a failing regression then escaped unencodable characters in human output. JSON output and stored Unicode are unchanged.
+- Direction assessment: still a dependency-free record helper; no process runner, Docker or LLM service. The end-to-end research workflow remains incomplete until review recording, comparisons/decisions and the agent skill exist.
+- Follow-up design concern: save_experiment scans/hashes the complete history twice; large artifacts/history can make each update expensive. Separate mutation-local validation from explicit full evidence checks before large real-project use. No large-data performance benchmark was run.
+- Contract wording to clarify: §4's prohibition on '..' should distinguish JSON storage destinations (ID confined) from read-only command/evidence/artifact references. Independent review reported this as a low-priority ambiguity, not a storage escape finding; no path behavior was changed.
+- Final verification after review fix: all 46 unittest tests and git diff --check passed; publish both implementation and focused output fix in the dev-targeted PR.
