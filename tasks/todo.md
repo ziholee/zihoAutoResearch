@@ -137,3 +137,22 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - Reproduction: the new regression failed because running/unknown evidence deletion was accepted, allowing old evidence to be reused as new confirmation. No actual ML execution.
 - Verification: all 47 tests passed on PR #4 branch, including rejected deletion/replacement/reordering preserving original bytes, old-evidence-only resolution rejection and appended confirmation success; git diff --check passed. Native Windows/Linux not tested.
 - Integration into PR #9: preserved both task histories, updated the unknown-start fixture to append confirmation rather than replace earlier evidence, and passed all 62 tests plus git diff --check. The correction command still creates a separate record and preserves the original.
+
+## Issue #7 comparison and decisions — 2026-10-04
+- Branch feat/comparison-decisions from merged origin/dev 6520a35.
+- Scope: read-only compare, revision-guarded decide with immutable decision history, exact decimal delta/threshold, explicit optional run_context (scope/seed/budget_ref), conservative confirmation statistics and stale baseline diagnostics. No ML, automatic keep/selection or execution service.
+- Plan: failing CLI/decimal regressions; implement schema-compatible optional context and comparison/decision logic; align docs/templates; full tests and independent review.
+- Completion: mismatched or unknown scope/budget/environment blocks numeric comparison; ties never count as improvement; active same-plan confirmation counts exclude superseded originals, single-run variance remains unknown; evidence availability remains distinct from content truth; decision updates preserve project selection and original execution.
+- Implemented compare/decide with optional immutable run_context, explicit unknown constraints, exact decimal subtraction and rational repetition statistics. No new evaluation server or duplicate Comparison schema.
+- Initial regressions failed before implementation (run_context rejected); two test setup errors also exposed the existing changed-comparison-ID guard and were corrected without changing that guard.
+- Independent review found command mismatch aggregation and lost confirmation links after anchor correction. A new regression reproduced the lost-link failure; fixed command matching and ancestry lookup while preserving explicit baseline references and excluding superseded originals.
+- Intermediate full suite: 72 tests passed. Added final cases for corrected confirmation deduplication, unknown seeds/environment, missing evidence versus numeric comparability, evidence-free keep rejection and tie keep by explicit decision. Final verification pending below.
+- Final verification (2026-10-05 KST): all 75 unittest tests passed; git diff --check passed; 39 local links across README/docs/templates and source/package template equality passed. Wheel/sdist built; an isolated installed wheel exercised init/project set/create/update/compare/decide/check and preserved selection. No ML executed; native Windows/Linux remain unverified.
+- Independent final review found no further blocking issues. Existing missing run_context and corrected baseline references remain immutable and explicitly limited; no automatic migration or silent baseline redirection.
+- Implementation is on feat/comparison-decisions in the working tree; no commit, PR publication or issue closure requested in this increment.
+
+## Delivery — comparison and decisions — 2026-10-05
+- User authorized continuing with commit and a PR targeting dev after the progress briefing.
+- Plan: align README implementation status, rerun the full regression suite and documentation/package checks, commit the comparison increment, push the branch and open a dev-targeted PR referencing #7.
+- Completion: verify the published branch SHA and PR base/head; leave merging and issue closure to integration. Preserve the unrelated .DS_Store file.
+- Verification: reran all 75 unittest tests successfully; git diff --check, 39 local documentation links and source/package template equality passed. Fresh wheel/sdist build passed. README now lists compare/decide as implemented; origin/dev still matches the branch base 6520a35. No ML execution; native Windows/Linux remain unverified.
