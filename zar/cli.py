@@ -1,4 +1,4 @@
-"""Project-only CLI. Stored commands are data and are never executed."""
+"""Local research record CLI. Stored commands are data and are never executed."""
 import argparse
 from datetime import datetime, timezone
 from importlib.resources import files
@@ -9,6 +9,7 @@ import sys
 from uuid import uuid4
 
 from .codec import loads, dumps
+from .comparisons import compare, prepare_decision
 from .experiments import prepare_create, validate_update, prepare_correction, superseded_ids, budget_used
 from .git_tracking import snapshot, GitStateError
 from .storage import atomic_write, project_lock
@@ -159,6 +160,9 @@ def save_experiment(args, root, project):
             path = store / 'experiments' / (candidate['id'] + '.json')
             if path.exists() or path.is_symlink():
                 reject('conflict', path, 'Correction requires an unused experiment ID.')
+        elif args.action == 'decide':
+            candidate, errors = prepare_decision(current, body, {d['id']:d for d in records}, now())
+            enforce(errors)
         else:
             enforce(validate_update(current, body))
             candidate = body
@@ -189,6 +193,14 @@ def execute(args):
     with project_lock(store):
         project = read_document(store / 'project.json')
         enforce(validate_document(project, 'project'))
+        if args.command == 'experiment' and args.action == 'compare':
+            diagnostics = inspect_project(root, project)
+            enforce(diagnostics)
+            records = {d['id']:d for d in (read_document(p) for p in (store / 'experiments').glob('*.json'))}
+            for id in (args.base_id, args.candidate_id):
+                if not ID.fullmatch(id): reject('arguments', 'id', 'Invalid experiment ID.', 2)
+                if id not in records: reject('conflict', id, 'Experiment does not exist.')
+            return compare(records[args.base_id], records[args.candidate_id], records), diagnostics
         if args.command == 'experiment':
             return save_experiment(args, root, project)
         if args.command == 'project':
@@ -248,6 +260,12 @@ def parse(arguments):
     correct = experiment_actions.add_parser('correct')
     correct.add_argument('id')
     correct.add_argument('--file', required=True)
+    comparer = experiment_actions.add_parser('compare')
+    comparer.add_argument('base_id')
+    comparer.add_argument('candidate_id')
+    decide = experiment_actions.add_parser('decide')
+    decide.add_argument('id')
+    decide.add_argument('--file', required=True)
     git_parser = commands.add_parser('git')
     git_actions = git_parser.add_subparsers(dest='action', required=True, parser_class=Parser)
     git_actions.add_parser('status')
@@ -270,7 +288,8 @@ def main(argv=None):
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
-                                 'experiment correct <id> --file <json>', 'git status'],
+                                 'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
+                                 'experiment decide <id> --file <json>', 'git status'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
         else:
@@ -285,7 +304,14 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if 'repository' in data:
+            if 'comparable' in data:
+                emit_text('Comparable: ' + ('yes' if data['comparable'] else 'no'))
+                emit_text('Reasons: ' + (', '.join(data['reasons']) or 'none'))
+                emit_text('Improvement: ' + str(data['improvement']))
+                emit_text('Meets min delta: ' + str(data['meets_min_delta']))
+                for label, summary in data['repeats'].items():
+                    emit_text(label + ' repetitions: ' + dumps(summary).strip())
+            elif 'repository' in data:
                 emit_text('Repository: ' + data['repository'])
                 emit_text('HEAD: ' + data['head'])
                 emit_text('Code clean: ' + ('yes' if data['code_clean'] else 'no'))

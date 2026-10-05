@@ -16,7 +16,7 @@
 | 실행 코드 식별자 | `E.code_ref`; `git:`이면 전체 SHA를 표시하되 실행 일치가 검증됐다고 단정하지 않음 |
 | 실행 직전 코드 일치·Git 밖 입력 | `E.execution.evidence[]`를 확인 근거 참조로 표시. 독립적인 코드 일치 결과 필드는 없으므로 일치 판정은 미기록이며 현재 Git 상태로 과거 사실을 보완하지 않음 |
 | 데이터·분할·평가 | `E.comparison.dataset_ref`, `.split_ref`, `.evaluation_ref` |
-| 설정·시드 | `E.config_ref`; 구조화된 시드 필드가 없으므로 시드 값은 미기록, 관련 `E.execution.evidence[]`는 근거 참조로만 표시. config_ref에서 추정하지 않음 |
+| 설정·시드 | `E.config_ref`, `E.run_context.seed`; scope/budget_ref도 선언 조건으로 표시. 미기록 시 추정하지 않으며 실제 사용량은 evidence/note의 명시된 원문만 표시 |
 | 환경·장치 | `E.environment.os`, `.runtime`, `.device` |
 | 명령·작업 디렉터리 | `E.command.argv`, `.cwd`; 계획 명령임을 표시하고 실제 실행 일치는 `E.execution.evidence[]`에 있을 때만 별도 표시 |
 | 시작·종료·시간 | `E.execution.started_at`, `.finished_at`; 둘 다 있으면 차이를 계산해 “기록된 경과 시간”으로 표시. 자원 사용 시간은 추정하지 않음 |
@@ -28,8 +28,8 @@
 | 점검 대체 여부 | 다른 review의 `supersedes_id == R.id` 여부; 원래 review ID를 보존 |
 | 실행 상태·exit code·이유·근거 | `E.execution.status`, `.exit_code`, `.note`, `.evidence[]` |
 | 로컬 지표·방향·실측값 | `E.comparison.metric`, `.direction`, `E.execution.score`; score가 null이면 “미기록” |
-| 비교 가능 여부와 이유 | `E.decision.validity`, `.reason`, `.evidence[]`; 판단이 없으면 미기록. 구현 후 compare의 파생 검사는 저장 판단과 구분하며 계약의 전체 조건을 적용 |
-| 반복 결과·변동·미확인 사유 | `E.execution.evidence[]`, `E.decision.evidence[]`, `E.execution.note`, `E.decision.reason`에 명시된 내용. 자동 반복 그룹 필드는 없으므로 숫자·횟수 추정 금지 |
+| 비교 가능 여부와 이유 | `E.decision.validity`, `.reason`, `.evidence[]`; 판단이 없으면 미기록. compare의 파생 검사는 저장 판단과 구분하며 계약의 전체 조건을 적용 |
+| 반복 결과·변동·미확인 사유 | `E.execution.evidence[]`, `E.decision.evidence[]`, `E.execution.note`, `E.decision.reason`에 명시된 내용. compare의 repeats는 명시적 confirmation 부모 연결과 조건 일치에 한해 산출하며 그 밖의 숫자·횟수 추정 금지 |
 | 유지·되돌리기·보류·근거·이력 | `E.decision.status`, `.reason`, `.evidence[]`, `E.decision_history[].decided_at/decision`; 미기록 판단을 보완하지 않음 |
 | 현재 기록상 선택·코드·산출물 | `P.selected_experiment_id`와 그 ID의 `code_ref`, `execution.artifacts[]`; 실행 당시 선택이나 실제 폴더 상태라는 뜻이 아님 |
 | 실제 폴더 상태·보류 후보 보존 위치 | `E.execution.evidence[]`, `E.decision.evidence[]`의 명시적 관측·위치와 관측 당시 시점. 최신 상태가 확인되지 않으면 현재 상태는 미기록 |

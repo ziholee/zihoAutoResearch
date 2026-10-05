@@ -56,7 +56,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update/correct`, `git status`, `experiment create --git-head`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가, 실험 비교·판정과 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가와 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
 - [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
 - [보고서 필드별 원본 매핑](docs/report-field-mapping.md)
@@ -70,7 +70,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 - [실험 기록 템플릿](templates/experiment.md)
 - [작업 기록](tasks/todo.md)
 
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 실험 비교·판정 명령을 구현하고 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 구현한 실험 기록·비교·판정 명령을 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
 
 ## 설치와 기본 사용
 
@@ -149,3 +149,14 @@ zar experiment correct exp-baseline-1 --project /path/to/ml-project --file corre
 ```
 
 정정 입력은 `{id, revision, execution, reason, evidence}`이며 원본 revision과 새 ID를 제공합니다. 같은 실행 계획·산출물을 보존하고 결과만 정정합니다. 새 실행 횟수는 늘지 않으며 새 판단은 비어 있습니다. 선택된 원본은 먼저 선택 해제해야 합니다. 자세한 상태·정정 규칙은 [파일 계약](docs/cli-and-file-contract.md), 향후 보고서의 출처는 [필드 매핑](docs/report-field-mapping.md)을 따릅니다.
+
+## 실험 비교와 판단 기록
+
+생성 입력에 `run_context`를 지정합니다. `scope`는 `proxy` 또는 `full`, `seed`는 정수 또는 미확인 시 null, `budget_ref`는 실행 예산 조건 식별자입니다. [생성 예제](examples/experiment-create.json)의 값은 실제 조건으로 바꾸세요.
+
+```sh
+zar experiment compare exp-baseline-1 exp-candidate-1 --project /path/to/ml-project --json
+zar experiment decide exp-candidate-1 --project /path/to/ml-project --file decision.json
+```
+
+[판단 입력 예제](examples/experiment-decision.json)의 revision은 대상 실험의 현재 값으로 바꿉니다. compare는 조건 일치 여부, 정확한 십진 개선 폭, 명시적으로 연결한 확인 실험의 횟수·분산을 보여줍니다. 미기록 조건·proxy/full 혼합·정정된 baseline은 비교를 제한하고, 근거 확인 한계는 별도로 출력합니다. decide는 사용자의 근거 있는 판단을 이력에 추가하며 코드·Git·현재 선택을 바꾸지 않습니다. 자세한 의미와 기존 기록 호환성은 [비교 계약](docs/cli-and-file-contract.md#8-비교와-submissionsidjson)을 따릅니다.
