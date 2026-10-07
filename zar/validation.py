@@ -5,7 +5,6 @@ import hashlib
 import math
 from pathlib import Path
 import re
-from .codec import loads
 
 META = 'schema_version id revision created_at updated_at'
 ID = re.compile(r'[a-z0-9-]{1,64}\Z')
@@ -246,47 +245,50 @@ def validate_document(doc, kind):
     return v.errors
 
 
-def inspect_project(root, project, *, experiment=None):
+def inspect_project(root, project, *, experiment=None, snapshot=None, check_files=True):
+    """Validate a snapshot, optionally overlaying an unwritten experiment.
+
+    Metadata mode preserves record/link/state checks but explicitly reports that
+    referenced files were not checked. Full evidence validation is the default.
+    """
+    from .records import load_records
+
     root = Path(root)
     store = root / '.autoresearch'
-    result = validate_document(project, 'project')
-    records = {k: {} for k in ('review','experiment','submission')}
-    ids = {project.get('id')} if isinstance(project.get('id'), str) else set()
-    paths = {}
-    for kind, group in records.items():
-        directory = store / (kind + 's')
-        if directory.is_symlink() or not directory.is_dir():
-            result.append(diagnostic('io', directory, 'Record directory must be an existing ordinary directory'))
-            continue
-        entries = list(directory.glob('*.json'))
-        proposed_path = directory / (experiment['id'] + '.json') if kind == 'experiment' and experiment else None
-        if proposed_path is not None and proposed_path not in entries:
-            entries.append(proposed_path)
-        for path in sorted(entries):
-            if path.is_symlink() or (path != proposed_path and not path.is_file()):
-                result.append(diagnostic('io', path, 'Record must be an ordinary file'))
-                continue
-            try:
-                doc = experiment if path == proposed_path else loads(path.read_text(encoding='utf-8'))
-            except (ValueError, UnicodeError) as exc:
-                result.append(diagnostic('json', path, str(exc)))
-                continue
-            except OSError as exc:
-                result.append(diagnostic('io', path, str(exc)))
-                continue
-            errors = validate_document(doc, kind)
-            for error in errors: error['path'] = str(path) + ':' + error['path']
-            result.extend(errors)
-            if errors: continue
-            if path.stem != doc['id']: result.append(diagnostic('conflict', path, 'Filename does not match record ID'))
-            if doc['id'] in ids: result.append(diagnostic('conflict', path, 'Duplicate record ID'))
-            ids.add(doc['id']); group[doc['id']] = doc; paths[doc['id']] = path
+    snapshot = snapshot if snapshot is not None else load_records(root, project)
+    result = validate_document(project, 'project') + list(snapshot.diagnostics)
+    records = {kind: dict(group) for kind, group in snapshot.records.items()}
+    paths = dict(snapshot.paths)
+    if not check_files:
+        result.append(diagnostic('evidence_not_checked', store,
+                                 'Referenced evidence and artifact files were not checked', 'warning'))
+    if experiment is not None:
+        errors = validate_document(experiment, 'experiment')
+        proposed_id = experiment.get('id') if isinstance(experiment, dict) else None
+        path = store / 'experiments' / ((proposed_id if isinstance(proposed_id, str) else '<invalid>') + '.json')
+        for error in errors:
+            error['path'] = str(path) + ':' + error['path']
+        result.extend(errors)
+        if not errors:
+            if (isinstance(project, dict) and proposed_id == project.get('id')) or any(proposed_id in records[kind] for kind in ('review', 'submission')):
+                result.append(diagnostic('conflict', path, 'Duplicate record ID'))
+            records['experiment'][proposed_id] = experiment
+            paths[proposed_id] = path
+    # A project update may change its ID after this snapshot was loaded.
+    if isinstance(project, dict) and isinstance(project.get('id'), str):
+        for group in records.values():
+            if project['id'] in group:
+                item = diagnostic('conflict', paths[project['id']], 'Duplicate record ID')
+                if item not in result:
+                    result.append(item)
     if any(d['code'] in ('schema','json') and d['severity'] == 'error' for d in result): return result
 
     def issue(doc, message, code='conflict', severity='error'):
         result.append(diagnostic(code, paths.get(doc.get('id'), store / 'project.json'), message, severity))
 
     def file_check(ref, sha, path, strict=False):
+        if not check_files:
+            return
         file = Path(ref)
         if not file.is_absolute(): file = root / file
         try:
