@@ -2,7 +2,7 @@
 
 상태: 구현 기준 v1 · 2026-10-07
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`와 JSON 저장·검증 기반을 구현했습니다. `submission add`, `report`는 후속 구현 범위이며 아래 표는 해당 목표 동작도 포함합니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`와 JSON 저장·검증 기반을 구현했습니다. `report`는 후속 구현 범위이며 아래 표는 해당 목표 동작도 포함합니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -199,7 +199,7 @@ decide는 `{revision, decision}`을 검증하고 decision_history에 시각과 �
 
 점수가 아직 없으면 submission 파일을 만들지 않습니다. 실험 artifacts에 제출 예정 파일만 기록합니다. 같은 competition/external_id/leaderboard의 중복 결과는 거부하고 정정은 supersedes_id를 요구합니다. 다른 leaderboard의 결과는 별도 기록입니다. 제출 추가가 실험의 로컬 점수·판단·선택을 바꾸지 않습니다.
 
-submission add 입력은 위 제출 필드 전부와 id이며 submitted_at/observed_at도 필수입니다. 실험은 succeeded여야 하며 artifact의 path/sha256은 해당 실험의 role=submission 산출물과 정확히 일치해야 합니다. 따라서 제출 파일을 먼저 experiment update로 등록합니다. 파일이 존재하면 해시를 확인하고 불일치는 거부합니다. 외부로 이동해 파일이 없으면 등록된 해시와 제출 출처로 연결하되 현재 파일 확인 불가를 표시합니다.
+submission add 입력은 생성 메타데이터를 제외한 위 제출 필드 전부와 id만 받으며 submitted_at/observed_at도 필수입니다. 실험은 succeeded여야 하며 artifact의 path/sha256은 해당 실험의 role=submission 산출물과 정확히 일치해야 합니다. 따라서 제출 파일을 먼저 experiment update로 등록합니다. 파일이 존재하면 해시를 확인하고 불일치는 거부합니다. 외부로 이동해 파일이 없으면 등록된 해시와 제출 출처로 연결하되 현재 파일 확인 불가를 표시합니다.
 
 ## 9. 저장·충돌·복구
 
@@ -223,7 +223,7 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
-각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 기준과 후보의 기록·비교·판단·선택을 연결합니다. 제출 기록 추가와 보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
+각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 기준과 후보의 기록·비교·판단·선택을 연결합니다. 보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
 
 ## 11. Git 이력 연결
 
