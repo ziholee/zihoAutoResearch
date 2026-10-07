@@ -1,0 +1,10 @@
+{
+  "revision": 2,
+  "decision": {
+    "status": "hold",
+    "validity": "not_comparable",
+    "reason": "비교 조건과 근거를 확인한 뒤 판단한다",
+    "evidence": [],
+    "next_action": "compare 결과의 제한 사유와 실행 근거를 확인한다"
+  }
+}

@@ -111,6 +111,12 @@ class Validator:
                 if value['min_delta'] < 0: self.error(path + '.min_delta', 'Must be nonnegative')
             except ArithmeticError: pass
 
+    def run_context(self, value, path):
+        if not self.obj(value, 'scope seed budget_ref', path): return
+        self.enum(value['scope'], 'proxy full', path + '.scope')
+        self.scalar(value['seed'], 'int', path + '.seed', True)
+        self.scalar(value['budget_ref'], 'str', path + '.budget_ref')
+
     def command(self, value, path):
         if not self.obj(value, 'name argv cwd', path): return
         self.enum(value['name'], 'train validate predict other', path + '.name')
@@ -178,6 +184,8 @@ def validate_document(doc, kind):
     # v1 compatibility: old experiment documents may omit correction (equivalent to null).
     if kind == 'experiment' and isinstance(doc, dict) and 'correction' in doc:
         fields[kind] += ' correction'
+    if kind == 'experiment' and isinstance(doc, dict) and 'run_context' in doc:
+        fields[kind] += ' run_context'
     if not v.obj(doc, META + ' ' + fields[kind], '$'): return v.errors
     if type(doc['schema_version']) is not int or doc['schema_version'] != 1: v.error('$.schema_version', 'Only schema_version 1 is supported')
     v.scalar(doc['id'], 'id', '$.id')
@@ -198,6 +206,8 @@ def validate_document(doc, kind):
         for k in ('code_ref','data_ref'): v.scalar(doc[k], 'str', '$.' + k)
         v.array(doc['items'], v.finding, '$.items', True)
     elif kind == 'experiment':
+        if doc.get('run_context') is not None:
+            v.run_context(doc['run_context'], '$.run_context')
         correction = doc.get('correction')
         if correction is not None and v.obj(correction, 'supersedes_id reason evidence', '$.correction'):
             v.scalar(correction['supersedes_id'], 'id', '$.correction.supersedes_id')
@@ -336,7 +346,7 @@ def inspect_project(root, project, *, experiment=None):
         if original is None or ref == doc['id']:
             issue(doc, 'Correction references a missing or identical experiment')
         else:
-            if any(doc[k] != original[k] for k in plan_fields):
+            if any(doc[k] != original[k] for k in plan_fields) or doc.get('run_context') != original.get('run_context'):
                 issue(doc, 'Correction must retain the same execution plan')
             if doc['execution']['status'] not in terminal or original['execution']['status'] not in terminal:
                 issue(doc, 'Correction requires completed executions')

@@ -128,12 +128,15 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 | `code_ref`, `config_ref` | string. 실행할 코드/설정 상태 식별자 |
 | `command` | Command. 실행에 사용할 명령의 사본 |
 | `review_ids` | string 배열. 존재하는 점검 기록 참조 |
+| `run_context` | 선택적 `{scope, seed, budget_ref}` 또는 null. 생성 시 선언하는 실행 조건; 생략은 미기록 |
 | `execution` | 아래 Execution 객체 |
 | `decision` | null 또는 아래 Decision 객체 |
 | `decision_history` | DecisionHistory 배열. 생성 시 []; CLI만 갱신 |
 | `correction` | null 또는 `{supersedes_id, reason, evidence}`. 기존 v1의 생략은 null; correct만 생성하고 update로 변경 불가 |
 
 생성 본문에는 kind, hypothesis, parent_id, baseline_id, code_ref, config_ref, command, review_ids와 id를 제공합니다. CLI는 comparison/environment를 현재 프로젝트에서 복사하고 execution을 planned로 초기화하며 decision은 null로 둡니다. parent/baseline은 이미 존재해야 하고 자기 참조는 금지합니다. baseline은 baseline_id가 null이고, performance/confirmation은 같은 비교 구간의 baseline_id가 필수입니다. validity_fix는 새 비교 구간이면 baseline_id가 null일 수 있습니다.
+
+run_context.scope는 `proxy|full`, seed는 정수 또는 null, budget_ref는 비어 있지 않은 실행 예산 조건 식별자입니다. 예: `{"scope":"full","seed":42,"budget_ref":"epochs-10-v1"}`. epochs/step/time 제한과 조기 종료 정책 등 예산 조건을 연결하며 같은 식별자는 같은 조건을 의미해야 합니다. dataset/split/evaluator는 기존 Comparison을 사용하고 중복하지 않습니다. 이 정보는 생성 후 불변이며 정정에도 보존됩니다. 실제 소비한 시간·step·자원은 execution.note/evidence에 기록합니다. budget_ref 일치만으로 실제 자원 사용량이 같았다고 보장하지 않습니다. seed가 없으면 미확인으로 표시하며 파일명이나 config_ref에서 추정하지 않습니다. confirmation 종류 자체가 full 실행을 뜻하지 않습니다.
 
 Execution은 `{status, started_at, finished_at, exit_code, score, evidence, artifacts, note}`입니다. status는 `planned|running|succeeded|failed|interrupted|unknown|cancelled`. 시각·exit_code·score·note는 null 가능, evidence는 Evidence 배열입니다. Artifact는 `{role, path, sha256, code_ref, config_ref, evidence}`이며 role/path/code_ref/config_ref는 string, sha256은 64자리 소문자 16진수 또는 null입니다. 단, `role=submission`은 최초 등록부터 sha256이 필수이며 null을 거부합니다. evidence는 Evidence 배열입니다. score는 유한한 number 또는 null이며 로컬 지표는 comparison을 따릅니다.
 
@@ -160,15 +163,21 @@ CLI는 원본의 모든 계획 필드(comparison/environment/code_ref/config_ref
 
 correction.supersedes_id는 같은 실행 계획을 가진 종료 실험을 참조합니다. 후속 정정이 없는 활성 기록만 정정하며 분기·순환·같은 ID·중복 ID는 거부합니다. 원본이 현재 선택이면 project set으로 선택을 해제한 뒤 정정합니다. 대체된 기록은 update할 수 없습니다. 기존 parent/baseline/submission 참조를 자동 변경하지 않고 대체됨과 재확인 필요를 진단합니다. status는 정정으로 대체된 ID와 실제 횟수 예산 사용량을 표시하고, 대체된 keep을 활성 후보로 제시하지 않습니다.
 
-schema_version 1의 호환 확장으로 correction 생략은 null입니다. 기존 파일 자동 변환은 하지 않지만 새 필드·상태를 읽으려면 이 기능을 포함한 CLI가 필요합니다. 이전 CLI는 새 기록을 거부할 수 있습니다.
+schema_version 1의 호환 확장으로 correction과 run_context의 생략은 각각 null입니다. 기존 파일 자동 변환은 하지 않지만 새 필드·상태를 읽으려면 이 기능을 포함한 CLI가 필요합니다. 이전 CLI는 새 기록을 거부할 수 있습니다.
 
 ## 8. 비교와 submissions/<id>.json
 
-compare는 두 실험이 succeeded, score 존재, 모든 Comparison 필드와 environment 동일, 알려진 invalid/not_comparable 판단 없음일 때 수치 차이를 계산합니다. `raw_delta = candidate - base`, `improvement = direction이 maximize면 raw_delta, minimize면 -raw_delta`입니다.
+compare는 서로 다른 활성 실험이 succeeded, score 존재, 모든 Comparison 필드와 값이 채워진 environment 동일, run_context의 scope/budget_ref 동일, 알려진 invalid/not_comparable 판단 없음일 때 수치 차이를 계산합니다. run_context 생략/null, 환경 미기록, proxy/full 혼합, 예산 조건 차이, 정정으로 대체된 실험 또는 baseline 참조는 비교 제한 사유입니다. candidate.baseline_id가 대체됐다면 최신 baseline을 명시해도 재검토가 필요합니다. 원래 참조를 자동 교체하지 않으며 새 계획으로 기록해야 합니다. `raw_delta = candidate - base`, `improvement = direction이 maximize면 raw_delta, minimize면 -raw_delta`입니다.
 
 결과는 개선 폭과 min_delta 충족 여부를 보여주며 자동 keep하지 않습니다. 반복 변동·코드 복잡도·도메인 타당성은 스킬이 근거로 판단합니다. min_delta가 0이어도 동률을 개선으로 출력하지 않습니다. 조건이 다르면 비교 불가 사유를 반환하고 점수 차이를 개선 증거로 출력하지 않습니다.
 
 점수와 min_delta는 JSON 숫자 토큰의 십진 값을 보존해 파싱하고, 차이·경계 비교는 반올림 없는 십진 연산으로 수행합니다. 이진 부동소수점으로 변환한 뒤 다시 십진수로 복원하지 않습니다. 판정식은 `improvement > 0 AND improvement >= min_delta`입니다. 정확히 경계와 같은 개선은 충족하며, epsilon이나 표시용 반올림으로 판정하지 않습니다. 예를 들어 1.2 → 1.1의 최소화 개선은 정확히 0.1이므로 min_delta=0.1을 충족합니다. 저장·JSON 출력도 같은 십진 값을 보존하고, 사람이 읽는 표시를 줄이더라도 판정에는 원래 값을 사용합니다.
+
+compare는 읽기 전용이며 유효한 기록의 비교 불가는 종료 코드 0과 `comparable:false`, `reasons`, null인 raw_delta/improvement/meets_min_delta로 반환합니다. 형식·참조 오류는 기존 오류 종료 코드를 따릅니다. 서로 다른 정상 비교 구간의 실험은 비교 불가를 반환하지만 저장 계약 자체에 어긋난 baseline 연결은 검사 오류입니다. 알려진 seed가 달라도 비교를 허용하되 반복 통계에 별도로 표시합니다. diagnostics의 evidence_missing/evidence_changed/evidence_unhashed/evidence_unverified는 수치 비교 가능성과 구분합니다. 파일 해시 일치는 내용 식별이며 ML 타당성 검증이 아닙니다.
+
+반복 통계 `repeats.base/candidate`는 대상 실행과 그 ID(또는 같은 실행의 정정 조상 ID)를 parent_id로 명시한 confirmation 중, 코드·설정·Comparison·환경·command·scope·budget_ref가 같은 활성 성공 기록만 포함합니다. 정정 원본과 정정본을 이중 집계하지 않으며 잘못된 판단/대체된 baseline은 제외합니다. 다른 부모·간접 후손을 임의로 묶지 않습니다. count는 조건을 확인해 포함한 기록 수이고 제외된 연결은 excluded_ids로 표시합니다. mean과 sample_variance는 반올림하지 않는 `{numerator, denominator}` 유리수입니다. 1회 이하의 표본분산은 null이며 0으로 추정하지 않습니다. distinct_known_seeds/unknown_seed_count를 따로 제공하며 반복의 독립성·통계적 유의성을 주장하지 않습니다. 반복 평균으로 개별 점수를 대체하거나 자동 우승을 정하지 않습니다.
+
+decide는 `{revision, decision}`을 검증하고 decision_history에 시각과 판단을 추가하며 revision을 올립니다. keep은 실행 성공과 유효 근거를 요구하고, baseline이 있으면 위 비교 가능 조건을 충족해야 합니다. baseline 없는 기준/validity_fix도 알려진 환경과 run_context가 필요합니다. 최소 개선 폭 충족을 keep의 필수 조건으로 삼지 않으므로 동률의 단순성 개선 등은 reason/evidence로 설명할 수 있습니다. hold/discard는 비교 제한을 기록할 수 있습니다. 이전 invalid 판단은 새 판단을 기준으로 재검토할 수 있습니다. 선택은 자동 변경하지 않으며 선택된 실험을 hold/discard로 바꾸려면 먼저 project set으로 선택을 해제합니다. 기존 context 없는 기록은 계속 읽고 hold/discard할 수 있지만 새 keep/수치 비교는 제한됩니다. 불변 계획을 직접 고쳐 제한을 우회하지 않습니다.
 
 | 제출 필드 | 자료형과 의미 |
 |---|---|

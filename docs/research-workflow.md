@@ -83,7 +83,7 @@
 
 [Git 연구 이력](git-research-history.md)에 따라 실행할 코드 커밋을 먼저 확보하고 `experiment create --git-head`로 연결합니다. 실행 직전 코드 상태를 다시 확인하며, 관측 후 JSON과 연구 지침은 후속 커밋에 남깁니다. 결과 기록 커밋의 SHA로 code_ref를 덮어쓰지 않습니다. commit/reset/checkout은 CLI가 수행하지 않습니다.
 
-실험별 원본은 JSON이며 [기록 템플릿](../templates/experiment.md)은 읽기용 보고서 양식입니다. 각 항목의 출처와 미기록 처리 규칙은 [보고서 필드 매핑](report-field-mapping.md)을 따릅니다. 현재 review/compare/decide/submission/report 명령은 미구현이며, 이를 대신해 불변 JSON을 직접 고치지 않습니다. 코드/설정, 데이터·분할, 실행 명령, 로그, 관측 점수, 판단과 다음 행동이 연결돼야 합니다. LLM에는 요약을 우선 제공하고 필요할 때 원본 로그를 읽습니다.
+실험별 원본은 JSON이며 [기록 템플릿](../templates/experiment.md)은 읽기용 보고서 양식입니다. 각 항목의 출처와 미기록 처리 규칙은 [보고서 필드 매핑](report-field-mapping.md)을 따릅니다. 현재 review/submission/report 명령은 미구현이며, 이를 대신해 불변 JSON을 직접 고치지 않습니다. 코드/설정, 데이터·분할, 실행 명령, 로그, 관측 점수, 판단과 다음 행동이 연결돼야 합니다. LLM에는 요약을 우선 제공하고 필요할 때 원본 로그를 읽습니다.
 
 현재 선택한 코드와 작업 폴더에 놓인 코드를 구분합니다. hold 후보의 코드·설정·산출물을 별도로 식별해 보존하고 다음 실험을 어떤 코드에서 시작하는지 기록합니다. discard는 실험 시작 전 기록한 상태를 기준으로 후보 변경만 되돌립니다.
 
