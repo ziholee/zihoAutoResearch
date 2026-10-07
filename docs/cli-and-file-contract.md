@@ -1,8 +1,8 @@
 # v1 사용 흐름·CLI·파일 계약
 
-상태: 구현 기준 v1 · 2026-10-04
+상태: 구현 기준 v1 · 2026-10-07
 
-이 문서는 만들 CLI의 계약입니다. `init`, `project set`, `status`, `check`, `experiment create/update/correct`, `git status`, `experiment create --git-head`와 JSON 저장·검증 기반을 구현했습니다. 나머지 명령은 후속 구현 범위입니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`와 JSON 저장·검증 기반을 구현했습니다. `submission add`, `report`는 후속 구현 범위이며 아래 표는 해당 목표 동작도 포함합니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -50,6 +50,8 @@
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
 | `zar status` | 준비 상태, 누락, 선택 실험, 마지막 실험, planned/running/unknown, 다음 행동 표시 |
 | `zar check` | 모든 JSON의 형식·참조·상태·근거 가용성 검사. ML 타당성을 자동 판정하는 명령이 아님 |
+| `zar context [--experiment <id>] [--limit <n>] [--offset <n>] [--max-bytes <n>] [--snapshot <hash>]` | 메타데이터만 검사한 제한된 맥락 조회. 전체 상태 집계·누락·근거 미확인 명시 |
+| `zar evidence read --kind <kind> --id <id> --pointer <pointer>` | 등록된 로컬 근거의 해시 확인과 정확한 원문 줄 조회. revision/해시 고정 및 줄·바이트 옵션 지원 |
 | `zar git status` | init 전에도 읽기 전용으로 저장소·HEAD·코드 변경과 연구 기록 변경을 조회 |
 | `zar experiment create --git-head --file <json>` | 코드 변경이 없는 HEAD를 확인해 code_ref를 git:<전체 SHA>로 대체하고 planned 기록 생성 |
 | `zar review add --file <json>` | 새 점검 기록 생성. 같은 ID의 덮어쓰기 금지 |
@@ -61,6 +63,8 @@
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
 | `zar report --output <path>` | `.autoresearch/reports/` 기준 상대 경로에 Markdown 생성. 기존 파일이 있으면 오류; `--overwrite`는 아래 소유 표식이 있는 보고서만 교체 |
 
+조회 명령의 옵션·출력 상한·핸들·오류는 [맥락과 근거 조회 계약](context-and-evidence.md)을 따릅니다. schema_version 1에는 새 필드를 요구하지 않습니다.
+
 project set으로 `selected_experiment_id`를 바꿀 수 있습니다. 해당 실험이 유효하고 keep 판단이며 현재 비교 조건에 속하는지 검사합니다. 이것은 기록상 선택이며 작업 폴더의 코드를 바꾸지 않습니다. decide와 선택 갱신은 별도 한 파일 변경이므로 중간 상태에도 “keep 후보이나 아직 선택되지 않음”을 표시할 수 있습니다.
 
 report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 경로만 받습니다. 절대 경로·`..`·심볼릭 링크 등으로 reports 밖에 쓰는 경로는 거부하며 reports 폴더 자체와 상위 저장 경로도 링크로 다른 위치에 연결돼 있으면 거부합니다. 출력의 첫 줄은 `<!-- zar-report:v1 project_id=<현재 프로젝트 ID> -->`입니다. `--overwrite`는 동일 프로젝트의 이 표식이 있는 일반 파일에만 허용합니다. 표식 없는 사용자 문서와 JSON 원본은 덮어쓰지 않습니다. 경로·표식 조건 위반은 종료 코드 3이며 파일을 변경하지 않습니다.
@@ -71,7 +75,7 @@ report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 �
 
 ## 4. 공통 파일 규칙
 
-- UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다. 호환 예외는 experiment.correction 하나로, 과거 v1 레코드의 생략을 null로 취급합니다. 새 레코드에는 correction을 기록합니다.
+- UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필수 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다. 호환 예외인 experiment.correction과 선택적 run_context는 과거 v1 레코드의 생략을 null로 취급합니다. 새 레코드에는 correction을 기록합니다.
 - 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
 - 생성 입력에는 본문과 id를 제공합니다. CLI가 만드는 메타데이터는 schema_version·revision·created_at·updated_at 네 필드입니다. 실행 시각·제출 시각은 관측한 작성자가 제공하며 CLI가 추정하지 않습니다. project set/experiment update는 현재 파일 전체의 수정본을 받습니다. 수정 시 CLI가 revision을 1 증가시키고 updated_at을 갱신합니다.
 - ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실행에는 새 실험 ID를 씁니다. 실행을 다시 하지 않고 종료 관측만 정정할 때는 아래 correct 명령으로 별도의 정정 ID를 연결합니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
@@ -106,6 +110,9 @@ max_experiments는 예약·시도한 실행 수 한도이며 baseline·planned·
 comparison을 바꾸면 선택 ID는 null 또는 새 비교 구간에 속하는 keep ID여야 합니다. 기존 실험의 comparison 사본은 바뀌지 않습니다. environment만 바꾼 경우도 새 실험에는 현재 환경 사본을 저장하고, 다른 환경끼리의 자동 수치 비교는 보류합니다.
 
 ## 6. reviews/<id>.json
+
+`review add` 입력은 `id`, `supersedes_id`, `code_ref`, `data_ref`, `items`만 포함합니다. CLI가 schema_version=1, revision=1, created_at/updated_at을 생성합니다. 새 ID만 허용하며 전체 형식·참조·근거 검사를 통과해야 저장합니다. 설정 미완료 자체는 등록을 막지 않습니다. 동일 코드·데이터의 활성 review 정정은 새 ID와 supersedes_id로 기록하며 기존 파일·실험 연결·프로젝트 선택은 변경하지 않습니다. 등록은 에이전트가 작성한 관측의 보존이며 자동 누수 탐지나 실행 허가가 아닙니다.
+
 
 | 필드 | 자료형과 의미 |
 |---|---|
@@ -216,7 +223,7 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
-각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이는 구현했으며, 비교·판정·보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
+각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 기준과 후보의 기록·비교·판단·선택을 연결합니다. 제출 기록 추가와 보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
 
 ## 11. Git 이력 연결
 

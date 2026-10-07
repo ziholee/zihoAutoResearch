@@ -12,52 +12,33 @@
 
 ## 아키텍처
 
-아래는 구현할 v1 구조입니다. 스킬은 프로젝트를 해석하고 판단하며, CLI는 기록·형식 검사·비교를 담당합니다.
+현재 구조는 연구 판단, 원본 기록, 재개용 조회를 분리합니다. 스킬이 프로젝트를 해석하고 판단하며 CLI는 기록·검사·비교와 근거 조회를 담당합니다. 상세 계약은 [맥락 조회와 근거 재조회](docs/context-and-evidence.md)를 따릅니다.
 
 ```mermaid
 flowchart TD
-    U[사용자: 목표와 작업 범위] --> S
-
-    subgraph Z[zihoAutoResearch]
-        S[LLM 스킬: 이해 · 점검 · 가설 · 수정]
-        P[program.md: 프로젝트 해석과 연구 절차]
-        C[zar CLI: 기록 · 검사 · 비교]
-        J[JSON 원본: 설정 · 점검 · 실험 · 제출 결과]
-        R[Markdown 보고서]
-        P -->|연구 지침| S
-        S -->|해석 갱신| P
-        S -->|근거와 결과 기록| C
-        C -->|검증 후 저장| J
-        J -->|현재 상태와 이력| C
-        C -->|조회 결과| S
-        C -->|생성| R
-    end
-
-    subgraph E[사용자가 나중에 적용할 기존 ML 프로젝트]
-        F[기존 코드 · 데이터 · 설정]
-        X[기존 에이전트 도구와 학습 명령]
-        O[실행 로그 · 로컬 점수 · 산출물]
-        F --> X --> O
-    end
-
-    F -->|읽기| S
-    S -->|범위 내 코드 수정| F
-    S -->|맡겨진 범위에서 실행| X
-    O -->|관측 근거| S
-    G[Git: 코드·설정 커밋과 결과 기록 커밋]
-    F -->|버전 보존| G
-    J -->|후속 커밋| G
-    G -->|코드 SHA 연결| C
-    L[사용자가 확인한 대회 제출 점수] -->|실험과 파일에 연결| C
-    R -->|결과와 다음 행동| U
+    U[사용자: 목표 · 변경 범위 · 예산] --> S[LLM 연구 스킬]
+    S --> C[CLI: 기록 변경 · 비교 · 판단 저장]
+    C --> J[원본 JSON + Git 코드 이력]
+    J --> R[공통 기록 스냅샷과 검증]
+    R --> C
+    R --> Q[context: 제한된 재개 정보]
+    Q --> S
+    R --> E[evidence read: 근거 원문 부분 조회]
+    L[기존 로그 · 데이터 · 산출물] --> E
+    E --> S
+    S --> X[기존 에이전트 도구: 허용된 코드 수정과 실행]
+    X --> L
+    J -. 후속 구현 .-> P[제출 기록 추가와 보고서 생성]
 ```
+
 
 CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행하지 않습니다. 실제 사용 중 실행은 기존 에이전트 도구가 맡으며, 도구 개발 검증에서는 로그와 점수를 모의 데이터로 대체합니다.
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`를 구현했습니다. LLM용 스킬, 리뷰·제출 기록 추가와 보고서 생성은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. 제출 기록 추가와 보고서 생성 명령은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
+- [맥락 조회·근거 재조회와 구조](docs/context-and-evidence.md)
 - [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
 - [보고서 필드별 원본 매핑](docs/report-field-mapping.md)
 - [Git 기반 연구 이력과 사용 순서](docs/git-research-history.md)
@@ -70,7 +51,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 - [실험 기록 템플릿](templates/experiment.md)
 - [작업 기록](tasks/todo.md)
 
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 다음 단계는 구현한 실험 기록·비교·판정 명령을 LLM용 스킬과 연결하는 것입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 스킬은 기존 CLI로 실험 기록·비교·판단·선택을 연결하며, 미지원 제출 단계의 근거는 미등록 초안으로 보존합니다. 다음 구현 범위는 제출 기록 추가와 보고서 생성입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
 
 ## 설치와 기본 사용
 
@@ -85,6 +66,40 @@ python -m pip install .
 zar init --project /path/to/ml-project
 zar status --project /path/to/ml-project
 ```
+
+### LLM 스킬 사용
+
+스킬은 이 저장소와 소스 배포본의 `skills/ziho-autoresearch/` 폴더로 배포합니다. `references/`를 포함한 폴더 전체가 한 단위이며, 외부 저장소 파일 없이 절차와 CLI 입력 방법을 읽을 수 있습니다. wheel은 CLI를 설치하며 스킬을 포함하거나 에이전트의 전역 설정에 자동 설치하지 않습니다. 소스 체크아웃 또는 압축 해제한 소스 배포본을 보관하고 기존 에이전트에 다음처럼 경로를 지정해 사용하세요.
+
+> `/absolute/path/to/zihoAutoResearch/skills/ziho-autoresearch/SKILL.md`를 읽고 `/absolute/path/to/ml-project`를 점검해줘. 우선 실행 없이 프로젝트 해석과 누락 정보를 정리해줘.
+
+실험까지 맡길 때는 목표, 허용 변경 경로, 실행 환경, 횟수·시간 한도를 함께 지정하거나 이미 확정한 project.json을 참조합니다. 스킬은 현재 기록을 읽고 미완료 실행을 확인한 뒤 이어갑니다. `keep` 판단, 기록상 선택, 실제 작업 폴더의 코드는 각각 확인합니다. 모든 지침이 설치된 에이전트에서 자동 발견된다고 보장하지는 않습니다.
+
+### 학습 없이 한 사이클 확인
+
+위 CLI 설치 후, 저장소에서 실행합니다. 출력 경로는 **존재하지 않는 새 폴더**이고 그 상위 폴더는 있어야 합니다.
+
+```sh
+python examples/mock-cycle.py --output /tmp/zar-mock-adopt
+python examples/mock-cycle.py --output /tmp/zar-mock-hold --scenario scope-mismatch
+```
+
+Windows에서는 `/tmp/...` 대신 존재하는 임시 폴더 아래의 새 경로를 지정하세요. 예제는 기준/후보의 가짜 코드·로그·시각·점수를 생성하고 CLI로 초기화 → 기준 선택 → 후보 기록 → 비교 → 판단 → 선택/보류 → check/status를 수행합니다. 학습 명령은 호출하지 않습니다. 예제의 고정 판단은 모의 시나리오이며 실제 연구의 자동 채택 정책이 아닙니다.
+
+각 출력 폴더에 `project/.autoresearch/` 기록, 호출과 진단의 `events.json`, 결과의 `summary.json`, 제한된 조회의 `context.json`, 원문 발췌의 `evidence-page.json`을 보존합니다. 기본 예제는 정확한 0.1 개선으로 후보를 선택합니다. scope-mismatch 예제는 proxy/full 불일치로 후보를 보류하고 기준 선택을 유지합니다. 이때 작업 폴더에는 후보 코드가 남으므로 `workspace_matches_selection:false`를 명시합니다. 기록상 선택이 코드를 복구하지 않는다는 예제입니다. 기존 출력 폴더는 덮어쓰지 않으며 재실행에는 새 경로를 사용합니다.
+
+### 필요한 맥락과 근거만 읽기
+
+```sh
+zar context --project /path/to/ml-project --experiment exp-candidate-1 --max-bytes 16384 --json
+zar evidence read --project /path/to/ml-project --kind experiment --id exp-candidate-1 --pointer /execution/evidence/0 --max-lines 80 --json
+```
+
+`context`는 기록의 형식·참조를 확인하고 선택/후보/미완료/실패 정보를 제한된 크기로 제공합니다. 전체 로그의 존재·해시는 확인하지 않으며 `evidence_not_checked`를 명시합니다. 누락 카드와 잘린 필드를 확인하고 `next_offset`과 `--snapshot`으로 이어 읽습니다.
+
+`evidence read`는 등록된 근거의 해시와 원문을 같은 스트림에서 확인하며 UTF-8 줄을 그대로 반환합니다. 등록 해시가 바뀌었으면 내용을 반환하지 않습니다. 해시가 없는 파일은 미검증으로 표시하고, 다음 페이지에는 이전 `actual_sha256`을 `--sha256`으로 전달할 수 있습니다. 원본은 자동 보관·복원하지 않습니다. 전체 근거 검사는 기존 `check`, ML 해석은 스킬이 담당합니다. 정확한 상한·오류·동시 변경 한계는 [조회 계약](docs/context-and-evidence.md)을 참고하세요.
+
+### 프로젝트 설정과 검사
 
 초기화는 `.autoresearch/`만 생성하고 기존 코드·루트 `program.md`·`AGENTS.md`를 보존합니다. `--project`를 생략하면 현재 폴더를 사용하며 상위 폴더를 탐색하지 않습니다.
 
@@ -160,3 +175,9 @@ zar experiment decide exp-candidate-1 --project /path/to/ml-project --file decis
 ```
 
 [판단 입력 예제](examples/experiment-decision.json)의 revision은 대상 실험의 현재 값으로 바꿉니다. compare는 조건 일치 여부, 정확한 십진 개선 폭, 명시적으로 연결한 확인 실험의 횟수·분산을 보여줍니다. 미기록 조건·proxy/full 혼합·정정된 baseline은 비교를 제한하고, 근거 확인 한계는 별도로 출력합니다. decide는 사용자의 근거 있는 판단을 이력에 추가하며 코드·Git·현재 선택을 바꾸지 않습니다. 자세한 의미와 기존 기록 호환성은 [비교 계약](docs/cli-and-file-contract.md#8-비교와-submissionsidjson)을 따릅니다.
+
+## 실행 전 점검 기록
+
+`zar review add --project /path/to/ml-project --file review-draft.json --json`으로 점검 결과를 등록합니다. 입력은 `id`, `supersedes_id`, `code_ref`, `data_ref`, `items`이며 생성 메타데이터는 CLI가 채웁니다. 프로젝트 설정이 미완성이어도 점검을 남길 수 있습니다. 입력 예시는 [스킬의 CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md#register-a-review)에 있습니다.
+
+실험 전 변경 범위·가설과 실제 diff를 대조하고, 데이터 누수·평가 방법 변경·검증하지 못한 항목을 근거와 함께 남깁니다. 등록한 ID를 새 실험의 `review_ids`에 연결합니다. 등록 성공은 점검 내용이나 ML 타당성의 자동 승인을 뜻하지 않습니다. 같은 코드·데이터의 점검 정정은 새 ID와 `supersedes_id`로 원본을 보존하며, 기존 실험 참조는 바꾸지 않습니다. [RRSI 적용 범위](docs/research-update-2026-10.md#rrsi-적용-실행-전-점검)를 참고하세요.
