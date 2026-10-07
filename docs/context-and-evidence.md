@@ -34,8 +34,10 @@ flowchart TD
 
 ```sh
 zar context --project /path/to/project --experiment exp-candidate --limit 5 --max-bytes 16384 --json
-zar context --project /path/to/project --experiment exp-candidate --offset 5 --snapshot <snapshot_id> --json
+zar context --project /path/to/project --experiment exp-candidate --offset <next_offset> --snapshot <snapshot_id> --json
 ```
+
+첫 응답의 `data.page.next_offset`과 `data.snapshot_id`를 두 번째 명령에 전달합니다. next_offset이 null이면 마지막 페이지입니다. 바이트 상한 때문에 반환 카드 수가 limit보다 적을 수 있으므로 offset을 limit만큼 늘리지 않습니다. 강조 실험 등 조회 조건은 그대로 유지합니다.
 
 | 인자 | 동작 |
 |---|---|
@@ -45,7 +47,7 @@ zar context --project /path/to/project --experiment exp-candidate --offset 5 --s
 | `--max-bytes` | 성공한 JSON envelope 전체와 개행의 상한. 기본 16384, 2048~1048576 |
 | `--snapshot` | 이전 응답의 snapshot_id. 기록이 바뀌었으면 종료 3으로 거부 |
 
-순서는 강조 실험 → 현재 선택 → 해당 기록들의 baseline/parent/정정 원본 계보 → 미완료 실행 → 같은 비교·환경의 실패/중단/보류/폐기 → 나머지 최근 기록입니다. 같은 분류에서는 created_at과 ID의 역순입니다. 강조 기준이 없으면 전체 실패 이력을 대상으로 합니다. “관련”은 이 규칙의 일치이며 실패 원인이 같다는 추론이 아닙니다. 기존 baseline 참조를 정정본으로 자동 변경하지 않습니다.
+순서는 강조 실험 → 현재 선택 → 해당 기록들의 baseline/parent/정정 원본 계보 → 미완료 실행 → 같은 비교·환경의 실패/중단/보류/폐기 → 나머지 최근 기록입니다. 계보는 강조·선택 실험에서 시작해 각 기록의 baseline → parent → 정정 원본 순으로 중복 없이 너비 우선 탐색합니다. 이후 미완료 실행·관련 실패/중단/보류/폐기·나머지 기록은 각 분류 안에서 created_at과 ID의 역순입니다. 강조 기준이 없으면 전체 실패 이력을 대상으로 합니다. “관련”은 이 규칙의 일치이며 실패 원인이 같다는 추론이 아닙니다. 기존 baseline 참조를 정정본으로 자동 변경하지 않습니다.
 
 응답 `data`는 `view:research_context`, 프로젝트/스냅샷 ID, 선택/강조 ID, 준비 여부와 누락 설정, 예산, 전체 상태 집계, 카드, 페이지, 누락 정보를 담습니다. 카드는 실행 상태·점수·판단·정정 연결·원본 경로·일부 근거 핸들을 제공합니다. 지표의 세부 조건·전체 지침은 `project_source`와 `program_source`에서 읽습니다. 점수만 보고 비교 가능하다고 판단하지 않습니다.
 

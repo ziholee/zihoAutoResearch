@@ -28,3 +28,6 @@
 ## 2026-10-03 — Deliver a working increment first
 - Keep foundational CLI work bounded to the requested commands. Do not add future mutation workflows to a foundation milestone.
 - Delegate through small, immediately usable interfaces. Require an early working artifact when other code depends on it; unintegrated parallel work does not reduce delivery time.
+
+- Bounded pagination examples must use the returned continuation field, never infer offsets from the requested limit. Describe ancestry traversal separately from date-sorted groups.
+- Keep shared research instructions aligned on validity exceptions: preserving selection on hold applies only to a valid selected baseline; an invalid selection requires explicit deselection.
