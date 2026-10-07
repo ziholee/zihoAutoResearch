@@ -16,7 +16,7 @@ TRANSITIONS = {
 
 def prepare_create(body, project, stamp):
     validator = Validator()
-    validator.obj(body, CREATE_FIELDS, '$')
+    validator.obj(body, CREATE_FIELDS + (' run_context' if isinstance(body, dict) and 'run_context' in body else ''), '$')
     if validator.errors:
         return None, validator.errors
     candidate = deepcopy(body)
@@ -38,8 +38,10 @@ def validate_update(current, candidate):
 
     # Only execution is caller-editable; revision is an optimistic concurrency token.
     for field in current:
-        if field not in ('execution', 'updated_at', 'correction') and candidate[field] != current[field]:
+        if field not in ('execution', 'updated_at', 'correction', 'run_context') and candidate[field] != current[field]:
             conflict(field, f'{field} must match the stored record.')
+    if candidate.get('run_context') != current.get('run_context'):
+        conflict('run_context', 'Run context cannot be changed by update.')
     if candidate.get('correction') != current.get('correction'):
         conflict('correction', 'Correction lineage cannot be changed by update.')
     old, new = current['execution'], candidate['execution']

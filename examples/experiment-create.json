@@ -6,6 +6,18 @@
   "baseline_id": null,
   "code_ref": "replace-with-code-version",
   "config_ref": "replace-with-config-version",
-  "command": {"name": "train", "argv": ["python", "train.py"], "cwd": "."},
-  "review_ids": []
+  "command": {
+    "name": "train",
+    "argv": [
+      "python",
+      "train.py"
+    ],
+    "cwd": "."
+  },
+  "review_ids": [],
+  "run_context": {
+    "scope": "full",
+    "seed": 42,
+    "budget_ref": "replace-with-run-budget-protocol"
+  }
 }
