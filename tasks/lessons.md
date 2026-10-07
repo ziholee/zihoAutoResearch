@@ -1,5 +1,11 @@
 # Lessons
 
+## 2026-10-07 — Bounded projections and faithful fixtures
+- Audit every projected field against its actual schema bounds. A field called an ID may be an unrestricted string; preserve source linkage and explicit truncation rather than making the entire context inaccessible.
+- Use the project's lossless JSON codec in test helpers when reading canonical records containing Decimal values. A standard json.dumps fixture error is not a product regression.
+- Resolve both paths when counting filesystem reads on macOS; /var and /private/var can refer to the same temporary file.
+- Read-only CLI commands can still share a cooperative project lock. Serialize calls for one project and wait for owned pending calls; do not remove a lock to force parallelism.
+
 ## 2026-10-03 — Keep the research workflow lightweight
 - Define the project instructions, evidence, and one experiment loop before designing execution infrastructure. Existing data, commands, local validation, and competition scores should be reused.
 - Do not equate portability with building OS-specific execution backends or adding containers. Add integration code only for a demonstrated gap in the actual project.

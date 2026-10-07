@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 from importlib.resources import files
 import os
+import re
 from pathlib import Path
 import shutil
 import sys
@@ -14,6 +15,10 @@ from .experiments import prepare_create, validate_update, prepare_correction, su
 from .git_tracking import snapshot, GitStateError
 from .storage import atomic_write, project_lock
 from .validation import ID, validate_document, inspect_project, readiness_missing
+from .records import RecordSnapshot, load_records
+from .reviews import prepare_add as prepare_review
+from .context import build_context, ContextError
+from .evidence import read_evidence, EvidenceError
 
 
 class Failure(Exception):
@@ -103,8 +108,8 @@ def initialize(root):
         lock.unlink()
 
 
-def state(root, project):
-    experiments = [read_document(p) for p in sorted((root / '.autoresearch/experiments').glob('*.json'))]
+def state(root, project, snapshot):
+    experiments = list(snapshot.records['experiment'].values())
     superseded = superseded_ids(experiments)
     latest = max(experiments, key=lambda e: (datetime.fromisoformat(e['created_at'].replace('Z', '+00:00')), e['id']), default=None)
     missing = readiness_missing(project)
@@ -119,12 +124,12 @@ def state(root, project):
                 next_action=project['next_action'])
 
 
-def save_experiment(args, root, project):
+def save_experiment(args, root, project, snapshot):
     # Caller holds the project lock throughout validation and the single-file write.
     store = root / '.autoresearch'
-    enforce(inspect_project(root, project))
+    enforce(inspect_project(root, project, snapshot=snapshot))
     body = read_document(Path(args.file))
-    records = [read_document(p) for p in (store / 'experiments').glob('*.json')]
+    records = list(snapshot.records['experiment'].values())
     superseded = superseded_ids(records)
     if args.action == 'create':
         missing = readiness_missing(project)
@@ -149,7 +154,7 @@ def save_experiment(args, root, project):
         path = store / 'experiments' / (args.id + '.json')
         if not path.is_file():
             reject('conflict', path, 'Experiment does not exist.')
-        current = read_document(path)
+        current = snapshot.records['experiment'][args.id]
         if current['id'] in superseded:
             reject('conflict', path, 'This experiment has been superseded; use the active correction.')
         if args.action == 'correct':
@@ -169,10 +174,33 @@ def save_experiment(args, root, project):
             candidate['revision'] += 1
             candidate['updated_at'] = now()
             enforce(validate_document(candidate, 'experiment'))
-    diagnostics = inspect_project(root, project, experiment=candidate)
+    diagnostics = inspect_project(root, project, experiment=candidate, snapshot=snapshot)
     enforce(diagnostics)
     atomic_write(path, dumps(candidate))
     return {'experiment': candidate}, diagnostics
+
+
+def save_review(args, root, project, snapshot):
+    # The caller holds the same cooperative lock as every record mutation.
+    enforce(inspect_project(root, project, snapshot=snapshot))
+    candidate, errors = prepare_review(read_document(Path(args.file)), now())
+    enforce(errors)
+    record_id = candidate['id']
+    path = root / '.autoresearch' / 'reviews' / (record_id + '.json')
+    if (path.exists() or path.is_symlink() or record_id == project['id']
+            or any(record_id in group for group in snapshot.records.values())):
+        reject('conflict', path, 'Review requires an unused record ID.')
+    # Overlay copied maps so validation sees all links, correction branches and
+    # evidence before a single append-only write; original documents stay intact.
+    records = {kind: dict(group) for kind, group in snapshot.records.items()}
+    records['review'][record_id] = candidate
+    paths = dict(snapshot.paths)
+    paths[record_id] = path
+    proposed = RecordSnapshot(records, paths, list(snapshot.diagnostics))
+    diagnostics = inspect_project(root, project, snapshot=proposed)
+    enforce(diagnostics)
+    atomic_write(path, dumps(candidate))
+    return {'review': candidate}, diagnostics
 
 
 def inspect_git(root):
@@ -193,16 +221,40 @@ def execute(args):
     with project_lock(store):
         project = read_document(store / 'project.json')
         enforce(validate_document(project, 'project'))
-        if args.command == 'experiment' and args.action == 'compare':
-            diagnostics = inspect_project(root, project)
+        snapshot = load_records(root, project)
+        if args.command in ('context', 'evidence'):
+            diagnostics = inspect_project(root, project, snapshot=snapshot, check_files=False)
             enforce(diagnostics)
-            records = {d['id']:d for d in (read_document(p) for p in (store / 'experiments').glob('*.json'))}
+            if args.command == 'context':
+                return build_context(project, snapshot.records, diagnostics, experiment=args.experiment,
+                                     limit=args.limit, offset=args.offset, max_bytes=args.max_bytes,
+                                     snapshot=args.snapshot)
+            if not ID.fullmatch(args.id): reject('arguments', 'id', 'Invalid record ID.', 2)
+            document = snapshot.records[args.kind].get(args.id)
+            if document is None: reject('conflict', args.id, 'Record does not exist.')
+            if args.revision is not None and args.revision != document['revision']:
+                reject('conflict', args.id, 'Record revision changed; refresh the evidence handle.')
+            if args.sha256 is not None and not re.fullmatch(r'[0-9a-f]{64}', args.sha256):
+                reject('arguments', 'sha256', 'Expected a lowercase SHA256 hash.', 2)
+            data, evidence_diagnostics = read_evidence(root, document, args.pointer,
+                start_line=args.start_line, max_lines=args.max_lines, max_bytes=args.max_bytes)
+            if args.sha256 is not None and args.sha256 != data['source']['actual_sha256']:
+                reject('evidence_changed', args.pointer, 'Evidence differs from the requested page identity; no excerpt returned.')
+            data.update(view='evidence_page', record_kind=args.kind, record_id=args.id,
+                        record_revision=document['revision'])
+            return data, diagnostics + evidence_diagnostics
+        if args.command == 'experiment' and args.action == 'compare':
+            diagnostics = inspect_project(root, project, snapshot=snapshot)
+            enforce(diagnostics)
+            records = snapshot.records['experiment']
             for id in (args.base_id, args.candidate_id):
                 if not ID.fullmatch(id): reject('arguments', 'id', 'Invalid experiment ID.', 2)
                 if id not in records: reject('conflict', id, 'Experiment does not exist.')
             return compare(records[args.base_id], records[args.candidate_id], records), diagnostics
         if args.command == 'experiment':
-            return save_experiment(args, root, project)
+            return save_experiment(args, root, project, snapshot)
+        if args.command == 'review':
+            return save_review(args, root, project, snapshot)
         if args.command == 'project':
             candidate = read_document(Path(args.file))
             enforce(validate_document(candidate, 'project'))
@@ -213,16 +265,16 @@ def execute(args):
                     and candidate['comparison']['id'] == project['comparison']['id']
                     and candidate['comparison'] != project['comparison']):
                 reject('conflict', 'comparison', 'Changed comparison fields require a new comparison ID.')
-            diagnostics = inspect_project(root, candidate)
+            diagnostics = inspect_project(root, candidate, snapshot=snapshot)
             enforce(diagnostics)
             candidate['revision'] += 1
             candidate['updated_at'] = now()
             enforce(validate_document(candidate, 'project'))
             atomic_write(store / 'project.json', dumps(candidate))
             return {'project': candidate}, diagnostics
-        diagnostics = inspect_project(root, project)
+        diagnostics = inspect_project(root, project, snapshot=snapshot)
         enforce(diagnostics)
-        data = state(root, project)
+        data = state(root, project, snapshot)
         if args.command == 'check' and data['missing']:
             diagnostics.extend(diagnostic('not_ready', field, 'Required setting is missing.') for field in data['missing'])
             raise Failure(3, diagnostics)
@@ -245,10 +297,31 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
+    context = commands.add_parser('context', help='bounded metadata context; evidence files are not checked')
+    context.add_argument('--experiment')
+    context.add_argument('--limit', type=int, default=5)
+    context.add_argument('--offset', type=int, default=0)
+    context.add_argument('--max-bytes', type=int, default=16384)
+    context.add_argument('--snapshot', help='reject pagination if canonical records changed')
+    evidence = commands.add_parser('evidence')
+    evidence_actions = evidence.add_subparsers(dest='action', required=True, parser_class=Parser)
+    reader = evidence_actions.add_parser('read')
+    reader.add_argument('--kind', choices=('experiment','review','submission'), required=True)
+    reader.add_argument('--id', required=True)
+    reader.add_argument('--pointer', required=True)
+    reader.add_argument('--revision', type=int, help='require the recorded handle revision')
+    reader.add_argument('--sha256', help='require a prior page content hash, including unhashed sources')
+    reader.add_argument('--start-line', type=int, default=1)
+    reader.add_argument('--max-lines', type=int, default=80)
+    reader.add_argument('--max-bytes', type=int, default=16384)
     project = commands.add_parser('project')
     actions = project.add_subparsers(dest='action', required=True, parser_class=Parser)
     setter = actions.add_parser('set')
     setter.add_argument('--file', required=True)
+    review = commands.add_parser('review')
+    review_actions = review.add_subparsers(dest='action', required=True, parser_class=Parser)
+    review_add = review_actions.add_parser('add')
+    review_add.add_argument('--file', required=True)
     experiment = commands.add_parser('experiment')
     experiment_actions = experiment.add_subparsers(dest='action', required=True, parser_class=Parser)
     create = experiment_actions.add_parser('create')
@@ -287,9 +360,12 @@ def main(argv=None):
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
+                                 'review add --file <json>',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
                                  'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
-                                 'experiment decide <id> --file <json>', 'git status'],
+                                 'experiment decide <id> --file <json>', 'git status',
+                                 'context [--experiment <id>] [--limit <n>] [--offset <n>] [--max-bytes <n>] [--snapshot <hash>]',
+                                 'evidence read --kind <kind> --id <id> --pointer <pointer> [--revision <n>] [--sha256 <hash>] [--start-line <n>] [--max-lines <n>] [--max-bytes <n>]'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
         else:
@@ -297,6 +373,9 @@ def main(argv=None):
             data, diagnostics = execute(args)
     except Failure as exc:
         code, diagnostics = exc.exit_code, exc.diagnostics
+    except (ContextError, EvidenceError) as exc:
+        code = exc.exit_code
+        diagnostics = [diagnostic(exc.code, '', exc.message)]
     except OSError as exc:
         code = 4
         diagnostics = [diagnostic('io', exc.filename or '', str(exc))]
@@ -304,7 +383,9 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if 'comparable' in data:
+            if data.get('view') in ('research_context', 'evidence_page'):
+                emit_text(dumps(data).rstrip('\n'))
+            elif 'comparable' in data:
                 emit_text('Comparable: ' + ('yes' if data['comparable'] else 'no'))
                 emit_text('Reasons: ' + (', '.join(data['reasons']) or 'none'))
                 emit_text('Improvement: ' + str(data['improvement']))
@@ -319,6 +400,10 @@ def main(argv=None):
                     emit_text(category + ':')
                     for change in data[category]:
                         emit_text(change['status'] + ' ' + change['path'])
+            elif 'review' in data:
+                review = data['review']
+                emit_text(f"Review: {review['id']} (revision {review['revision']})")
+                emit_text('Findings: ' + str(len(review['items'])))
             elif 'experiment' in data:
                 experiment = data['experiment']
                 emit_text(f"Experiment: {experiment['id']} (revision {experiment['revision']})")
