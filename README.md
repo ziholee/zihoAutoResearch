@@ -28,7 +28,7 @@ flowchart TD
     E --> S
     S --> X[기존 에이전트 도구: 허용된 코드 수정과 실행]
     X --> L
-    J -. 후속 구현 .-> P[제출 기록 추가와 보고서 생성]
+    J -. 후속 구현 .-> P[보고서 생성]
 ```
 
 
@@ -36,7 +36,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. 제출 기록 추가와 보고서 생성 명령은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. 보고서 생성 명령은 후속 구현 범위입니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
 - [맥락 조회·근거 재조회와 구조](docs/context-and-evidence.md)
 - [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
@@ -51,7 +51,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 - [실험 기록 템플릿](templates/experiment.md)
 - [작업 기록](tasks/todo.md)
 
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 스킬은 기존 CLI로 실험 기록·비교·판단·선택을 연결하며, 미지원 제출 단계의 근거는 미등록 초안으로 보존합니다. 다음 구현 범위는 제출 기록 추가와 보고서 생성입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
+목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 스킬은 기존 CLI로 실험 기록·비교·판단·선택을 연결하며, 확인된 제출 결과를 실험·파일 해시와 연결합니다. 다음 구현 범위는 보고서 생성입니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
 
 ## 설치와 기본 사용
 
@@ -181,3 +181,9 @@ zar experiment decide exp-candidate-1 --project /path/to/ml-project --file decis
 `zar review add --project /path/to/ml-project --file review-draft.json --json`으로 점검 결과를 등록합니다. 입력은 `id`, `supersedes_id`, `code_ref`, `data_ref`, `items`이며 생성 메타데이터는 CLI가 채웁니다. 프로젝트 설정이 미완성이어도 점검을 남길 수 있습니다. 입력 예시는 [스킬의 CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md#register-a-review)에 있습니다.
 
 실험 전 변경 범위·가설과 실제 diff를 대조하고, 데이터 누수·평가 방법 변경·검증하지 못한 항목을 근거와 함께 남깁니다. 등록한 ID를 새 실험의 `review_ids`에 연결합니다. 등록 성공은 점검 내용이나 ML 타당성의 자동 승인을 뜻하지 않습니다. 같은 코드·데이터의 점검 정정은 새 ID와 `supersedes_id`로 원본을 보존하며, 기존 실험 참조는 바꾸지 않습니다. [RRSI 적용 범위](docs/research-update-2026-10.md#rrsi-적용-실행-전-점검)를 참고하세요.
+
+## 확인된 제출 결과 기록
+
+`zar submission add --project /path/to/ml-project --file submission-draft.json --json`은 이미 확인한 외부 점수와 제출 근거를 기록합니다. 먼저 성공한 실험의 artifacts에 role=submission 파일 경로와 SHA-256을 등록해야 합니다. 점수가 아직 없으면 산출물만 보존합니다. 입력 필드는 [v1 계약](docs/cli-and-file-contract.md)과 [CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md#register-an-observed-submission-result)를 따릅니다.
+
+중복 외부 결과는 거부하고, 정정은 같은 competition/external_id/leaderboard의 활성 기록을 새 ID로 대체합니다. 원본·실험 로컬 점수·판단·현재 선택은 보존됩니다. 실제 파일 해시가 다르면 등록을 거부하며, 파일이 없으면 확인 불가 경고를 남깁니다. CLI는 외부 제출이나 점수 조회를 수행하지 않습니다.

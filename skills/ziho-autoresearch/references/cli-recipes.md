@@ -129,7 +129,7 @@ Input: `{id, revision, execution, reason, evidence}`. Use a new ID and the origi
 
 ## Finish and supported limits
 
-Persist next_action with a current project draft; `status` exposes selection, readiness, budget_used, unfinished work and kept-but-unselected records. Run `check` and report its diagnostics. Submission registration/report generation are not yet available: preserve pending material as labeled drafts without canonical IDs. An ordinary final chat summary is not a CLI-generated report.
+Persist next_action with a current project draft; `status` exposes selection, readiness, budget_used, unfinished work and kept-but-unselected records. Run `check` and report its diagnostics. Report generation is not yet available. Submission results can be recorded only after observing a score; pending material remains a draft. An ordinary final chat summary is not a CLI-generated report.
 
 ## Bounded restart context and exact evidence pages
 
@@ -179,3 +179,15 @@ Input includes exactly these fields (replace illustrative observations and ident
 The CLI generates schema_version/revision/timestamps. Incomplete project settings allow registration. Findings use confirmed_issue, suspected, passed_in_scope, unverifiable or not_applicable. Confirmed/passed findings require nonempty Evidence arrays; suspected needs next_action; unverifiable needs limitation; not_applicable needs an applicability reason. Evidence has the same shape as execution evidence. Missing/changed files and unverified identities remain diagnostics; successful registration never verifies the finding's truth or grants execution permission.
 
 Record declared changes versus actual diff and evaluation integrity as distinct items when relevant. Use observation for observed facts and label hypotheses explicitly. IDs are unique across canonical records. Set supersedes_id only to an active review with the same code_ref/data_ref; correction creates a new record and never redirects existing experiment review_ids. For changed code/data, create a fresh review with supersedes_id null and recheck relevant findings. Attach returned IDs when creating the experiment; review_ids is immutable afterward.
+
+## Register an observed submission result
+
+```sh
+zar submission add --project <target-root> --file <submission-draft.json> --json
+```
+
+Input has exactly `id`, `supersedes_id`, `experiment_id`, `competition`, `external_id`, `artifact`, `leaderboard`, `metric`, `direction`, `score`, `submitted_at`, `observed_at`, `evidence`. The CLI generates schema_version/revision/created_at/updated_at. Artifact is `{path, sha256}` and must exactly match a registered submission-role artifact of the referenced succeeded experiment. Evidence is a nonempty array in the same shape as review/execution evidence. Direction is minimize/maximize, score is an observed finite number, and both times are observed UTC RFC 3339 with submitted_at <= observed_at. Do not invent a missing score or timestamp.
+
+An existing artifact with mismatched hash is rejected. If the file is unavailable, its registered identity and result evidence remain usable with an explicit warning, not current-file verification. This command does not contact the competition, submit files, or change the experiment's local score, decision or project selection. Record local/external differences as observations, not causal conclusions.
+
+The tuple competition/external_id/leaderboard identifies one external result. Duplicate roots are rejected; different leaderboards may have separate records. A correction requires a new ID and supersedes_id pointing to the active submission with that same tuple. Originals and references stay unchanged. If the linked experiment was corrected, the existing linkage remains and diagnostics disclose it rather than redirecting it.

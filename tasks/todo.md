@@ -16,7 +16,8 @@ Current completion target is the reusable tool itself; real ML application is pe
 - [x] Review representative JSON examples and resolve interface inconsistencies.
 - [x] Implement the LLM skill and supported CLI loop (project/experiment/Git/compare/decide), with mock adoption/hold and resume checks.
 - [x] Implement review add with evidence diagnostics and append-only corrections.
-- [ ] Implement the remaining submission/report commands.
+- [x] Implement submission add with artifact/result linkage and append-only corrections.
+- [ ] Implement the remaining report command.
 - [ ] Verify the complete v1 tool with sample files and simulated results; current subset passes, remaining commands pending. Do not run actual ML training or submit models.
 - [ ] Complete v1 packaging and usage instructions; CLI wheel, source-distributed skill, and mock-cycle examples are available for the implemented subset.
 
@@ -226,3 +227,19 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - User authorized fixing the three audit findings. Plan: replace fixed-offset example with returned pagination fields; describe ancestry traversal separately from recent ordering; align source/packaged instructions and workflow on deselecting an invalid baseline. Verify links, templates and relevant context/selection behavior, then publish the correction to PR #11 without merging.
 - Resolved all three audit findings: pagination example uses next_offset and stops on null; ancestry order matches baseline/parent/correction breadth-first traversal; both program templates and workflow preserve only a valid selection and explicitly deselect an invalid baseline. Runtime code unchanged.
 - Verification: context tests 10/10 and comparison/selection tests 13/13 passed; 54 local links, source/package template equality and git diff --check passed. Existing 115-test full-suite result belongs to the preceding audit; no new full-suite claim. Publish only the six documentation/record files; preserve unrelated .DS_Store.
+
+## Submission recording — codex/submission-recording
+
+- Start from merged origin/dev 852b9a6; preserve unrelated .DS_Store. Goal: complete submission add using the existing v1 schema and shared record validation, without external submissions or training.
+- Plan: CLI regressions for observed-result registration, artifact identity, duplicate/correction rules and write preservation; implement author-only input and atomic snapshot validation; align docs/skill; full tests, isolated package smoke and independent review. Report remains pending.
+- Acceptance: only succeeded experiment with matching registered submission artifact; present-file hash mismatch rejected, unavailable-file warning preserved; score/time/evidence required; corrections append a new record with the same external identity; no experiment/project/selection mutation.
+- Completed: author-only submission input with generated metadata, shared review/submission save path, full snapshot validation, JSON/human help/output. Existing v1 submission schema and validators are reused without migration or new runtime dependencies.
+- Regression evidence: before implementation the seven new CLI tests failed because submission was not a parser choice; after implementation all seven passed. Covers exact Decimal, succeeded/registered artifact requirements, present hash rejection versus missing-file warnings, global ID/external tuple collisions, active correction chains, original preservation and injected atomic replace failure with retry.
+- Verification: full suite 122 tests passed (27.428s; /private/tmp/zar-submission-full.log); official skill validator, 56 local links, template equality and whitespace checks passed. Built wheel/sdist, installed the fresh wheel outside the repository, then ran a source-archive mock cycle followed by artifact registration, submission registration, correction, context and check; original experiment/project and submission bytes remained unchanged. Independent implementation/contract review found no confirmed defect.
+- Documentation: current support statements, submission recipe, source/packaged instructions and workflow updated; stale Git-history guide support list aligned. Actual submission/training was never run. Report and complete-v1 verification remain pending; native Windows/Linux not tested. Work remains on codex/submission-recording without a new commit, push or PR.
+
+## Submission skill verification and PR delivery
+
+- User requested skill-based verification and PR publication if successful. Applied sip and verification-before-completion; independent read-only code/contract review found no confirmed defect.
+- Fresh verification: 122 tests passed in 30.126s (/private/tmp/zar-submission-pr-tests.log); skill validator, 56 local links, template equality and diff whitespace passed. New wheel/sdist built; isolated installed-wheel smoke using source-archive fixtures passed submission registration, duplicate rejection, correction, original-byte preservation, context and check. No extra product fixes were needed.
+- Delivery scope: commit and publish codex/submission-recording as a dev-targeted PR; exclude unrelated .DS_Store. This supersedes the previous local-only delivery status. No merge, real training or external competition submission. Native Windows/Linux remain unverified.
