@@ -17,6 +17,7 @@ from .storage import atomic_write, project_lock
 from .validation import ID, validate_document, inspect_project, readiness_missing
 from .records import RecordSnapshot, load_records
 from .reviews import prepare_add as prepare_review
+from .submissions import prepare_add as prepare_submission
 from .context import build_context, ContextError
 from .evidence import read_evidence, EvidenceError
 
@@ -180,27 +181,29 @@ def save_experiment(args, root, project, snapshot):
     return {'experiment': candidate}, diagnostics
 
 
-def save_review(args, root, project, snapshot):
+def save_observation(args, root, project, snapshot):
     # The caller holds the same cooperative lock as every record mutation.
     enforce(inspect_project(root, project, snapshot=snapshot))
-    candidate, errors = prepare_review(read_document(Path(args.file)), now())
+    kind = args.command
+    prepare = prepare_review if kind == 'review' else prepare_submission
+    candidate, errors = prepare(read_document(Path(args.file)), now())
     enforce(errors)
     record_id = candidate['id']
-    path = root / '.autoresearch' / 'reviews' / (record_id + '.json')
+    path = root / '.autoresearch' / (kind + 's') / (record_id + '.json')
     if (path.exists() or path.is_symlink() or record_id == project['id']
             or any(record_id in group for group in snapshot.records.values())):
-        reject('conflict', path, 'Review requires an unused record ID.')
+        reject('conflict', path, 'Record requires an unused record ID.')
     # Overlay copied maps so validation sees all links, correction branches and
     # evidence before a single append-only write; original documents stay intact.
     records = {kind: dict(group) for kind, group in snapshot.records.items()}
-    records['review'][record_id] = candidate
+    records[kind][record_id] = candidate
     paths = dict(snapshot.paths)
     paths[record_id] = path
     proposed = RecordSnapshot(records, paths, list(snapshot.diagnostics))
     diagnostics = inspect_project(root, project, snapshot=proposed)
     enforce(diagnostics)
     atomic_write(path, dumps(candidate))
-    return {'review': candidate}, diagnostics
+    return {kind: candidate}, diagnostics
 
 
 def inspect_git(root):
@@ -253,8 +256,8 @@ def execute(args):
             return compare(records[args.base_id], records[args.candidate_id], records), diagnostics
         if args.command == 'experiment':
             return save_experiment(args, root, project, snapshot)
-        if args.command == 'review':
-            return save_review(args, root, project, snapshot)
+        if args.command in ('review', 'submission'):
+            return save_observation(args, root, project, snapshot)
         if args.command == 'project':
             candidate = read_document(Path(args.file))
             enforce(validate_document(candidate, 'project'))
@@ -318,10 +321,11 @@ def parse(arguments):
     actions = project.add_subparsers(dest='action', required=True, parser_class=Parser)
     setter = actions.add_parser('set')
     setter.add_argument('--file', required=True)
-    review = commands.add_parser('review')
-    review_actions = review.add_subparsers(dest='action', required=True, parser_class=Parser)
-    review_add = review_actions.add_parser('add')
-    review_add.add_argument('--file', required=True)
+    for kind in ('review', 'submission'):
+        observation = commands.add_parser(kind)
+        observation_actions = observation.add_subparsers(dest='action', required=True, parser_class=Parser)
+        observation_add = observation_actions.add_parser('add')
+        observation_add.add_argument('--file', required=True)
     experiment = commands.add_parser('experiment')
     experiment_actions = experiment.add_subparsers(dest='action', required=True, parser_class=Parser)
     create = experiment_actions.add_parser('create')
@@ -360,7 +364,7 @@ def main(argv=None):
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
-                                 'review add --file <json>',
+                                 'review add --file <json>', 'submission add --file <json>',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
                                  'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
                                  'experiment decide <id> --file <json>', 'git status',
@@ -400,6 +404,11 @@ def main(argv=None):
                     emit_text(category + ':')
                     for change in data[category]:
                         emit_text(change['status'] + ' ' + change['path'])
+            elif 'submission' in data:
+                submission = data['submission']
+                emit_text(f"Submission: {submission['id']} (revision {submission['revision']})")
+                emit_text('Experiment: ' + submission['experiment_id'])
+                emit_text('Score: ' + str(submission['score']))
             elif 'review' in data:
                 review = data['review']
                 emit_text(f"Review: {review['id']} (revision {review['revision']})")
