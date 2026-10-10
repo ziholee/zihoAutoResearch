@@ -77,13 +77,22 @@ class MockCycle:
                   'raise RuntimeError("Mock cycle must never execute this file")\n')
         code = self.project / 'train.py'
         code.write_text(source, encoding='utf-8')
+        review_id = identifier + '-review'
+        review = dict(id=review_id, supersedes_id=None,
+                      code_ref='sha256:' + hashlib.sha256(code.read_bytes()).hexdigest(),
+                      data_ref='synthetic-data-v1', items=[dict(
+                          id='mock-scope', topic='Execution scope', applicability='Synthetic demonstration only',
+                          observation='Sentinel code is recorded but must never execute',
+                          assessment='unverifiable', evidence=[], limitation='No real data or ML execution',
+                          next_action='Use supplied mock observations only')])
+        self.cli('review', 'add', '--file', self.draft(review_id + '.json', review))
         plan = dict(
             id=identifier, kind='performance' if baseline else 'baseline',
             hypothesis='Synthetic candidate observation' if baseline else 'Synthetic reference observation',
             parent_id=baseline, baseline_id=baseline,
             code_ref='sha256:' + hashlib.sha256(code.read_bytes()).hexdigest(),
             config_ref='synthetic-config-v1', command=self.read('project.json')['commands'][0],
-            review_ids=[], run_context=dict(scope=scope, seed=42, budget_ref='mock-60-seconds-v1'),
+            review_ids=[review_id], run_context=dict(scope=scope, seed=42, budget_ref='mock-60-seconds-v1'),
         )
         self.cli('experiment', 'create', '--file', self.draft(identifier + '-plan.json', plan))
         document = self.read(f'experiments/{identifier}.json')
@@ -139,6 +148,25 @@ class MockCycle:
                         'Supplied comparable mock observations satisfy this demonstration; no ML validity claim.',
                         candidate_evidence)
             self.select('mock-candidate', 'Mock cycle complete; no training or submission performed.')
+        prediction = self.project / 'mock-predictions.csv'
+        prediction.write_text('id,prediction\nsynthetic-1,0.5\n', encoding='utf-8')
+        artifact_hash = hashlib.sha256(prediction.read_bytes()).hexdigest()
+        candidate = self.read('experiments/mock-candidate.json')
+        candidate['execution']['artifacts'].append(dict(
+            role='submission', path=prediction.name, sha256=artifact_hash,
+            code_ref=candidate['code_ref'], config_ref=candidate['config_ref'],
+            evidence=[candidate_evidence]))
+        self.cli('experiment', 'update', 'mock-candidate',
+                 '--file', self.draft('candidate-artifact.json', candidate))
+        submission = dict(id='mock-submission', supersedes_id=None,
+            experiment_id='mock-candidate', competition='synthetic-competition', external_id='synthetic-entry',
+            artifact=dict(path=prediction.name, sha256=artifact_hash), leaderboard='mock-public',
+            metric='mock-error', direction='minimize', score=Decimal('1.15'),
+            submitted_at='2026-01-01T00:04:00Z', observed_at='2026-01-01T00:05:00Z',
+            evidence=[dict(kind='user_report', ref='SIMULATED external score; no actual submission',
+                           locator=None, sha256=None)])
+        self.cli('submission', 'add', '--file', self.draft('mock-submission.json', submission))
+        report = self.cli('report', '--output', 'summary.md')
         context = self.cli('context', '--experiment', 'mock-candidate')
         (self.output / 'context.json').write_text(dumps(context), encoding='utf-8')
         candidate = self.read('experiments/mock-candidate.json')
@@ -158,8 +186,8 @@ class MockCycle:
             selected_code_ref=selected['code_ref'], workspace_code_ref=workspace_ref,
             workspace_matches_selection=workspace_ref == selected['code_ref'],
             unfinished=state['unfinished'], budget_used=state['budget_used'],
-            next_action=state['next_action'],
-            limitation='Synthetic observations only; no ML, Git commits, registered review, submission or generated report. '
+            next_action=state['next_action'], report=report['output'],
+            limitation='Synthetic observations only; registered reviews/results and report are mock artifacts, not ML validity. No ML, Git commits or external submission. '
                        'The hold example preserves candidate workspace bytes separately from the baseline selection.',
         )
         (self.output / 'summary.json').write_text(dumps(summary), encoding='utf-8')

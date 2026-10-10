@@ -2,7 +2,7 @@
 
 상태: 구현 기준 v1 · 2026-10-07
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`와 JSON 저장·검증 기반을 구현했습니다. `report`는 후속 구현 범위이며 아래 표는 해당 목표 동작도 포함합니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -67,7 +67,7 @@
 
 project set으로 `selected_experiment_id`를 바꿀 수 있습니다. 해당 실험이 유효하고 keep 판단이며 현재 비교 조건에 속하는지 검사합니다. 이것은 기록상 선택이며 작업 폴더의 코드를 바꾸지 않습니다. decide와 선택 갱신은 별도 한 파일 변경이므로 중간 상태에도 “keep 후보이나 아직 선택되지 않음”을 표시할 수 있습니다.
 
-report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 경로만 받습니다. 절대 경로·`..`·심볼릭 링크 등으로 reports 밖에 쓰는 경로는 거부하며 reports 폴더 자체와 상위 저장 경로도 링크로 다른 위치에 연결돼 있으면 거부합니다. 출력의 첫 줄은 `<!-- zar-report:v1 project_id=<현재 프로젝트 ID> -->`입니다. `--overwrite`는 동일 프로젝트의 이 표식이 있는 일반 파일에만 허용합니다. 표식 없는 사용자 문서와 JSON 원본은 덮어쓰지 않습니다. 경로·표식 조건 위반은 종료 코드 3이며 파일을 변경하지 않습니다.
+report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 경로만 받습니다. 절대 경로·`..`·심볼릭 링크 등으로 reports 밖에 쓰는 경로는 거부하며 reports 폴더 자체와 상위 저장 경로도 링크로 다른 위치에 연결돼 있으면 거부합니다. 중첩 상대 경로의 부모 디렉터리는 미리 존재해야 하며 자동 생성하지 않습니다. report는 전체 프로젝트를 출력하고 설정 미완료는 누락으로 표시합니다. 성공 data는 view=research_report, output(생성 경로), project_id, generated_at입니다. 출력의 첫 줄은 `<!-- zar-report:v1 project_id=<현재 프로젝트 ID> -->`입니다. `--overwrite`는 동일 프로젝트의 이 표식이 있는 일반 파일에만 허용합니다. 표식 없는 사용자 문서와 JSON 원본은 덮어쓰지 않습니다. 경로·표식 조건 위반은 종료 코드 3이며 파일을 변경하지 않습니다.
 
 기본 출력은 사람이 읽는 텍스트입니다. `--json`을 주면 성공·실패 모두 stdout에 `{ok, data, diagnostics}` 객체 하나를 출력합니다. diagnostics 항목은 `{severity, code, path, message}`입니다. JSON 모드에 설명 문장·색상·로그를 섞지 않습니다.
 
@@ -223,7 +223,7 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
 
-각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 기준과 후보의 기록·비교·판단·선택을 연결합니다. 보고서 명령은 후속 구현 대상입니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
+각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 점검 등록부터 기준·후보 기록·비교·판단·선택·모의 제출 결과·보고서를 연결합니다. 보고서 명령도 구현했습니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
 
 ## 11. Git 이력 연결
 

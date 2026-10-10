@@ -129,7 +129,7 @@ Input: `{id, revision, execution, reason, evidence}`. Use a new ID and the origi
 
 ## Finish and supported limits
 
-Persist next_action with a current project draft; `status` exposes selection, readiness, budget_used, unfinished work and kept-but-unselected records. Run `check` and report its diagnostics. Report generation is not yet available. Submission results can be recorded only after observing a score; pending material remains a draft. An ordinary final chat summary is not a CLI-generated report.
+Persist next_action with a current project draft; `status` exposes selection, readiness, budget_used, unfinished work and kept-but-unselected records. Run `check` and report its diagnostics. Generate a project-wide report with `report --output summary.md` when requested. Submission results can be recorded only after observing a score; pending material remains a draft. An ordinary final chat summary is not a CLI-generated report.
 
 ## Bounded restart context and exact evidence pages
 
@@ -191,3 +191,14 @@ Input has exactly `id`, `supersedes_id`, `experiment_id`, `competition`, `extern
 An existing artifact with mismatched hash is rejected. If the file is unavailable, its registered identity and result evidence remain usable with an explicit warning, not current-file verification. This command does not contact the competition, submit files, or change the experiment's local score, decision or project selection. Record local/external differences as observations, not causal conclusions.
 
 The tuple competition/external_id/leaderboard identifies one external result. Duplicate roots are rejected; different leaderboards may have separate records. A correction requires a new ID and supersedes_id pointing to the active submission with that same tuple. Originals and references stay unchanged. If the linked experiment was corrected, the existing linkage remains and diagnostics disclose it rather than redirecting it.
+
+## Generate a research report
+
+```sh
+zar report --project <target-root> --output summary.md --json
+zar report --project <target-root> --output summary.md --overwrite --json
+```
+
+The output is relative to `.autoresearch/reports/` and must end in `.md`; nested parents must already exist. Absolute paths, parent traversal and symlinks in the output path are rejected. An existing file needs --overwrite and the exact first-line ownership marker for this project. User documents and other projects' reports are not overwritten. The command holds the project lock and atomically writes only the derived report.
+
+The report includes project settings, all reviews/experiments/submissions, original source fields/evidence, active/superseded lineage, saved decisions and separately labeled computed comparisons. Absent values show 미기록 and unknown execution shows 상태 불명. Current selection is not proof of historical workspace state. Full evidence validation runs first; warnings are retained in the report, errors prevent output. No logs are semantically interpreted, and no LLM, Git or external service is called. Reports are not output-size bounded; use context for a bounded restart view. JSON success data contains view=research_report, output, project_id and generated_at.
