@@ -89,13 +89,17 @@ class EvidenceTests(unittest.TestCase):
         self.path.mkdir()
         self.fails(doc, 'evidence_not_regular', 4)
         self.path.rmdir()
-        os.mkfifo(self.path)
-        self.fails(doc, 'evidence_not_regular', 4)
-        self.path.unlink()
         actual = self.root / 'actual.txt'
         actual.write_bytes(b'a\n')
         self.path.symlink_to(actual)
         self.assertEqual(self.read(doc)[0]['text'], 'a\n')
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'POSIX FIFO creation is unavailable')
+    def test_fifo_is_not_regular(self):
+        doc = self.source(b'a\n')
+        self.path.unlink()
+        os.mkfifo(self.path)
+        self.fails(doc, 'evidence_not_regular', 4)
 
     def test_eof_and_empty(self):
         for content in (b'', b'a\n'):

@@ -92,7 +92,7 @@ class ReviewTests(CliHarness):
     def test_registered_hashed_evidence_can_be_read_and_rejects_later_changes(self):
         source = self.project / 'proof.txt'
         text = 'Synthetic scoped inspection\n'
-        source.write_text(text)
+        source.write_bytes(text.encode('utf-8'))
         body = self.body()
         body['items'][0].update(assessment='confirmed_issue', evidence=[dict(
             kind='file', ref=source.name, locator='line 1',

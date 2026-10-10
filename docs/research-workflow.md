@@ -83,7 +83,7 @@
 
 [Git 연구 이력](git-research-history.md)에 따라 실행할 코드 커밋을 먼저 확보하고 `experiment create --git-head`로 연결합니다. 실행 직전 코드 상태를 다시 확인하며, 관측 후 JSON과 연구 지침은 후속 커밋에 남깁니다. 결과 기록 커밋의 SHA로 code_ref를 덮어쓰지 않습니다. commit/reset/checkout은 CLI가 수행하지 않습니다.
 
-실험별 원본은 JSON이며 [기록 템플릿](../templates/experiment.md)은 읽기용 보고서 양식입니다. 각 항목의 출처와 미기록 처리 규칙은 [보고서 필드 매핑](report-field-mapping.md)을 따릅니다. 현재 report 명령은 미구현이며, 이를 대신해 불변 JSON을 직접 고치지 않습니다. 코드/설정, 데이터·분할, 실행 명령, 로그, 관측 점수, 판단과 다음 행동이 연결돼야 합니다. 재개 시 `context`로 선택·후보·미완료 실행·관련 실패와 누락 개수를 먼저 읽습니다. 출력은 결정론적 미리보기이며 원본 설정을 대체하지 않습니다. 필요한 근거는 `evidence read`로 지정한 줄만 읽고, 중요한 판단 전 전체 근거 검사는 `check`로 수행합니다. [조회 계약](context-and-evidence.md)에 따라 페이지 간 snapshot/revision/해시를 고정하고, evidence_not_checked를 근거 유효성으로 해석하지 않습니다.
+실험별 원본은 JSON이며 [기록 템플릿](../templates/experiment.md)은 읽기용 보고서 양식입니다. 각 항목의 출처와 미기록 처리 규칙은 [보고서 필드 매핑](report-field-mapping.md)을 따릅니다. report로 프로젝트 전체 보고서를 생성하며 불변 JSON을 직접 고치지 않습니다. 코드/설정, 데이터·분할, 실행 명령, 로그, 관측 점수, 판단과 다음 행동이 연결돼야 합니다. 재개 시 `context`로 선택·후보·미완료 실행·관련 실패와 누락 개수를 먼저 읽습니다. 출력은 결정론적 미리보기이며 원본 설정을 대체하지 않습니다. 필요한 근거는 `evidence read`로 지정한 줄만 읽고, 중요한 판단 전 전체 근거 검사는 `check`로 수행합니다. [조회 계약](context-and-evidence.md)에 따라 페이지 간 snapshot/revision/해시를 고정하고, evidence_not_checked를 근거 유효성으로 해석하지 않습니다.
 
 현재 선택한 코드와 작업 폴더에 놓인 코드를 구분합니다. hold 후보의 코드·설정·산출물을 별도로 식별해 보존하고 다음 실험을 어떤 코드에서 시작하는지 기록합니다. discard는 실험 시작 전 기록한 상태를 기준으로 후보 변경만 되돌립니다.
 

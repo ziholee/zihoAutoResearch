@@ -38,7 +38,7 @@ flowchart LR
 3. `zar experiment create --git-head --project <root> --file <input.json>`을 실행합니다. 생성 입력은 기존 형식 그대로이며 입력의 code_ref는 CLI가 `git:<전체 HEAD SHA>`로 대체합니다. 입력 파일은 프로젝트 밖 또는 `.autoresearch/drafts/`에 두어 미추적 코드 변경으로 간주되지 않게 합니다.
 4. 실행 직전에 Git 상태를 다시 확인합니다. HEAD가 결과 기록 커밋 때문에 이동했다면 기록된 코드 SHA와 현재 코드·설정의 차이를 확인합니다. 코드가 달라졌고 실행하지 않았다면 기존 planned를 이유와 함께 cancelled로 닫고 새 실험을 만듭니다. 실행 시작을 확인할 수 없으면 note·evidence를 갖춘 unknown으로 남기고 확인 전 재실행하지 않습니다. CLI는 실제 명령을 실행하거나 실행 시점을 감시하지 않습니다.
 5. 기존 환경에서 얻은 상태·시각·로그·점수를 `experiment update`로 기록합니다. code_ref·계획·이미 기록한 시각은 보존합니다.
-6. 변경한 실험 JSON과 필요한 연구 지침을 명시적으로 스테이징해 결과 기록 커밋을 만듭니다. keep/discard/hold 판단과 다음 행동도 JSON에 기록하고 후속 커밋에 남깁니다. 점검·비교·판단·제출 결과는 review add/experiment compare/experiment decide/submission add로 기록·조회합니다. report는 후속 구현 범위이며, 명령을 우회해 불변 기록을 직접 수정하지 않습니다.
+6. 변경한 실험 JSON과 필요한 연구 지침을 명시적으로 스테이징해 결과 기록 커밋을 만듭니다. keep/discard/hold 판단과 다음 행동도 JSON에 기록하고 후속 커밋에 남깁니다. 점검·비교·판단·제출 결과는 review add/experiment compare/experiment decide/submission add로 기록·조회합니다. report는 JSON에서 읽기용 Markdown을 생성하며, 명령을 우회해 불변 기록을 직접 수정하지 않습니다.
 7. 다음 가설은 선택한 코드 기준에서 진행합니다. 실패 이력은 지우지 않습니다. 복구가 필요하면 기존 에이전트가 자신의 변경 범위를 확인해 복구 커밋을 만들고 사용자 변경을 보존합니다. CLI는 reset/checkout/revert/commit/push를 실행하지 않습니다.
 
 ## Git 검사 범위와 한계

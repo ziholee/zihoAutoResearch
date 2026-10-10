@@ -31,3 +31,8 @@
 
 - Bounded pagination examples must use the returned continuation field, never infer offsets from the requested limit. Describe ancestry traversal separately from date-sorted groups.
 - Keep shared research instructions aligned on validity exceptions: preserving selection on hold applies only to a valid selected baseline; an invalid selection requires explicit deselection.
+
+## 2026-10-10 — Native-platform fixture identity
+- A fixture containing stored hashes must preserve bytes at Git checkout; disable text conversion for those fixture paths instead of weakening evidence validation or recalculating trusted expectations.
+- Build byte-sensitive test evidence with write_bytes and compare retrieved excerpts to original bytes, including CRLF. Text-mode I/O may translate line endings on Windows.
+- Separate POSIX-only FIFO/trailing-space cases from portable directory/symlink/space-path tests. Skip only the unsupported primitive with an explicit reason and retain native OS coverage.

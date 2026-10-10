@@ -1,8 +1,8 @@
 # 보고서 필드와 JSON 원본 매핑
 
-갱신: 2026-10-04 · [보고서 양식](../templates/experiment.md) · [v1 계약](cli-and-file-contract.md)
+갱신: 2026-10-07 · [보고서 양식](../templates/experiment.md) · [v1 계약](cli-and-file-contract.md)
 
-`report`는 현재 미구현입니다. 아래는 구현할 출력 계약이며 현재 생성 가능하다는 뜻이 아닙니다. `E`는 대상 `experiments/<id>.json`, `P`는 `project.json`, `R`은 `E.review_ids`로 찾은 review, `S`는 `S.experiment_id == E.id`인 submission입니다. 배열은 원본 순서를 보존합니다. Evidence는 kind/ref/locator/sha256을 그대로 표시하며 임의의 외부 문서·로그에서 값을 자동 추출하지 않습니다. 정정 계보는 전체 같은 종류의 JSON을 조회해 계산합니다.
+`report`는 프로젝트 전체 JSON에서 Markdown을 생성합니다. 원본 필드는 경로와 함께 표시하고, 파생 비교·기록된 경과 시간은 저장 필드와 구분합니다. 활성 기록을 먼저 표시하되 대체된 기록과 전체 정정 계보도 남깁니다. `E`는 대상 `experiments/<id>.json`, `P`는 `project.json`, `R`은 `E.review_ids`로 찾은 review, `S`는 `S.experiment_id == E.id`인 submission입니다. 배열은 원본 순서를 보존합니다. 원본 문자열은 Markdown/HTML 구문으로 실행되지 않게 이스케이프하며 표시되는 값은 보존합니다. 생성 시각을 제외한 결과는 동일한 기록·진단에서 재현됩니다. Evidence는 kind/ref/locator/sha256을 그대로 표시하며 임의의 외부 문서·로그에서 값을 자동 추출하지 않습니다. 정정 계보는 전체 같은 종류의 JSON을 조회해 계산합니다.
 
 모든 null·생략·출처 없는 항목은 “미기록”입니다. `execution.status == unknown`은 상태명 “상태 불명”으로 표시하고 관련 미확인 값은 “미기록”으로 둡니다. 값이 없는 이유를 원본 note/evidence가 설명하면 함께 표시합니다. 예산·지표·다음 행동을 program.md에서 파싱하지 않습니다.
 
