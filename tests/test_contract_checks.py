@@ -20,7 +20,7 @@ class ContractChecksTests(unittest.TestCase):
         # Explicit documented command fixture: do not generate expectations from
         # the checker, so a new real command must update this coverage fixture.
         commands = '`init` `project set` `status` `check` `review add` `submission add` `memory add` `candidate add` '
-        commands += '`report` `experiment create` `git status` `context` `evidence read`\n'
+        commands += '`report` `lineage` `experiment create` `git status` `context` `evidence read`\n'
         self.write('README.md', commands)
         self.write('docs/cli-and-file-contract.md', commands)
         self.write('skills/example/SKILL.md', '---\nname: example\ndescription: Test skill.\n---\n')
