@@ -1,4 +1,6 @@
 import json
+import os
+import unittest
 import subprocess
 
 from test_cli import CliHarness
@@ -53,6 +55,14 @@ class GitTrackingTests(CliHarness):
         self.git('init')
         self.invoke('git','status',expected=3)
 
+    def test_repository_path_with_spaces(self):
+        renamed = self.project.with_name('project with spaces')
+        self.project.rename(renamed)
+        self.project = renamed
+        sha = self.setup_repo()
+        self.assertEqual(self.invoke('git', 'status')['data']['head'], sha)
+
+    @unittest.skipIf(os.name == 'nt', 'Win32 paths do not preserve trailing spaces')
     def test_repository_path_with_trailing_space(self):
         renamed=self.project.with_name('project with space ')
         self.project.rename(renamed)

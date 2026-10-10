@@ -1,0 +1,2 @@
+# These fixtures carry byte-exact SHA256 references; checkout must not rewrite them.
+examples/contract-v1/** -text

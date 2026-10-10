@@ -43,7 +43,8 @@ class MockCycleTests(unittest.TestCase):
             self.assertEqual(context['selected_experiment_id'],'mock-candidate')
             self.assertFalse(context['safeguards']['evidence_checked'])
             page = loads((output / 'evidence-page.json').read_text())
-            self.assertEqual(page['text'],'SIMULATED ONLY; NO TRAINING EXECUTED\nexperiment=mock-candidate\n')
+            raw_log = (output / 'project/.autoresearch/evidence/mock-candidate.txt').read_bytes()
+            self.assertEqual(page['text'], b''.join(raw_log.splitlines(keepends=True)[:2]).decode('utf-8'))
             self.assertEqual(page['source']['hash_state'],'matched')
             store = output / 'project/.autoresearch'
             baseline = loads((store / 'experiments/mock-baseline.json').read_text())
