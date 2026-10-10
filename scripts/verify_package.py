@@ -157,6 +157,16 @@ def verify(dist: Path) -> None:
                                 actual_cost_state='unknown', budget_used=2, selected_experiment_id='reference'),
                 'Unexpected installed-package candidate lifecycle result')
         print('PASS: installed wheel + sdist candidate rationale; forecasts, observations, deferral and original preservation')
+        lineage_example = source / 'examples/mock-lineage.py'
+        require(lineage_example.is_file(), 'Source distribution is missing examples/mock-lineage.py')
+        summary = json.loads(run([str(python), '-I', str(lineage_example), '--output', str(workspace / 'lineage-cycle')],
+                                 workspace, environment))
+        require(summary == dict(simulated=True, git_linear=True, experiment_siblings=True, record_count=4,
+                                execution_count=3, correction_count=1, failed_count=1, cancelled_count=1,
+                                stale_reference_count=4, originals_preserved=True, git_head_preserved=True,
+                                training_executed=False, budget_used=2),
+                'Unexpected installed-package lineage result')
+        print('PASS: installed wheel + sdist lineage; Git history differs from experiment ancestry, originals preserved')
     print('Package verification passed; observations were synthetic and no training was requested.')
 
 

@@ -1,6 +1,6 @@
 # Git 기반 연구 이력
 
-갱신: 2026-10-04 · [제품 정의](product-direction.md)와 [CLI 계약](cli-and-file-contract.md)을 따릅니다.
+갱신: 2026-10-11 · [제품 정의](product-direction.md)와 [CLI 계약](cli-and-file-contract.md)을 따릅니다.
 
 ## 코드와 결과를 연결하는 단위
 
@@ -27,7 +27,7 @@ flowchart LR
 |---|---|
 | 코드, 작은 실행 설정, 의존성 명세 | 원본 데이터, 모델 체크포인트, 대용량 로그·예측 파일 |
 | `.autoresearch/project.json`, `program.md` | 외부에 보관한 데이터/산출물의 위치와 내용 식별자 |
-| reviews/experiments/submissions의 작은 JSON | 대회에서 받은 외부 점수와 출처 |
+| reviews/experiments/submissions/memories/candidates의 작은 JSON | 대회에서 받은 외부 점수와 출처 |
 
 잠금·임시 파일은 커밋하지 않습니다. 대상 프로젝트의 `.gitignore`에 `.autoresearch/.lock`, `.autoresearch.init.lock`, `.autoresearch-init-*/`, `.autoresearch/**/.zar-*`를 추가합니다. `.autoresearch/` 전체를 무시하면 연구 기록이 Git에 남지 않습니다. 사용자 프로젝트의 `.gitignore`는 CLI가 자동 수정하지 않습니다. 민감정보나 대회 규칙상 공개할 수 없는 데이터도 커밋하지 않습니다.
 
@@ -57,3 +57,9 @@ flowchart LR
 `zar experiment correct <old-id> --file <json>`은 같은 실행의 관측을 새 ID로 정정합니다. 입력은 `{id, revision, execution, reason, evidence}`이고 기존 레코드의 계획·코드 SHA·환경·비교 조건을 그대로 복사합니다. 현재 프로젝트 설정이나 결과 기록 커밋 SHA로 바꾸지 않습니다. 선택된 원본은 먼저 선택을 해제해야 하며, 후속 정정이 없는 succeeded/failed/interrupted만 대상입니다.
 
 원본은 바뀌지 않고 새 레코드의 correction에 원본 ID·사유·근거가 남습니다. 새 판단은 null/history []에서 시작하고 artifacts는 원본과 동일합니다. 산출물 추가는 이후 update를 사용합니다. 정정은 새 실행 예산을 쓰지 않습니다. 기존 제출과 실험 참조는 원본을 계속 가리키며 대체 사실만 표시합니다. 정정 JSON도 후속 기록 커밋에 남깁니다.
+
+## 실험 계보 읽기
+
+`zar lineage --project <root> --json`으로 저장된 실험의 parent_id(계획 파생), baseline_id(비교 기준), correction(같은 실행의 관측 정정)을 구분해 조회합니다. Mermaid가 필요하면 `--format mermaid`를 사용합니다. 실패·취소·원본을 그대로 보존하고 정정 끝점과 같은 실행의 묶음을 보여줍니다. 원래 baseline·parent 참조는 대체된 기록을 계속 가리킬 수 있으며 조회에서 자동 교체하지 않습니다.
+
+이 그래프는 JSON에 선언된 실험 관계입니다. code_ref에 Git SHA가 있어도 Git의 commit parent 관계를 읽거나 SHA의 존재·실행 일치를 검증하지 않습니다. 수동 코드 식별자와 비Git 프로젝트도 지원합니다. 후보·점검·제출·기억은 별도 그래프 노드로 확장하지 않습니다. 후보 선택 버전은 원본 실험의 candidate_id와 후보 조회에서 확인합니다. 출력 형식·정정 집계·제한은 [계보 조회 계약](experiment-lineage.md)을 따릅니다.

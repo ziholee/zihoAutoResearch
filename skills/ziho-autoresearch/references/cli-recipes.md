@@ -263,3 +263,13 @@ zar evidence read --project <target-root> --kind candidate --id <candidate-id> -
 Only call evidence read for an existing evidence element; the exploratory example above has none. Status is proposed/selected/deferred/retired. reconsideration.trigger is initial/failure/stagnation/other; reason must explain the evidence or changed conditions. expected_cost.run_seconds is a nonnegative finite number or null, never a runtime limit. CLI generates metadata and snapshots current project environment/comparison. To connect execution, add `"candidate_id": "candidate-1"` to experiment create's body and match hypothesis/parent and project conditions. Latest selected is required for creation; it does not change selected_experiment_id or authorize execution.
 
 Correct or change candidate status using a new ID and supersedes_id, preserving hypothesis/parent. Current conditions and new forecasts are saved separately; old predictions and experiment links remain unchanged. Changed hypothesis/parent requires a new chain. Retired is terminal. Consult original candidate_id on outcomes when comparing forecast with observation. Actual cost remains unknown unless separately evidenced; elapsed time is not resource use. Reassess failure/stagnation from evidence before retrying; never automatically increase experiment/time budgets.
+
+## Inspect experiment lineage
+
+```sh
+zar lineage --project <target-root> --json
+zar lineage --project <target-root> --format mermaid
+zar lineage --project <target-root> --format mermaid --json
+```
+
+Default format is json. `--json` wraps the graph in the standard response; with format mermaid, data also includes the mermaid string. Without `--json`, format mermaid emits the raw chart. This is a read-only whole-history view, without context pagination or output-byte limits. Parent, baseline and correction edges preserve original references. Corrected records are still shown, with endpoints and deduplicated logical histories; planned/cancelled histories are included, so counts do not prove actual execution or consumed budget. Evidence files and Git ancestry are not read or verified. Consult the [lineage contract](../../../docs/experiment-lineage.md) for output details.
