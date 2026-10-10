@@ -2,7 +2,7 @@
 
 상태: 구현 기준 v1 · 2026-10-11
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `lineage`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -54,6 +54,7 @@
 | `zar check` | 모든 JSON의 형식·참조·상태·근거 가용성 검사. ML 타당성을 자동 판정하는 명령이 아님 |
 | `zar context [--experiment <id>] [--limit <n>] [--offset <n>] [--max-bytes <n>] [--snapshot <hash>]` | 메타데이터만 검사한 제한된 맥락 조회. 전체 상태 집계·누락·근거 미확인 명시 |
 | `zar evidence read --kind <kind> --id <id> --pointer <pointer>` | 등록된 로컬 근거의 해시 확인과 정확한 원문 줄 조회. revision/해시 고정 및 줄·바이트 옵션 지원 |
+| `zar lineage [--format json|mermaid]` | 실험의 부모·비교 기준·정정 관계를 전체 그래프로 조회. 메타데이터 검사만 수행; [계보 조회 계약](experiment-lineage.md) |
 | `zar git status` | init 전에도 읽기 전용으로 저장소·HEAD·코드 변경과 연구 기록 변경을 조회 |
 | `zar experiment create --git-head --file <json>` | 코드 변경이 없는 HEAD를 확인해 code_ref를 git:<전체 SHA>로 대체하고 planned 기록 생성 |
 | `zar review add --file <json>` | 새 점검 기록 생성. 같은 ID의 덮어쓰기 금지 |
@@ -69,7 +70,7 @@
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
 | `zar report --output <path>` | `.autoresearch/reports/` 기준 상대 경로에 Markdown 생성. 기존 파일이 있으면 오류; `--overwrite`는 아래 소유 표식이 있는 보고서만 교체 |
 
-조회 명령의 옵션·출력 상한·핸들·오류는 [맥락과 근거 조회 계약](context-and-evidence.md)을 따릅니다. schema_version 1에는 새 필드를 요구하지 않습니다.
+`context`와 `evidence read`의 옵션·출력 상한·핸들·오류는 [맥락과 근거 조회 계약](context-and-evidence.md)을 따릅니다. schema_version 1에는 새 필드를 요구하지 않습니다.
 
 project set으로 `selected_experiment_id`를 바꿀 수 있습니다. 해당 실험이 유효하고 keep 판단이며 현재 비교 조건에 속하는지 검사합니다. 이것은 기록상 선택이며 작업 폴더의 코드를 바꾸지 않습니다. decide와 선택 갱신은 별도 한 파일 변경이므로 중간 상태에도 “keep 후보이나 아직 선택되지 않음”을 표시할 수 있습니다.
 
@@ -82,7 +83,7 @@ report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 �
 ## 4. 공통 파일 규칙
 
 - UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필수 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다. 호환 예외인 experiment.correction과 선택적 run_context는 과거 v1 레코드의 생략을 null로 취급합니다. 새 레코드에는 correction을 기록합니다.
-- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission/memory ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
+- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission/memory/candidate ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
 - 생성 입력에는 본문과 id를 제공합니다. CLI가 만드는 메타데이터는 schema_version·revision·created_at·updated_at 네 필드입니다. 실행 시각·제출 시각은 관측한 작성자가 제공하며 CLI가 추정하지 않습니다. project set/experiment update는 현재 파일 전체의 수정본을 받습니다. 수정 시 CLI가 revision을 1 증가시키고 updated_at을 갱신합니다.
 - ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실행에는 새 실험 ID를 씁니다. 실행을 다시 하지 않고 종료 관측만 정정할 때는 아래 correct 명령으로 별도의 정정 ID를 연결합니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
 - 경로는 대상 프로젝트 기준 `/` 구분 상대 경로를 기본으로 합니다. 기존 외부 데이터 경로는 절대 경로도 기록할 수 있으나 이동 시 가용성 재검사 대상입니다. 기록 경로에 `..`나 저장 폴더 밖 쓰기는 허용하지 않습니다.
@@ -249,3 +250,9 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 `candidate add` 입력은 id, supersedes_id, status, hypothesis, parent_id, analysis, evidence, exploratory_reason, expected_effect, expected_cost, uncertainty, decision_reason, reconsideration, memory_ids입니다. 메타데이터와 conditions(environment/comparison)는 CLI가 등록 당시 프로젝트에서 만듭니다. 형식·정정·조회 계약은 [후보 기록 계약](candidate-rationale.md)을 따릅니다.
 
 실험의 candidate_id가 있으면 신규 생성 시 대체되지 않은 selected 후보여야 하고 hypothesis·parent_id와 environment·comparison이 해당 후보의 원본 값과 같아야 합니다. 과거 실험은 후보가 정정된 후에도 원래 selected 버전을 가리키며 대체 경고를 표시합니다. 후보 정정은 hypothesis·parent_id를 보존하고 예측과 등록 조건을 새 기록에 남깁니다. retired는 종점입니다. 후보 선택은 실험 실행이나 프로젝트의 채택 선택을 바꾸지 않습니다. 같은 후보의 복수 실행은 기존 실험 횟수·시간 예산을 따릅니다. 기존 프로젝트의 candidates 폴더와 실험 candidate_id 생략은 허용하며 자동 마이그레이션하지 않습니다.
+
+## 실험 계보 조회
+
+`lineage`는 스키마를 추가하거나 저장된 기록을 변경하지 않습니다. 기본 `--format json`은 그래프 JSON을 출력하며 `--json`은 공통 `{ok, data, diagnostics}` 응답으로 감쌉니다. `--format mermaid`는 Mermaid 원문을 출력하고, `--format mermaid --json`은 공통 응답의 data에 그래프와 mermaid 문자열을 함께 제공합니다. 전체 그래프 조회에는 context의 페이지·바이트 제한을 적용하지 않습니다.
+
+기존 실험의 parent_id·baseline_id·correction 관계는 서로 다른 간선으로 표시합니다. 대체된 원본을 제거하거나 참조를 최신 정정본으로 바꾸지 않습니다. 실험 계보에는 실패·중단·취소·계획·상태 불명도 포함하며, 같은 실행의 정정은 별도 실행으로 중복 집계하지 않습니다. 이 집계는 실행 시작·완료 횟수나 예산 사용량이 아닙니다. 코드 식별자는 저장된 문자열이며 Git 이력·근거 해시를 조회하지 않습니다. 상세 출력과 검증 한계는 [계보 계약](experiment-lineage.md)을 따릅니다.

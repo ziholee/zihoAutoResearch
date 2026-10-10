@@ -280,6 +280,17 @@ def execute(args):
         project = read_document(store / 'project.json')
         enforce(validate_document(project, 'project'))
         snapshot = load_records(root, project)
+        if args.command == 'lineage':
+            from .lineage import build_lineage, render_mermaid
+            diagnostics = inspect_project(root, project, snapshot=snapshot, check_files=False)
+            enforce(diagnostics)
+            try:
+                data = build_lineage(project, snapshot.records)
+            except ValueError as exc:
+                reject('conflict', 'lineage', str(exc))
+            if args.format == 'mermaid':
+                data['mermaid'] = render_mermaid(data)
+            return data, diagnostics
         if args.command in ('context', 'evidence'):
             diagnostics = inspect_project(root, project, snapshot=snapshot, check_files=False)
             enforce(diagnostics)
@@ -357,6 +368,8 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
+    lineage = commands.add_parser('lineage', help='read-only experiment relations; no evidence or Git verification')
+    lineage.add_argument('--format', choices=('json', 'mermaid'), default='json')
     context = commands.add_parser('context', help='bounded metadata context; evidence files are not checked')
     context.add_argument('--experiment')
     views = context.add_mutually_exclusive_group()
@@ -414,10 +427,11 @@ def parse(arguments):
     return args
 
 
-def emit_text(text):
+def emit_text(text, *, stream=None):
     """Keep human output usable when a terminal cannot encode recorded text."""
-    encoding = getattr(sys.stdout, 'encoding', None) or 'utf-8'
-    print(text.encode(encoding, errors='backslashreplace').decode(encoding))
+    stream = sys.stdout if stream is None else stream
+    encoding = getattr(stream, 'encoding', None) or 'utf-8'
+    print(text.encode(encoding, errors='backslashreplace').decode(encoding), file=stream)
 
 
 def main(argv=None):
@@ -428,7 +442,7 @@ def main(argv=None):
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
                                  'candidate add --file <json>', 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
-                                 'report --output <relative.md> [--overwrite]',
+                                 'report --output <relative.md> [--overwrite]', 'lineage [--format json|mermaid]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
                                  'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
                                  'experiment decide <id> --file <json>', 'git status',
@@ -451,7 +465,9 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if data.get('view') in ('research_context', 'evidence_page'):
+            if data.get('view') == 'experiment_lineage':
+                emit_text(data['mermaid'].rstrip('\n') if 'mermaid' in data else dumps(data).rstrip('\n'))
+            elif data.get('view') in ('research_context', 'evidence_page'):
                 emit_text(dumps(data).rstrip('\n'))
             elif data.get('view') == 'research_report':
                 emit_text('Report: ' + data['output'])
@@ -504,5 +520,6 @@ def main(argv=None):
                 emit_text('Superseded experiments: ' + (', '.join(data['superseded_experiment_ids']) or 'none'))
                 emit_text('Next action: ' + (data['next_action'] or 'unset'))
         for item in diagnostics:
-            emit_text(f"{item['severity']}: {item['path']}: {item['message']}")
+            emit_text(f"{item['severity']}: {item['path']}: {item['message']}",
+                      stream=sys.stderr if data is not None and data.get('view') == 'experiment_lineage' else None)
     return code
