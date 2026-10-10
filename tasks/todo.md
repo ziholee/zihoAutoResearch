@@ -17,9 +17,9 @@ Current completion target is the reusable tool itself; real ML application is pe
 - [x] Implement the LLM skill and supported CLI loop (project/experiment/Git/compare/decide), with mock adoption/hold and resume checks.
 - [x] Implement review add with evidence diagnostics and append-only corrections.
 - [x] Implement submission add with artifact/result linkage and append-only corrections.
-- [ ] Implement the remaining report command.
-- [ ] Verify the complete v1 tool with sample files and simulated results; current subset passes, remaining commands pending. Do not run actual ML training or submit models.
-- [ ] Complete v1 packaging and usage instructions; CLI wheel, source-distributed skill, and mock-cycle examples are available for the implemented subset.
+- [x] Implement the report command with source mapping and confined atomic Markdown output.
+- [x] Verify the v1 command chain with sample files and simulated results through report generation, including adoption/hold and regression failure cases. No actual ML training or external submission.
+- [x] Build and verify the CLI wheel, source-distributed skill, updated instructions and complete mock-cycle examples; native Windows/Linux and real ML application remain unverified.
 
 Earlier draft completion entries are historical; they do not authorize implementing the retired execution-platform design.
 
@@ -243,3 +243,26 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - User requested skill-based verification and PR publication if successful. Applied sip and verification-before-completion; independent read-only code/contract review found no confirmed defect.
 - Fresh verification: 122 tests passed in 30.126s (/private/tmp/zar-submission-pr-tests.log); skill validator, 56 local links, template equality and diff whitespace passed. New wheel/sdist built; isolated installed-wheel smoke using source-archive fixtures passed submission registration, duplicate rejection, correction, original-byte preservation, context and check. No extra product fixes were needed.
 - Delivery scope: commit and publish codex/submission-recording as a dev-targeted PR; exclude unrelated .DS_Store. This supersedes the previous local-only delivery status. No merge, real training or external competition submission. Native Windows/Linux remain unverified.
+
+## Research report — codex/research-report
+
+- Start from merged origin/dev 1819914. Goal: complete report using canonical JSON only, without an LLM, training, external submission or inferred historical facts.
+- Plan: project-wide renderer with source fields/lineage/missing values and distinct derived comparisons; confined atomic Markdown output; failing CLI regressions then implementation; align docs/skill; full suite and end-to-end mock installed-package verification; independent review.
+- Acceptance: reports-relative .md only; no absolute/parent/symlink escape; nested parent directories must already exist; overwrite requires exact same-project first-line ownership marker; invalid records/writes leave originals unchanged. Active records precede preserved superseded records, raw evidence/array order retained, absent values explicitly missing, current selection never presented as historical workspace.
+- Completed: report renderer preserves all raw fields/arrays/evidence with JSON pointers, active and superseded records, original links and exact numeric values; missing values and unknown state are explicit. Derived compare results/elapsed time and current selection are distinguished from stored judgments/historical workspace. Markdown/HTML data is escaped without semantic interpretation.
+- CLI: report --output relative.md [--overwrite] validates the existing path chain and same-project marker, runs full record/evidence checks and atomically writes only the report. Existing user documents, linked paths, invalid records and failed replacements preserve originals. Nested parent directories must exist.
+- Integration: mock-cycle now registers scoped synthetic reviews, candidate submission artifacts and mock external results, then generates the report before final check/status. Both adoption and scope-mismatch hold preserve selection semantics and never execute the training sentinel or contact an external service.
+- Regression evidence: report CLI tests first failed on missing parser command. Initial renderer assertions were corrected to compare displayed values after entity decoding and exclude only the generated timestamp; generation is deterministic for identical records/diagnostics/time. Final suite passed 133 tests in 29.861s (/private/tmp/zar-report-final-tests.log), including 11 report tests and end-to-end mock scenarios.
+- Package/docs verification: fresh wheel/sdist built; isolated installed wheel ran both complete source-archive mock scenarios and explicit report overwrite with canonical JSON byte preservation. Official skill validator, 56 local links, template equality and diff checks passed. Independent reviewer found no functional defect; stale README wording was corrected. Escaping and sub-microsecond elapsed arithmetic received an additional regression.
+- Limits/delivery: project-wide report output is unbounded and hashes referenced evidence; use context for bounded restart. No LLM, training, actual submission or native Windows/Linux validation. Work is local on codex/research-report; no new commit, push, PR or merge in this implementation turn.
+
+## Document-driven GitHub automation — 2026-10-10
+
+- Goal: use the product definition and v1 contracts as implementation acceptance criteria, preserving the lightweight CLI/agent boundary. Include the already implemented report in the verification baseline.
+- Plan: map contracts to existing regression suites; automate portable document checks, OS/Python tests and isolated installed-package mock cycles; add review instructions and tag-triggered draft releases; verify locally and on GitHub, then require the verified gate on dev.
+- Acceptance: no runtime dependencies, real training, external submission, arbitrary quality weights or automatic merge. Failed/skipped required jobs cannot pass the aggregate gate. PR checks receive no publishing credentials. Release tags must match package version and be reachable from dev.
+- Verification: fresh unittest suite, contract checker, build and installed-wheel scenarios; independent workflow review; actual GitHub checks before claiming native platform coverage. Paid AI review remains optional and is not enabled without account confirmation.
+- Progress: portable contract checker and nine regression tests added; workflow/package verification and documentation in progress.
+- Local verification: 142 unittest tests passed in 31.753s; document contracts and isolated fresh-wheel/sdist comparable/scope-mismatch examples passed, including report overwrite preserving canonical JSON. Logs: /private/tmp/zar-automation-tests.log and /private/tmp/zar-automation-build.log.
+- Independent workflow review found no blocking issue in the aggregate gate, reusable release dependency or draft-only publishing. Removed ineffective clean-checkout git diff check. Added automation files to sdist so published documentation links remain resolvable.
+- Delivery plan: publish the report plus contract automation on a dev-targeted PR, run GitHub's OS matrix, and configure dev's required gate after actual success. No tag/release/merge is performed in this task; AI automatic review is not enabled.
