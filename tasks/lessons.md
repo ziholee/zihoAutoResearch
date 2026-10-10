@@ -48,3 +48,7 @@
 
 ## 2026-10-11 — Machine-readable graph output
 - When a human command intentionally emits reusable JSON or Mermaid, keep diagnostic warnings on stderr so valid projects with warnings still produce parseable stdout. Test the warning-bearing path, not only an empty happy-path graph.
+
+## 2026-10-11 — Installed-environment verification
+- Keep virtualenv interpreter paths lexical: resolving a symlink can select the base interpreter and lose installed dependencies. Exercise normal symlink virtualenvs on POSIX as well as native Windows environments.
+- Filter generated subdirectories relative to the canonical root, never by all absolute ancestor names. Assert preservation checks actually cover records before claiming unchanged bytes.
