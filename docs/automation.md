@@ -33,6 +33,8 @@
 
 ## 릴리스
 
+최초 v0.1.0의 파일 구성·설치·체크섬 확인·초안 공개 절차는 [배포 안내](releasing.md), 사용자 변경 내역은 [CHANGELOG](../CHANGELOG.md)를 따른다.
+
 [Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. 자동 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출은 포함하지 않는다.
 
 태그 생성·공개는 별도 릴리스 행위다. 워크플로 설정 검증만으로 실제 릴리스 성공을 주장하지 않는다. 빌드 도구는 개발 의존성이며 제품 런타임에는 추가되지 않는다.
@@ -58,3 +60,7 @@ Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트�
 ## 후속 구현 반영 — 2026-10-11
 
 [PR #14](https://github.com/ziholee/zihoAutoResearch/pull/14)의 실패 기억과 [PR #15](https://github.com/ziholee/zihoAutoResearch/pull/15)의 후보 근거가 머지되어 관련 회귀 검사와 설치 예제가 추가되었다. 계보 조회 변경에서는 JSON·Mermaid 관계 표시, 원본 보존, 정정 중복 제외, 메타데이터 조회 범위를 검사하고 설치 패키지에서도 `examples/mock-lineage.py`를 실행한다. 위 PR #13의 검사 수는 당시 기록이며 현재 테스트 수를 뜻하지 않는다. 각 변경의 실제 실행 결과는 [작업 기록](../tasks/todo.md)과 해당 PR의 CI를 기준으로 확인한다.
+
+## 계보 통합 확인 — 2026-10-11
+
+PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoResearch/actions/runs/38071425224)가 통과했다. 로컬 전체 테스트 196개와 설치 합성 시나리오 5개를 검증했으며, 계보까지 초기 기능 이슈가 모두 종료되었다. v0.1.0 배포 준비는 실제 태그 릴리스 성공을 뜻하지 않는다. 배포 검증은 wheel/sdist 메타데이터·라이선스·README·릴리스 문서 포함 여부도 검사한다.
