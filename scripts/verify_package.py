@@ -62,7 +62,7 @@ def read_json(path: Path):
 
 def canonical_bytes(store: Path) -> dict[str, bytes]:
     paths = [store / 'project.json']
-    for directory in ('reviews', 'experiments', 'submissions', 'memories'):
+    for directory in ('reviews', 'experiments', 'submissions', 'memories', 'candidates'):
         paths.extend(sorted((store / directory).glob('*.json')))
     return {path.relative_to(store).as_posix(): path.read_bytes() for path in paths}
 
@@ -149,6 +149,14 @@ def verify(dist: Path) -> None:
                                 originals_preserved=True, evidence_hash_matched=True, budget_used=2),
                 'Unexpected installed-package memory lifecycle result')
         print('PASS: installed wheel + sdist failure memory; recall, evidence, retirement and original preservation')
+        candidate_example = source / 'examples/mock-candidates.py'
+        require(candidate_example.is_file(), 'Source distribution is missing examples/mock-candidates.py')
+        summary = json.loads(run([str(python), '-I', str(candidate_example), '--output', str(workspace / 'candidate-cycle')],
+                                 workspace, environment))
+        require(summary == dict(simulated=True, deferred=1, non_improving=1, forecasts_preserved=True,
+                                actual_cost_state='unknown', budget_used=2, selected_experiment_id='reference'),
+                'Unexpected installed-package candidate lifecycle result')
+        print('PASS: installed wheel + sdist candidate rationale; forecasts, observations, deferral and original preservation')
     print('Package verification passed; observations were synthetic and no training was requested.')
 
 

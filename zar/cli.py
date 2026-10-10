@@ -16,6 +16,7 @@ from .git_tracking import snapshot, GitStateError
 from .storage import atomic_write, project_lock
 from .validation import ID, validate_document, inspect_project, readiness_missing
 from .records import RecordSnapshot, load_records
+from .candidates import prepare_add as prepare_candidate, validate_creation
 from .memories import prepare_add as prepare_memory
 from .reviews import prepare_add as prepare_review
 from .submissions import prepare_add as prepare_submission
@@ -62,9 +63,10 @@ def safe_layout(store):
         reject('conflict', store, 'Metadata directory must not be a symbolic link.')
     if not store.is_dir():
         reject('io', store, 'Project is not initialized. Run zar init.', 4)
-    optional = store / 'memories'
-    if optional.is_symlink() or (optional.exists() and not optional.is_dir()):
-        reject('conflict', optional, 'Memory storage must be an ordinary directory.')
+    for name in ('memories', 'candidates'):
+        optional = store / name
+        if optional.is_symlink() or (optional.exists() and not optional.is_dir()):
+            reject('conflict', optional, 'Optional record storage must be an ordinary directory.')
     for name in ('project.json', 'program.md', 'reviews', 'experiments', 'submissions', 'reports'):
         path = store / name
         if path.is_symlink():
@@ -99,7 +101,7 @@ def initialize(root):
         staging = root / ('.autoresearch-init-' + str(uuid4()))
         staging.mkdir(mode=0o777)  # OS applies the user's umask, as for normal directories.
         temporary = staging
-        for name in ('reviews', 'experiments', 'submissions', 'reports', 'memories'):
+        for name in ('reviews', 'experiments', 'submissions', 'reports', 'memories', 'candidates'):
             (temporary / name).mkdir()
         (temporary / 'project.json').write_text(dumps(project), encoding='utf-8')
         (temporary / 'program.md').write_text(files('zar').joinpath('program.md').read_text(encoding='utf-8'), encoding='utf-8')
@@ -151,6 +153,7 @@ def save_experiment(args, root, project, snapshot):
             if not git_state['code_clean']:
                 reject('conflict', 'git', 'Commit or set aside code/config changes before --git-head. Run zar git status.')
             candidate['code_ref'] = git_state['code_ref']
+        enforce(validate_creation(candidate, snapshot.records))
         path = store / 'experiments' / (candidate['id'] + '.json')
         if path.exists() or path.is_symlink():
             reject('conflict', path, 'Experiment ID already exists.')
@@ -191,7 +194,9 @@ def save_observation(args, root, project, snapshot):
     enforce(inspect_project(root, project, snapshot=snapshot))
     kind = args.command
     body = read_document(Path(args.file))
-    if kind == 'memory':
+    if kind == 'candidate':
+        candidate, errors = prepare_candidate(body, now(), project)
+    elif kind == 'memory':
         candidate, errors = prepare_memory(body, now(), snapshot.records['experiment'])
     else:
         prepare = prepare_review if kind == 'review' else prepare_submission
@@ -211,7 +216,7 @@ def save_observation(args, root, project, snapshot):
     proposed = RecordSnapshot(records, paths, list(snapshot.diagnostics))
     diagnostics = inspect_project(root, project, snapshot=proposed)
     enforce(diagnostics)
-    created_directory = kind == 'memory' and not path.parent.exists()
+    created_directory = kind in ('memory', 'candidate') and not path.parent.exists()
     if created_directory:
         path.parent.mkdir()
     try:
@@ -281,7 +286,7 @@ def execute(args):
             if args.command == 'context':
                 return build_context(project, snapshot.records, diagnostics, experiment=args.experiment,
                                      limit=args.limit, offset=args.offset, max_bytes=args.max_bytes,
-                                     snapshot=args.snapshot, memories=args.memories)
+                                     snapshot=args.snapshot, memories=args.memories, candidates=args.candidates)
             if not ID.fullmatch(args.id): reject('arguments', 'id', 'Invalid record ID.', 2)
             document = snapshot.records[args.kind].get(args.id)
             if document is None: reject('conflict', args.id, 'Record does not exist.')
@@ -306,7 +311,7 @@ def execute(args):
             return compare(records[args.base_id], records[args.candidate_id], records), diagnostics
         if args.command == 'experiment':
             return save_experiment(args, root, project, snapshot)
-        if args.command in ('review', 'submission', 'memory'):
+        if args.command in ('review', 'submission', 'memory', 'candidate'):
             return save_observation(args, root, project, snapshot)
         if args.command == 'report':
             return save_report(args, root, project, snapshot)
@@ -354,7 +359,9 @@ def parse(arguments):
         commands.add_parser(name)
     context = commands.add_parser('context', help='bounded metadata context; evidence files are not checked')
     context.add_argument('--experiment')
-    context.add_argument('--memories', action='store_true', help='page active failure memories instead of experiment cards')
+    views = context.add_mutually_exclusive_group()
+    views.add_argument('--candidates', action='store_true', help='page candidate intentions and linked observations')
+    views.add_argument('--memories', action='store_true', help='page active failure memories instead of experiment cards')
     context.add_argument('--limit', type=int, default=5)
     context.add_argument('--offset', type=int, default=0)
     context.add_argument('--max-bytes', type=int, default=16384)
@@ -362,7 +369,7 @@ def parse(arguments):
     evidence = commands.add_parser('evidence')
     evidence_actions = evidence.add_subparsers(dest='action', required=True, parser_class=Parser)
     reader = evidence_actions.add_parser('read')
-    reader.add_argument('--kind', choices=('experiment','review','submission','memory'), required=True)
+    reader.add_argument('--kind', choices=('experiment','review','submission','memory','candidate'), required=True)
     reader.add_argument('--id', required=True)
     reader.add_argument('--pointer', required=True)
     reader.add_argument('--revision', type=int, help='require the recorded handle revision')
@@ -377,7 +384,7 @@ def parse(arguments):
     actions = project.add_subparsers(dest='action', required=True, parser_class=Parser)
     setter = actions.add_parser('set')
     setter.add_argument('--file', required=True)
-    for kind in ('review', 'submission', 'memory'):
+    for kind in ('review', 'submission', 'memory', 'candidate'):
         observation = commands.add_parser(kind)
         observation_actions = observation.add_subparsers(dest='action', required=True, parser_class=Parser)
         observation_add = observation_actions.add_parser('add')
@@ -420,12 +427,12 @@ def main(argv=None):
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
-                                 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
+                                 'candidate add --file <json>', 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
                                  'report --output <relative.md> [--overwrite]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
                                  'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
                                  'experiment decide <id> --file <json>', 'git status',
-                                 'context [--memories] [--experiment <id>] [--limit <n>] [--offset <n>] [--max-bytes <n>] [--snapshot <hash>]',
+                                 'context [--memories | --candidates] [--experiment <id>] [--limit <n>] [--offset <n>] [--max-bytes <n>] [--snapshot <hash>]',
                                  'evidence read --kind <kind> --id <id> --pointer <pointer> [--revision <n>] [--sha256 <hash>] [--start-line <n>] [--max-lines <n>] [--max-bytes <n>]'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
@@ -463,6 +470,8 @@ def main(argv=None):
                     emit_text(category + ':')
                     for change in data[category]:
                         emit_text(change['status'] + ' ' + change['path'])
+            elif 'candidate' in data:
+                emit_text('Candidate: ' + data['candidate']['id'] + ' (' + data['candidate']['status'] + ')')
             elif 'memory' in data:
                 emit_text('Memory: ' + data['memory']['id'] + ' (' + data['memory']['status'] + ')')
             elif 'submission' in data:

@@ -41,3 +41,7 @@
 - Compare known condition leaves before classifying unknown fields. One missing device/seed must not hide a known OS/scope mismatch or raise its recall priority.
 - Provenance can reference an earlier recorded decision. Validate against preserved decision history rather than forcing the current decision to remain unchanged merely because memory exists.
 - An unsuperseded record is not necessarily active: retirement must remain explicit in both recall and reports.
+
+## 2026-10-11 — Forecast provenance across record types
+- Include every condition snapshot in comparison-ID consistency checks when adding a new record type; project/experiment-only checks can miss ID reuse through historical candidates.
+- Immutable forecast text alone does not establish a pre-execution prediction. Compare stored source-candidate and execution times, preserve retrospective recording, and disclose unknown or reversed timing without claiming external proof.

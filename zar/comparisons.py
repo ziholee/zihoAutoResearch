@@ -18,9 +18,10 @@ def exact_difference(candidate, base):
         return a - b
 
 
-def pair_reasons(base, candidate, records):
+def pair_reasons(base, candidate, records, *, superseded=None):
     reasons = []
-    superseded = superseded_ids(records.values())
+    if superseded is None:
+        superseded = superseded_ids(records.values())
     if base['id'] == candidate['id']: reasons.append('same_experiment')
     for label, doc in (('base', base), ('candidate', candidate)):
         if doc['id'] in superseded: reasons.append(label + '_superseded')
@@ -78,8 +79,9 @@ def repeat_summary(anchor, records):
                 limitation='Recorded runs only; seed independence and evidence truth are not verified.')
 
 
-def compare(base, candidate, records):
-    reasons = pair_reasons(base, candidate, records)
+def compare_pair(base, candidate, records, *, superseded=None):
+    """Compare one pair without deriving repeat aggregates."""
+    reasons = pair_reasons(base, candidate, records, superseded=superseded)
     raw = improvement = meets = None
     if not reasons:
         raw = exact_difference(candidate['execution']['score'], base['execution']['score'])
@@ -87,8 +89,13 @@ def compare(base, candidate, records):
         meets = improvement > 0 and improvement >= base['comparison']['min_delta']
     return dict(base_id=base['id'], candidate_id=candidate['id'], comparable=not reasons,
                 reasons=reasons, raw_delta=raw, improvement=improvement,
-                min_delta=base['comparison']['min_delta'], meets_min_delta=meets,
-                repeats=dict(base=repeat_summary(base,records), candidate=repeat_summary(candidate,records)))
+                min_delta=base['comparison']['min_delta'], meets_min_delta=meets)
+
+
+def compare(base, candidate, records):
+    result = compare_pair(base, candidate, records)
+    result['repeats'] = dict(base=repeat_summary(base, records), candidate=repeat_summary(candidate, records))
+    return result
 
 
 def prepare_decision(current, body, records, stamp):
