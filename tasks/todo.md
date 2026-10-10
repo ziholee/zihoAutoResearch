@@ -3,7 +3,7 @@
 ## Objective
 Build a lightweight workflow that helps an LLM understand existing ML projects, check preprocessing/training/validation, and improve the complete pipeline using existing commands and evidence-backed experiments.
 
-## Current plan — updated 2026-10-06
+## Current plan — updated 2026-10-11
 
 Current completion target is the reusable tool itself; real ML application is performed later by the user. Current scope supersedes earlier platform-oriented proposals: a lightweight LLM research workflow in existing ML projects. No Docker requirement, custom execution platform, or separate tool-quality benchmark in the initial scope. Existing data, local validation, and competition scores provide the experimental feedback.
 
@@ -19,7 +19,7 @@ Current completion target is the reusable tool itself; real ML application is pe
 - [x] Implement submission add with artifact/result linkage and append-only corrections.
 - [x] Implement the report command with source mapping and confined atomic Markdown output.
 - [x] Verify the v1 command chain with sample files and simulated results through report generation, including adoption/hold and regression failure cases. No actual ML training or external submission.
-- [x] Build and verify the CLI wheel, source-distributed skill, updated instructions and complete mock-cycle examples; native Windows/Linux and real ML application remain unverified.
+- [x] Build and verify the CLI wheel, source-distributed skill, updated instructions and complete mock-cycle examples; native Linux/Windows/macOS contract CI has passed; real ML application remains outside tool-development verification.
 
 Earlier draft completion entries are historical; they do not authorize implementing the retired execution-platform design.
 
@@ -299,3 +299,15 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - Independent review identified comparison ID reuse across candidate snapshots and retrospective forecasts without timing disclosure. Both reproduced and fixed: shared comparison identity validation preserves original files; linked outcomes expose recorded timestamp ordering with warning-only retrospective records. Focused re-review found no remaining blocker.
 - Fresh verification: 184 tests passed in 41.676s (/private/tmp/zar-candidate-full.log); documentation contracts and whitespace checks passed. Fresh wheel/sdist installed outside the repository passed all four synthetic scenarios including candidate rationale/deferral/original preservation (/private/tmp/zar-candidate-package.log). No training or external submission ran; runtime dependencies remain empty.
 - Delivery: publish codex/candidate-rationale as a dev-targeted PR closing #8 on merge; verify required GitHub CI without merging. Remaining limits: all records load into memory, author-supplied reasons/timestamps are not independent evidence, no actual ML/cost-effectiveness measurement. Preserve unrelated .DS_Store.
+
+## Experiment lineage — 2026-10-11
+
+- Goal: complete #5 on codex/experiment-lineage from merged dev 9da8912, preserving unrelated .DS_Store. Read stored experiment ancestry without a graph database, Git calls, training or source mutation.
+- Interface: zar lineage --format json|mermaid (default json); --json retains the standard result envelope, Mermaid format adds a mermaid field. Human Mermaid output is the raw chart. Whole-history metadata projection is unbounded; context remains the bounded restart tool.
+- Plan: regression-first pure deterministic graph and safe Mermaid rendering; CLI integration and read-only/error tests; installed-package synthetic lineage example with Git ancestry distinct from experiment ancestry; align contracts/skill/current progress; independent review, full suite, document/package checks, PR and required CI.
+- Acceptance: typed parent/baseline/correction edges preserve original refs, stale refs explicit, active correction endpoints and logical execution counts avoid duplicate runs; retain failed/cancelled nodes, exact code_ref without Git verification claims; reject missing references and directed ancestry cycles; legacy v1 files and canonical bytes preserved.
+- Documentation: supersede obsolete current-state claims while preserving historical logs; record completed #6/#7/#8 and CI platform evidence. Real ML and release publishing remain outside this change.
+- Implemented deterministic lineage JSON/Mermaid with typed original edges, correction endpoints and identity counts, recorded states/selection/code refs and explicit metadata-only limits. Iterative graph traversal handles long histories; labels use generated node IDs and encoded text.
+- Regression evidence: four public tests initially failed on the absent command. A warning-bearing human output test then reproduced stdout corruption; successful lineage diagnostics now use stderr, preserving JSON/chart output. Dedicated core/public suite passed 12 tests; independent implementation/docs and final example review found no remaining actionable finding.
+- Fresh verification: all 196 tests passed in 43.692s (/private/tmp/zar-lineage-full.log), documentation contracts and git diff --check passed. Fresh wheel/sdist isolated installation passed all five scenarios (/private/tmp/zar-lineage-package.log). The new example creates local Git A→B→C while recorded experiments branch a→b/a→c; preserves corrected originals/HEAD/budget, failed/cancelled states and never executes training.
+- Delivery: publish a dev-targeted PR closing #5 on merge and verify required remote CI. No merge/tag/release performed. Whole-history output/loading remains unbounded; Git object existence, actual execution, ML validity and cost improvements remain unverified by lineage.

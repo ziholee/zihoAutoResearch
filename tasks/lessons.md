@@ -45,3 +45,6 @@
 ## 2026-10-11 — Forecast provenance across record types
 - Include every condition snapshot in comparison-ID consistency checks when adding a new record type; project/experiment-only checks can miss ID reuse through historical candidates.
 - Immutable forecast text alone does not establish a pre-execution prediction. Compare stored source-candidate and execution times, preserve retrospective recording, and disclose unknown or reversed timing without claiming external proof.
+
+## 2026-10-11 — Machine-readable graph output
+- When a human command intentionally emits reusable JSON or Mermaid, keep diagnostic warnings on stderr so valid projects with warnings still produce parseable stdout. Test the warning-bearing path, not only an empty happy-path graph.

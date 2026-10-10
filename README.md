@@ -36,8 +36,9 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `lineage`, `report`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
+- [실험 계보의 JSON·Mermaid 조회](docs/experiment-lineage.md)
 - [다음 실험 후보의 근거·예상 비용·선택 이유](docs/candidate-rationale.md)
 - [실패 기억의 기록·정정·재조회](docs/failure-memory.md)
 - [맥락 조회·근거 재조회와 구조](docs/context-and-evidence.md)
@@ -214,3 +215,9 @@ zar report --project /path/to/ml-project --output summary.md --overwrite --json
 `zar candidate add --project /path/to/ml-project --file candidate-draft.json --json`으로 관측·가설·예상 효과·비용·불확실성·선택 또는 보류 이유를 기록합니다. `zar context --candidates --project /path/to/ml-project --json`은 후보의 예측과 연결된 실제 관측을 구분하여 보여줍니다. selected는 다음에 시도할 의도이며 `selected_experiment_id`의 채택 결과와 다릅니다. 실험 생성에 선택적 candidate_id를 넣으면 정확한 selected 버전과 연결합니다. 자동 점수·순위·실행·예산 확대는 하지 않습니다. 입력·정정·재평가 절차는 [후보 기록 계약](docs/candidate-rationale.md)을 따릅니다.
 
 설치 후 `python examples/mock-candidates.py --output /tmp/zar-mock-candidates`로 합성 예측·관측·보류 흐름을 확인할 수 있습니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 임시 경로를 바꿉니다. 실제 학습·비용 검증은 하지 않습니다.
+
+## 실험 계보 조회
+
+`zar lineage --project /path/to/ml-project --json`은 기존 실험 JSON에서 계획 부모·비교 기준·관측 정정 관계를 구분해 전체 그래프를 반환합니다. `zar lineage --project /path/to/ml-project --format mermaid`는 Mermaid 원문을 출력합니다. 실패·취소·정정 원본을 남기고, 정정은 같은 실행 계보로 묶어 중복 집계하지 않습니다. 집계에는 planned/cancelled도 포함되므로 실제 실행 횟수나 소비 예산으로 해석하지 않습니다.
+
+코드 식별자와 원래 참조를 표시하지만 Git 조상 관계·실제 실행·근거 파일을 검증하지는 않습니다. 전체 출력에는 크기 제한이 없으므로 제한된 재개 맥락에는 `context`를 사용합니다. [계보 조회 계약](docs/experiment-lineage.md)에서 방향·집계·한계를 확인할 수 있습니다. 설치 후 `python examples/mock-lineage.py --output /tmp/zar-mock-lineage`로 합성 이력의 JSON·Mermaid 조회와 원본 보존을 확인합니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 해당 환경의 임시 경로로 바꿉니다.
