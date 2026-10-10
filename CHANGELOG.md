@@ -1,8 +1,8 @@
 # 변경 내역
 
-## 0.1.0 — 초안 릴리스 후보
+## 0.1.0 — 2026-10-11 (KST)
 
-첫 GitHub 릴리스 후보입니다. 버전 번호는 패키지 버전이며 JSON 파일 계약의 schema_version=1과는 별개입니다. 공개 날짜와 공개 여부는 GitHub Release를 기준으로 확인합니다. 태그 생성은 공개 배포를 의미하지 않으며 초안 검증 후 유지관리자가 공개합니다.
+[첫 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)입니다. 버전 번호는 패키지 버전이며 JSON 파일 계약의 schema_version=1과는 별개입니다. 2026-10-10 17:50:40 UTC (2026-10-11 02:50:40 KST)에 공개했습니다. 태그는 검증된 커밋 5942ed6을 유지합니다.
 
 ### 제공 기능
 
