@@ -45,3 +45,9 @@ python3 scripts/verify_package.py --dist dist
 ```
 
 Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트에서 플랫폼별로 지원하지 않는 권한 검사는 skip될 수 있으므로 작업 로그의 skip 사유도 확인한다. 실제 실행 결과와 남은 제한은 [작업 기록](../tasks/todo.md)에 남긴다. 모의 검증은 실데이터 모델 선택·데이터 누수 판정·대표 성능·비용 절감을 입증하지 않는다.
+
+## 적용 확인 — 2026-10-10
+
+[PR #13](https://github.com/ziholee/zihoAutoResearch/pull/13)의 구현 커밋 `98b072d`에 대한 [GitHub 검사](https://github.com/ziholee/zihoAutoResearch/actions/runs/38060908959)가 모두 성공했다. Linux 3.11/3.14와 macOS 3.14는 각각 144개, Windows 3.14는 140개 성공·POSIX 전용 4개 skip이다. 설치 패키지의 모의 시나리오 두 개도 성공했다. 해시가 저장된 fixture는 `.gitattributes`로 checkout 줄바꿈 변환을 막고 원문 비교는 실제 바이트를 사용한다.
+
+[dev 보호 규칙](https://github.com/ziholee/zihoAutoResearch/rules/24842957)은 활성화되었다. 이는 특정 커밋의 검증 기록이며 이후 PR은 새 검사 결과를 충족해야 한다. 워크플로가 기본 브랜치에 정착하려면 PR 머지가 필요하다. 실제 태그 릴리스와 AI 자동 리뷰 활성화는 아직 수행하지 않았다.
