@@ -58,7 +58,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 배포와 라이선스
 
-v0.1.0의 첫 GitHub 배포를 준비하고 있습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. PyPI에 공개됐다고 가정하지 않으며, 아래 소스 설치 방법은 현재 사용할 수 있습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
+[v0.1.0 첫 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. PyPI에 공개됐다고 가정하지 않으며, 아래 소스 설치 방법은 현재 사용할 수 있습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
 
 ## 설치와 기본 사용
 
