@@ -26,7 +26,7 @@
 - 모든 작업이 성공해야 `Contract gate` 성공. 실패·취소·건너뛴 선행 작업은 성공으로 처리하지 않는다.
 - PR 워크플로는 읽기 권한만 사용하고 배포 비밀정보를 전달받지 않는다. Actions는 커밋 SHA로 고정한다.
 
-저장소의 dev 보호 규칙에는 실제 성공한 `Contract gate`를 필수 상태 검사로 지정한다. 워크플로 파일만 추가한다고 보호 규칙이 자동 생성되지는 않는다. 자동 머지는 설정하지 않는다. 의미·설계·문서 불일치는 [PR 양식](../.github/pull_request_template.md)과 [리뷰 지침](../.github/copilot-instructions.md)을 따라 검토한다. 지침 파일 자체는 AI 리뷰 활성화가 아니며 Copilot 이용 권한과 별도 자동 리뷰 설정이 필요하다.
+저장소의 dev 보호 규칙에는 실제 성공한 `Contract gate`를 필수 상태 검사로 지정한다. 워크플로 파일만 추가한다고 보호 규칙이 자동 생성되지는 않는다. 설정 원본은 [dev 규칙 JSON](../.github/dev-ruleset.json)이다. PR 경유·대화 해결·최신 dev 기준 검사를 요구하고 강제 push·삭제를 막는다. 단독 유지관리자의 PR이 타인 승인 부재로 막히지 않도록 필수 승인 수는 0이며, 이는 AI 리뷰나 의미 검증 통과를 뜻하지 않는다. 자동 머지는 설정하지 않는다. 의미·설계·문서 불일치는 [PR 양식](../.github/pull_request_template.md)과 [리뷰 지침](../.github/copilot-instructions.md)을 따라 검토한다. 지침 파일 자체는 AI 리뷰 활성화가 아니며 Copilot 이용 권한과 별도 자동 리뷰 설정이 필요하다.
 
 ## 릴리스
 
