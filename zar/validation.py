@@ -174,6 +174,9 @@ class Validator:
 
 
 def validate_document(doc, kind):
+    if kind == 'candidate':
+        from .candidates import validate_candidate
+        return validate_candidate(doc)
     if kind == 'memory':
         from .memories import validate_memory
         return validate_memory(doc)
@@ -188,6 +191,8 @@ def validate_document(doc, kind):
         fields[kind] += ' correction'
     if kind == 'experiment' and isinstance(doc, dict) and 'run_context' in doc:
         fields[kind] += ' run_context'
+    if kind == 'experiment' and isinstance(doc, dict) and 'candidate_id' in doc:
+        fields[kind] += ' candidate_id'
     if not v.obj(doc, META + ' ' + fields[kind], '$'): return v.errors
     if type(doc['schema_version']) is not int or doc['schema_version'] != 1: v.error('$.schema_version', 'Only schema_version 1 is supported')
     v.scalar(doc['id'], 'id', '$.id')
@@ -208,6 +213,8 @@ def validate_document(doc, kind):
         for k in ('code_ref','data_ref'): v.scalar(doc[k], 'str', '$.' + k)
         v.array(doc['items'], v.finding, '$.items', True)
     elif kind == 'experiment':
+        if 'candidate_id' in doc:
+            v.scalar(doc['candidate_id'], 'id', '$.candidate_id', True)
         if doc.get('run_context') is not None:
             v.run_context(doc['run_context'], '$.run_context')
         correction = doc.get('correction')
@@ -316,8 +323,8 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
             for i,x in enumerate(value): evidence_walk(x, f'{path}[{i}]')
 
     comparisons = {}
-    for doc in [project] + list(records['experiment'].values()):
-        comp = doc.get('comparison')
+    for doc in [project] + list(records['experiment'].values()) + list(records.get('candidate', {}).values()):
+        comp = doc.get('comparison') if 'conditions' not in doc else doc['conditions']['comparison']
         if comp:
             if comp['id'] in comparisons and comparisons[comp['id']] != comp: issue(doc, 'Comparison ID has conflicting field values')
             comparisons[comp['id']] = comp
@@ -351,7 +358,7 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
         if original is None or ref == doc['id']:
             issue(doc, 'Correction references a missing or identical experiment')
         else:
-            if any(doc[k] != original[k] for k in plan_fields) or doc.get('run_context') != original.get('run_context'):
+            if any(doc[k] != original[k] for k in plan_fields) or doc.get('run_context') != original.get('run_context') or doc.get('candidate_id') != original.get('candidate_id'):
                 issue(doc, 'Correction must retain the same execution plan')
             if doc['execution']['status'] not in terminal or original['execution']['status'] not in terminal:
                 issue(doc, 'Correction requires completed executions')
@@ -409,6 +416,8 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
         if len([d for d in docs if d['supersedes_id'] is None]) > 1: issue(docs[-1], 'Duplicate submission identity without correction')
     from .memories import validate_links
     validate_links(records, issue)
+    from .candidates import validate_links as validate_candidate_links
+    validate_candidate_links(records, issue)
     for group in records.values():
         for doc in group.values(): evidence_walk(doc, paths[doc['id']])
     return result

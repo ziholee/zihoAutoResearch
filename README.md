@@ -36,8 +36,9 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 현재 상태
 
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
+로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
 
+- [다음 실험 후보의 근거·예상 비용·선택 이유](docs/candidate-rationale.md)
 - [실패 기억의 기록·정정·재조회](docs/failure-memory.md)
 - [맥락 조회·근거 재조회와 구조](docs/context-and-evidence.md)
 - [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
@@ -116,7 +117,7 @@ zar check --project /path/to/ml-project --json
 
 CLI는 `.autoresearch/.lock`으로 동시 접근을 조정하며 잠금이 있으면 자동 삭제하지 않습니다. 중단으로 잠금이 남으면 실행 중인 CLI가 없는지 확인한 뒤 수동으로 복구합니다. `init`은 프로젝트 루트의 `.autoresearch.init.lock`을 사용합니다. CLI 밖의 동시 파일 편집은 보호하지 않습니다.
 
-`check`는 저장된 review/experiment/submission/memory 파일도 검사합니다. 파일 근거의 누락·해시 미기록·변경과 확인하지 못한 코드/데이터 최신성은 진단으로 표시하고 URL에 접속하지 않습니다. 실제 ML 실행이나 제출 없이 테스트합니다.
+`check`는 저장된 review/experiment/submission/memory/candidate 파일도 검사합니다. 파일 근거의 누락·해시 미기록·변경과 확인하지 못한 코드/데이터 최신성은 진단으로 표시하고 URL에 접속하지 않습니다. 실제 ML 실행이나 제출 없이 테스트합니다.
 
 ```sh
 python -m unittest discover -s tests -v
@@ -200,10 +201,16 @@ zar report --project /path/to/ml-project --output summary.md --json
 zar report --project /path/to/ml-project --output summary.md --overwrite --json
 ```
 
-프로젝트 전체 설정·점검·실험·제출 결과·실패 기억을 `.autoresearch/reports/summary.md`에 생성합니다. 활성 기록을 먼저 표시하고 정정된 원본도 보존해 보여줍니다. 저장된 판단과 현재 기록에서 계산한 비교 결과는 구분하며, 없는 값은 “미기록”, unknown은 “상태 불명”으로 표시합니다. 로그에서 사실을 추정하거나 LLM·Git·외부 서비스를 호출하지 않습니다. 근거 검사의 경고도 보고서에 포함합니다.
+프로젝트 전체 설정·점검·실험·제출 결과·실패 기억·후보 근거를 `.autoresearch/reports/summary.md`에 생성합니다. 활성 기록을 먼저 표시하고 정정된 원본도 보존해 보여줍니다. 저장된 판단과 현재 기록에서 계산한 비교 결과는 구분하며, 없는 값은 “미기록”, unknown은 “상태 불명”으로 표시합니다. 로그에서 사실을 추정하거나 LLM·Git·외부 서비스를 호출하지 않습니다. 근거 검사의 경고도 보고서에 포함합니다.
 
 출력은 reports 내부의 `.md` 상대 경로만 허용하며 중첩 경로의 부모 폴더는 미리 존재해야 합니다. 기존 파일은 기본적으로 보존하고, `--overwrite`도 같은 프로젝트의 보고서 표식이 있는 일반 파일만 교체합니다. 원본 JSON은 변경하지 않습니다. 보고서는 모든 기록을 포함하므로 큰 이력의 재개에는 제한된 `context`를 먼저 사용하세요.
 
 ## 구현 기준과 자동 검증
 
 문서의 요구사항과 회귀 테스트, PR 필수 검사, 리뷰 기준 및 초안 릴리스 절차는 [문서 기반 자동화](docs/automation.md)를 따릅니다. 자동 검사는 소프트웨어 계약을 확인하며 실제 ML 유효성이나 비용 절감을 대신 증명하지 않습니다.
+
+## 다음 실험 후보 기록
+
+`zar candidate add --project /path/to/ml-project --file candidate-draft.json --json`으로 관측·가설·예상 효과·비용·불확실성·선택 또는 보류 이유를 기록합니다. `zar context --candidates --project /path/to/ml-project --json`은 후보의 예측과 연결된 실제 관측을 구분하여 보여줍니다. selected는 다음에 시도할 의도이며 `selected_experiment_id`의 채택 결과와 다릅니다. 실험 생성에 선택적 candidate_id를 넣으면 정확한 selected 버전과 연결합니다. 자동 점수·순위·실행·예산 확대는 하지 않습니다. 입력·정정·재평가 절차는 [후보 기록 계약](docs/candidate-rationale.md)을 따릅니다.
+
+설치 후 `python examples/mock-candidates.py --output /tmp/zar-mock-candidates`로 합성 예측·관측·보류 흐름을 확인할 수 있습니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 임시 경로를 바꿉니다. 실제 학습·비용 검증은 하지 않습니다.

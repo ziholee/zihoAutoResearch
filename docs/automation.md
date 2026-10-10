@@ -11,9 +11,10 @@
 | 비교 조건·불명확한 근거·선택 분리 | `tests/test_comparisons.py`, `tests/test_reviews.py` | 숫자 개선만으로 유효성을 주장하지 않는가 |
 | 제한된 재개 맥락과 원문 근거 조회 | `tests/test_context.py`, `tests/test_evidence.py` | [조회 계약](context-and-evidence.md)의 경고·페이지·스냅샷 의미를 유지하는가 |
 | 실패 기억 원본·근거·조건·정정·폐기와 제한 재조회 | `tests/test_memories.py`, `tests/test_memory_core.py` | [실패 기억 계약](failure-memory.md)의 조건 일치와 실제 해결 검증을 혼동하지 않는가 |
+| 후보 근거·선택 이유·예측과 관측 분리 | `tests/test_candidates.py`, `tests/test_candidate_core.py` | [후보 기록 계약](candidate-rationale.md)의 원본 버전·재평가·예산을 지키고 예측을 실측으로 오인하지 않는가 |
 | 제출 기록과 실제 외부 제출 분리 | `tests/test_submissions.py` | artifact identity와 correction 연결을 보존하는가 |
 | 보고서 원본 필드·경로·덮어쓰기 계약 | `tests/test_reports.py` | [필드 매핑](report-field-mapping.md)에 없는 추론을 사실처럼 쓰지 않는가 |
-| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오와 실패 기억 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
+| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
 | 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
 
 이 표는 주요 요구의 추적표이며 CI는 표의 일부 검사만 선택하지 않고 전체 unittest를 실행한다. 링크 검사는 파일 존재를 확인하며 Markdown anchor나 설명의 진위를 증명하지 않는다. 스킬 검사는 기본 필수 메타데이터만 검사하고 완전한 YAML/스킬 실행 검증을 대체하지 않는다.

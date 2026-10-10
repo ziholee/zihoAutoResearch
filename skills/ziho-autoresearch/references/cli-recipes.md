@@ -230,3 +230,36 @@ zar evidence read --project <target-root> --kind memory --id <memory-id> --point
 Retain at least one exact original failure evidence object; a resolution requires a different succeeded experiment and at least one of its execution evidence objects. Active resolved memories require remedy text. Limitation is always nonempty. Metadata and failure conditions are generated from the original experiment, never the current configuration. A source may be failed/interrupted or have a current/historical discard decision. Retained historical discard evidence remains valid after a later hold/keep decision. Known environment/comparison/scope/budget mismatches prevent treating a different-condition success as its resolution; unknown conditions never establish verification. Code/config changes may be the repair; resolution seeds may differ. Missing scope/budget is resolution_scope=unknown and downgrades overall applicability. Focus-to-failure run_context matching still includes seed.
 
 Correct with a new ID and supersedes_id pointing to the active endpoint, keeping failure identity/conditions. Retire with a new status=retired record and explanation; retired is terminal and not recalled as active. Original references are never redirected after experiment correction. context marks superseded sources stale. Inspect original evidence and current conditions before reuse: matched is declared-field agreement, recorded is a stored resolution link, neither proves diagnosis or successful repair. Use next_offset and the same snapshot/focus to page active cards; switching from experiment cards starts at offset 0. Default context includes counts and recall guidance when memory exists. Full reports retain originals and retirement history.
+
+## Record the next experiment's rationale
+
+Prepare exactly these author fields; replace placeholders using observed evidence. An exploratory reason permits evidence=[] but does not establish validity.
+
+```json
+{
+  "id": "candidate-1",
+  "supersedes_id": null,
+  "status": "selected",
+  "hypothesis": "Explicit testable hypothesis",
+  "parent_id": null,
+  "analysis": "What the observation suggests and what remains unverified",
+  "evidence": [],
+  "exploratory_reason": "Why this bounded exploration is useful before evidence exists",
+  "expected_effect": "Expected observation, not a measured gain",
+  "expected_cost": {"run_seconds": null, "note": "Not measured; remain within authorized budget"},
+  "uncertainty": "What could invalidate this expectation",
+  "decision_reason": "Why try this candidate before the alternatives",
+  "reconsideration": {"trigger": "initial", "reason": "Initial bounded hypothesis"},
+  "memory_ids": []
+}
+```
+
+```sh
+zar candidate add --project <target-root> --file <candidate-draft.json> --json
+zar context --project <target-root> --candidates --json
+zar evidence read --project <target-root> --kind candidate --id <candidate-id> --pointer /evidence/0 --revision 1 --json
+```
+
+Only call evidence read for an existing evidence element; the exploratory example above has none. Status is proposed/selected/deferred/retired. reconsideration.trigger is initial/failure/stagnation/other; reason must explain the evidence or changed conditions. expected_cost.run_seconds is a nonnegative finite number or null, never a runtime limit. CLI generates metadata and snapshots current project environment/comparison. To connect execution, add `"candidate_id": "candidate-1"` to experiment create's body and match hypothesis/parent and project conditions. Latest selected is required for creation; it does not change selected_experiment_id or authorize execution.
+
+Correct or change candidate status using a new ID and supersedes_id, preserving hypothesis/parent. Current conditions and new forecasts are saved separately; old predictions and experiment links remain unchanged. Changed hypothesis/parent requires a new chain. Retired is terminal. Consult original candidate_id on outcomes when comparing forecast with observation. Actual cost remains unknown unless separately evidenced; elapsed time is not resource use. Reassess failure/stagnation from evidence before retrying; never automatically increase experiment/time budgets.
