@@ -20,7 +20,7 @@ flowchart TD
     Mutate --> JSON
 ```
 
-- `records.py`: 한 CLI 호출에서 review/experiment/submission/memory JSON을 한 번씩 읽고 검증합니다. 디스크 캐시·DB를 만들지 않습니다. 작성자가 추가한 memory JSON도 원본 기록이며 context는 별도 요약 저장소를 만들지 않습니다.
+- `records.py`: 한 CLI 호출에서 review/experiment/submission/memory/candidate JSON을 한 번씩 읽고 검증합니다. 디스크 캐시·DB를 만들지 않습니다. 작성자가 추가한 memory JSON도 원본 기록이며 context는 별도 요약 저장소를 만들지 않습니다.
 - `validation.py`: 스냅샷의 연결·정정·상태 조건을 검사합니다. 쓰기 전후 후보 검사는 같은 기록 스냅샷에 변경 후보를 겹쳐 수행하며 원본 스냅샷을 수정하지 않습니다.
 - `context.py`: 원본에서 재개에 필요한 카드와 전체 집계를 계산합니다. 결정론적 조회이며 생성형 요약·성능 판정·선택 변경을 하지 않습니다.
 - `evidence.py`: 등록된 근거의 원문을 지정한 줄 범위로 읽고 내용 식별자를 확인합니다. 해시와 발췌는 같은 스트림에서 얻습니다.
@@ -78,7 +78,7 @@ zar evidence read --project /path/to/project --kind experiment --id exp-candidat
   --pointer /execution/evidence/0 --revision 3 --start-line 1 --max-lines 80 --max-bytes 16384 --json
 ```
 
-`--kind`는 experiment/review/submission/memory입니다. memory의 근거 포인터는 `/evidence/0`처럼 지정합니다. `--pointer`는 해당 JSON의 정확한 Evidence 객체를 가리키는 JSON Pointer이며, 임의 경로 입력이나 객체 일부 문자열은 받지 않습니다. 예: `/execution/evidence/0`, `/decision/evidence/0`, `/items/0/evidence/0`. `--revision`을 주면 핸들을 받은 이후 기록이 바뀐 경우 종료 3으로 거부합니다.
+`--kind`는 experiment/review/submission/memory/candidate입니다. memory의 근거 포인터는 `/evidence/0`처럼 지정합니다. `--pointer`는 해당 JSON의 정확한 Evidence 객체를 가리키는 JSON Pointer이며, 임의 경로 입력이나 객체 일부 문자열은 받지 않습니다. 예: `/execution/evidence/0`, `/decision/evidence/0`, `/items/0/evidence/0`. `--revision`을 주면 핸들을 받은 이후 기록이 바뀐 경우 종료 3으로 거부합니다.
 
 `start-line`은 1부터, max-lines는 기본 80·최대 1000, max-bytes는 발췌 UTF-8 원문의 바이트 상한으로 기본 16384·최대 1048576입니다. **context와 달리 envelope 전체 크기는 제한하지 않습니다.**
 
@@ -104,3 +104,11 @@ SoL-Pi의 ObservationPack은 원문 접근을 보존하며 반복 출력을 줄�
 검증은 모의 기록으로 수행합니다. unknown/실패 집계 보존, 제한 출력·명시적 누락·스냅샷 충돌, 근거의 정확한 줄·해시·UTF-8 경계, 기존 full check의 변경 감지, 원본 무변경을 확인합니다. 처리 품질의 회귀를 허용하면서 출력을 줄이지 않습니다.
 
 출력 바이트는 실제 CLI 응답에서 측정합니다. provider 토큰·API 비용 절감은 별도 측정 전 주장하지 않습니다. context도 전체 JSON을 메모리에 읽고 참조 검사를 수행하며, evidence read도 매번 전체 대상 파일의 해시를 계산합니다. 기존 쓰기 명령의 전후 근거 검사 비용은 남아 있습니다. 이번 구조는 기록의 중복 파싱과 불필요한 로그 출력부터 줄이며, 더 큰 저장소의 성능은 별도 측정이 필요합니다.
+
+## 후보 근거 조회
+
+`zar context --project /path/to/project --candidates --limit 5 --max-bytes 16384 --json`은 후보 카드를 제공합니다. --memories와 배타적이며 기존 offset/snapshot/바이트 상한 계약을 그대로 따릅니다. 페이지 종류 변경 시 offset 0에서 시작합니다. 기본 context에는 후보가 있을 때 candidate_counts와 candidate_recall 안내가 포함됩니다. 집계는 total/superseded와 끝점별 proposed/selected/deferred/retired입니다. 카드 목록은 대체된 원본·retired를 제외하고 selected → proposed → deferred, 같은 상태는 created_at·ID 역순입니다. 이 순서는 작성자가 남긴 상태와 시각 순서이며 효과·가치 순위가 아닙니다.
+
+카드에는 작성자 설명의 160문자 미리보기, 예상 비용·재고 이유, 근거·실패 기억 핸들, 원래 candidate_id로 연결된 관측을 담습니다. 현재 후보와 이전 버전에 연결된 관측은 원래 candidate_id로 구분합니다. 근거·기억·관측은 각각 최대 3개와 생략 수를 제공합니다. 정정된 실험은 활성 관측 집계에서 제외하고 별도 원본 출처로 남깁니다. failed/interrupted/unknown 및 비교 가능한 non_improving 횟수는 기록에서 계산한 사실이며 같은 버그의 반복·성능 정체 원인 판정이 아닙니다. 각 관측의 forecast_timing은 후보 생성과 기록된 실행 시작 시각의 대조로 before_execution/recorded_after_execution/unknown을 표시합니다. 실행 후 작성된 후보에 연결한 관측은 경고하며, 시각 대조만으로 실제 사전 예측의 외부 증명을 주장하지 않습니다. 실제 비용의 구조화된 관측은 없으므로 actual_cost_state는 unknown입니다. 예측 비용에서 실제 비용을 추정하지 않습니다.
+
+`evidence read --kind candidate --id <id> --pointer /evidence/0 --revision 1`로 원문 근거를 확인합니다. evidence_checked/workspace_verified는 false입니다. 대체된 부모 실험·폐기 또는 대체된 실패 기억의 참조는 stale_refs로 표시하며 원래 ID를 바꾸지 않습니다. 선택·재시도 전 전체 근거와 현재 조건을 확인하는 절차는 [후보 기록 계약](candidate-rationale.md)을 따릅니다.

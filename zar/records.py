@@ -21,7 +21,7 @@ def load_records(root, project):
     from .validation import diagnostic, validate_document
 
     store = Path(root) / '.autoresearch'
-    records = {kind: {} for kind in ('review', 'experiment', 'submission', 'memory')}
+    records = {kind: {} for kind in ('review', 'experiment', 'submission', 'memory', 'candidate')}
     paths = {}
     diagnostics = []
     project_id = project.get('id') if isinstance(project, dict) else None
@@ -31,7 +31,7 @@ def load_records(root, project):
         return RecordSnapshot(records, paths, diagnostics)
     for kind, group in records.items():
         directory = store / ('memories' if kind == 'memory' else kind + 's')
-        if kind == 'memory' and not directory.exists() and not directory.is_symlink():
+        if kind in ('memory', 'candidate') and not directory.exists() and not directory.is_symlink():
             continue  # Optional extension; legacy projects need no migration.
         if directory.is_symlink() or not directory.is_dir():
             diagnostics.append(diagnostic('io', directory, 'Record directory must be an existing ordinary directory'))

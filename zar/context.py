@@ -67,9 +67,11 @@ def card(doc, corrected):
 
 
 def build_context(project, records, diagnostics, *, experiment=None, limit=5,
-                  offset=0, max_bytes=16384, snapshot=None, memories=False):
+                  offset=0, max_bytes=16384, snapshot=None, memories=False, candidates=False):
     if not 1 <= limit <= 100 or offset < 0 or not 2048 <= max_bytes <= 1048576:
         raise ContextError('arguments', 'limit: 1..100; offset: >=0; max-bytes: 2048..1048576.', 2)
+    if memories and candidates:
+        raise ContextError('arguments', 'Select only one context card view.', 2)
     experiments = records['experiment']
     if experiment is not None and experiment not in experiments:
         raise ContextError('conflict', 'Focus experiment does not exist.')
@@ -150,6 +152,22 @@ def build_context(project, records, diagnostics, *, experiment=None, limit=5,
         cards = projected[offset:offset+limit]
         data['cards'] = cards
         data['card_kind'] = 'memory'
+    candidate_records = records.get('candidate', {})
+    candidate_replaced = {doc['supersedes_id'] for doc in candidate_records.values() if doc['supersedes_id']}
+    candidate_ends = [doc for doc in candidate_records.values() if doc['id'] not in candidate_replaced]
+    if candidate_records or candidates:
+        data['candidate_counts'] = dict(total=len(candidate_records), superseded=len(candidate_replaced),
+            **{state: sum(doc['status'] == state for doc in candidate_ends) for state in ('proposed', 'selected', 'deferred', 'retired')})
+        data['candidate_recall'] = 'context --candidates: next-trial intentions and author forecasts, not observed winners.'
+    if candidates:
+        from .candidates import candidate_card, timestamp_key
+        active = sorted((doc for doc in candidate_ends if doc['status'] != 'retired'),
+                        key=lambda doc: (timestamp_key(doc['created_at']), doc['id']), reverse=True)
+        active.sort(key=lambda doc: {'selected': 0, 'proposed': 1, 'deferred': 2}[doc['status']])
+        ordering = [doc['id'] for doc in active]
+        cards = [candidate_card(doc, records) for doc in active[offset:offset+limit]]
+        data['cards'] = cards
+        data['card_kind'] = 'candidate'
     while True:
         returned = len(cards)
         next_offset = offset+returned if offset+returned < len(ordering) else None

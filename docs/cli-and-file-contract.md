@@ -2,7 +2,7 @@
 
 상태: 구현 기준 v1 · 2026-10-11
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -32,6 +32,7 @@
     experiments/<experiment-id>.json
     submissions/<submission-id>.json
     memories/<memory-id>.json # 선택적 실패 기억 확장; 기존 프로젝트는 생략 가능
+    candidates/<candidate-id>.json # 선택적 후보 근거 확장; 기존 프로젝트는 생략 가능
     reports/                 # 요청 시 생성하는 파생 Markdown
 ```
 
@@ -61,6 +62,8 @@
 | `zar experiment correct <id> --file <json>` | 종료 관측의 오기를 원본 보존 정정 레코드로 기록. 새 ID·원본 revision·새 execution·reason·evidence 필수 |
 | `zar experiment compare <base-id> <candidate-id>` | 로컬 비교 조건을 검사하고 차이 표시. 코드 변경·판단 저장 없음 |
 | `zar experiment decide <id> --file <json>` | revision·판단·근거·후속 행동을 담은 입력으로 판단 저장. keep/discard가 실제 파일을 변경하지 않음 |
+| `zar candidate add --file <json>` | 후보 관측·예측·선택 이유를 불변 기록으로 추가. [후보 기록 계약](candidate-rationale.md) |
+| `zar context --candidates` | 후보별 작성자 예측·연결 관측을 제한 조회. --memories와 동시 사용 불가 |
 | `zar memory add --file <json>` | 작성한 실패 기억을 불변 기록으로 추가. 정정·폐기는 새 ID와 supersedes_id 사용; [실패 기억 계약](failure-memory.md) |
 | `zar context --memories` | 활성 실패 기억 카드를 제한된 크기로 조회. 기존 context의 강조·페이지·스냅샷 인자 지원 |
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
@@ -102,7 +105,7 @@ review/submission의 supersedes_id는 같은 종류의 존재하는 활성 기�
 | `selected_experiment_id` | string 또는 null. 같은 프로젝트의 유효한 keep 실험 |
 | `next_action` | string 또는 null. 재개할 작업 요약 |
 
-Comparison은 `{id, dataset_ref, split_ref, metric, direction, evaluation_ref, min_delta}`입니다. 모든 값은 비어 있지 않은 string이며 direction은 `minimize|maximize`, min_delta만 0 이상 number입니다. dataset_ref·split_ref·evaluation_ref는 해당 버전/내용을 구분할 수 있는 식별자입니다. 비교 ID만 같고 실제 필드가 다르면 충돌입니다.
+Comparison은 `{id, dataset_ref, split_ref, metric, direction, evaluation_ref, min_delta}`입니다. 모든 값은 비어 있지 않은 string이며 direction은 `minimize|maximize`, min_delta만 0 이상 number입니다. dataset_ref·split_ref·evaluation_ref는 해당 버전/내용을 구분할 수 있는 식별자입니다. 비교 ID만 같고 실제 필드가 다르면 충돌입니다. 이 전역 일관성 검사는 후보의 conditions.comparison도 포함합니다.
 
 Command는 `{name, argv, cwd}`입니다. name은 `train|validate|predict|other`, argv는 비어 있지 않은 string 배열, cwd는 string입니다. CLI는 이 명령을 실행하거나 셸로 해석하지 않습니다.
 
@@ -137,6 +140,7 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 | `comparison`, `environment` | 생성 시 project.json에서 복사. 이후 불변 |
 | `code_ref`, `config_ref` | string. 실행할 코드/설정 상태 식별자 |
 | `command` | Command. 실행에 사용할 명령의 사본 |
+| `candidate_id` | 선택적 string 또는 null. 실행 준비 시 선택한 정확한 후보 버전. 생성 후 불변·정정에도 보존 |
 | `review_ids` | string 배열. 존재하는 점검 기록 참조 |
 | `run_context` | 선택적 `{scope, seed, budget_ref}` 또는 null. 생성 시 선언하는 실행 조건; 생략은 미기록 |
 | `execution` | 아래 Execution 객체 |
@@ -239,3 +243,9 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 [Git 연구 이력 계약](git-research-history.md)을 따릅니다. schema_version 1의 code_ref 문자열을 유지하고 Git 연결 실험에는 `git:<전체 커밋 SHA>`를 사용합니다. `--git-head` 없는 수동 식별자는 기존과 같이 허용하지만 Git 검증을 의미하지 않습니다. Git 조회 명령은 project.json 초기화 전에도 사용할 수 있습니다.
 
 코드·설정 커밋 → planned 기록 → 기존 환경 실행 → 결과·판단 기록 커밋 순서입니다. 결과 기록 커밋 SHA를 JSON 안에 자기 참조로 넣지 않습니다. CLI는 자동 커밋·브랜치 전환·되돌리기·push를 수행하지 않고 실행 시점의 코드 일치를 보증하지 않습니다. check는 JSON 계약과 근거 파일을 검사하며 과거 Git SHA의 존재 여부를 검증하는 기능은 아직 없습니다.
+
+## 후보 근거 확장: candidates/<id>.json
+
+`candidate add` 입력은 id, supersedes_id, status, hypothesis, parent_id, analysis, evidence, exploratory_reason, expected_effect, expected_cost, uncertainty, decision_reason, reconsideration, memory_ids입니다. 메타데이터와 conditions(environment/comparison)는 CLI가 등록 당시 프로젝트에서 만듭니다. 형식·정정·조회 계약은 [후보 기록 계약](candidate-rationale.md)을 따릅니다.
+
+실험의 candidate_id가 있으면 신규 생성 시 대체되지 않은 selected 후보여야 하고 hypothesis·parent_id와 environment·comparison이 해당 후보의 원본 값과 같아야 합니다. 과거 실험은 후보가 정정된 후에도 원래 selected 버전을 가리키며 대체 경고를 표시합니다. 후보 정정은 hypothesis·parent_id를 보존하고 예측과 등록 조건을 새 기록에 남깁니다. retired는 종점입니다. 후보 선택은 실험 실행이나 프로젝트의 채택 선택을 바꾸지 않습니다. 같은 후보의 복수 실행은 기존 실험 횟수·시간 예산을 따릅니다. 기존 프로젝트의 candidates 폴더와 실험 candidate_id 생략은 허용하며 자동 마이그레이션하지 않습니다.

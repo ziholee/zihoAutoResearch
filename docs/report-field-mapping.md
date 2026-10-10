@@ -51,3 +51,7 @@
 Evidence의 `kind/ref/locator/sha256`을 함께 표시합니다. 선택적 근거가 문서·로그의 내용을 연결하면 그 참조 위치를 표시합니다. 전용 값 필드가 없으면 참조와 JSON의 note/reason 원문만 보여주고 구조화된 값은 미기록으로 둡니다. 로그를 읽어 의미를 추론하는 것은 보고서 생성기의 역할이 아닙니다. 이를 위해 새 필수 JSON 필드를 추가하지 않습니다. 사용자 전달·해시 누락·파일 부재는 검증 한계로 표시합니다.
 
 보고서 생성 시각은 실행 관측 시각이 아닙니다. 지금 확인한 Git 상태, 선택 ID, 프로세스 상태로 과거 실행 직전 상태·시드·보류 위치를 채우지 않습니다. 과거 provenance가 없으면 미기록을 유지합니다. 보고서는 기존 ID 참조와 전체 정정 계보를 보존하며 활성 끝점·대체된 기록을 구분합니다.
+
+## 후보의 예측과 연결 관측
+
+`C`는 `.autoresearch/candidates/<id>.json`입니다. 보고서는 id·메타데이터·supersedes_id·status·hypothesis·parent_id·analysis·evidence·exploratory_reason·expected_effect·expected_cost·uncertainty·decision_reason·reconsideration·memory_ids·conditions를 원본 JSON Pointer와 함께 표시합니다. 대체·폐기된 후보와 정정 계보도 보존합니다. 실험의 `E.candidate_id`는 선택 근거의 정확한 원본이며 후보별 연결 실험도 그 ID를 사용합니다. 정정 끝점으로 바꾸지 않습니다. 기대 효과·예상 비용은 작성자의 예측이고 실제 점수·실행 상태는 연결 실험의 관측입니다. 기대와 실제의 차이를 임의의 비용 점수나 인과 결론으로 만들지 않습니다. candidate의 selected는 실행할 의도이며 P.selected_experiment_id의 채택 결과와 다릅니다.
