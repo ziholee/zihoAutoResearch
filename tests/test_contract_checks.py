@@ -19,7 +19,7 @@ class ContractChecksTests(unittest.TestCase):
             (self.root / folder).mkdir(parents=True)
         # Explicit documented command fixture: do not generate expectations from
         # the checker, so a new real command must update this coverage fixture.
-        commands = '`init` `project set` `status` `check` `review add` `submission add` '
+        commands = '`init` `project set` `status` `check` `review add` `submission add` `memory add` '
         commands += '`report` `experiment create` `git status` `context` `evidence read`\n'
         self.write('README.md', commands)
         self.write('docs/cli-and-file-contract.md', commands)

@@ -202,3 +202,31 @@ zar report --project <target-root> --output summary.md --overwrite --json
 The output is relative to `.autoresearch/reports/` and must end in `.md`; nested parents must already exist. Absolute paths, parent traversal and symlinks in the output path are rejected. An existing file needs --overwrite and the exact first-line ownership marker for this project. User documents and other projects' reports are not overwritten. The command holds the project lock and atomically writes only the derived report.
 
 The report includes project settings, all reviews/experiments/submissions, original source fields/evidence, active/superseded lineage, saved decisions and separately labeled computed comparisons. Absent values show 미기록 and unknown execution shows 상태 불명. Current selection is not proof of historical workspace state. Full evidence validation runs first; warnings are retained in the report, errors prevent output. No logs are semantically interpreted, and no LLM, Git or external service is called. Reports are not output-size bounded; use context for a bounded restart view. JSON success data contains view=research_report, output, project_id and generated_at.
+
+## Record and recall a failure memory
+
+Use a memory-capable CLI; older projects without a memories directory need no migration. Prepare exactly these author fields (all placeholders require real recorded evidence):
+
+```json
+{
+  "id": "memory-failure-1",
+  "supersedes_id": null,
+  "status": "active",
+  "cause": "Author explanation supported by the failure observation",
+  "remedy": null,
+  "limitation": "No successful resolution observed; cause remains limited to these conditions",
+  "evidence": [{"kind": "file", "ref": "logs/failure.txt", "locator": "lines 1-5", "sha256": null}],
+  "failure_experiment_id": "exp-failure-1",
+  "resolution_experiment_id": null
+}
+```
+
+```sh
+zar memory add --project <target-root> --file <memory-draft.json> --json
+zar context --project <target-root> --memories --experiment <focus-id> --json
+zar evidence read --project <target-root> --kind memory --id <memory-id> --pointer /evidence/0 --revision 1 --json
+```
+
+Retain at least one exact original failure evidence object; a resolution requires a different succeeded experiment and at least one of its execution evidence objects. Active resolved memories require remedy text. Limitation is always nonempty. Metadata and failure conditions are generated from the original experiment, never the current configuration. A source may be failed/interrupted or have a current/historical discard decision. Retained historical discard evidence remains valid after a later hold/keep decision. Known environment/comparison/scope/budget mismatches prevent treating a different-condition success as its resolution; unknown conditions never establish verification. Code/config changes may be the repair; resolution seeds may differ. Missing scope/budget is resolution_scope=unknown and downgrades overall applicability. Focus-to-failure run_context matching still includes seed.
+
+Correct with a new ID and supersedes_id pointing to the active endpoint, keeping failure identity/conditions. Retire with a new status=retired record and explanation; retired is terminal and not recalled as active. Original references are never redirected after experiment correction. context marks superseded sources stale. Inspect original evidence and current conditions before reuse: matched is declared-field agreement, recorded is a stored resolution link, neither proves diagnosis or successful repair. Use next_offset and the same snapshot/focus to page active cards; switching from experiment cards starts at offset 0. Default context includes counts and recall guidance when memory exists. Full reports retain originals and retirement history.

@@ -117,19 +117,21 @@ def render_report(project, records, diagnostics, generated_at):
                   '파일 검사는 근거의 의미적 진실성이나 과거 실행 일치를 보장하지 않습니다.', '',
                   _table(diagnostics) if diagnostics else '기록된 검증 진단 없음.', ''])
 
-    for kind, title in (('experiment', '실험'), ('review', '점검'), ('submission', '제출')):
-        group = records[kind]
+    for kind, title in (('experiment', '실험'), ('review', '점검'), ('submission', '제출'), ('memory', '실패 기억')):
+        group = records.get(kind, {})
         lines.extend([f'## {title} 기록', '', '활성 기록을 먼저 표시하며 대체된 원본도 보존합니다.', ''])
         if not group:
             lines.extend(['미기록', ''])
-        for identifier in sorted(group, key=lambda key: (key in replacements[kind], key)):
+        for identifier in sorted(group, key=lambda key: (key in replacements.get(kind, {}), key)):
             doc = group[identifier]
-            replaced_by = replacements[kind].get(identifier, [])
+            replaced_by = replacements.get(kind, {}).get(identifier, [])
+            directory = 'memories' if kind == 'memory' else kind + 's'
             lines.extend([f'<a id="{_anchor(kind, identifier)}"></a>', '',
                           f'### {title}: {_text(identifier)}', '',
-                          '출처: ' + _text(f'.autoresearch/{kind}s/{identifier}.json'), '',
+                          '출처: ' + _text(f'.autoresearch/{directory}/{identifier}.json'), '',
                           ('대체됨: ' + ', '.join(_reference(kind, item, records) for item in replaced_by)
-                           if replaced_by else '활성 기록 (대체 기록 없음)'), ''])
+                           if replaced_by else '폐기된 기억 (정정 끝점)' if kind == 'memory' and doc['status'] == 'retired'
+                           else '활성 기록 (대체 기록 없음)'), ''])
             if kind == 'experiment':
                 execution = doc['execution']
                 decision = doc.get('decision') or {}
@@ -153,6 +155,11 @@ def render_report(project, records, diagnostics, generated_at):
                               _table(compare(base, doc, group)) if base else '미기록 (연결된 비교 기준 없음)', ''])
             elif kind == 'review':
                 lines.extend(['점검 당시 코드·데이터를 기록합니다. 현재 상태와의 일치 및 최신성은 미확인입니다.', ''])
+            elif kind == 'memory':
+                lines.extend(['작성자 요약이며 해결의 인과관계·현재 적용 가능성은 미검증입니다.', '',
+                              '기억 상태: ' + _text(doc['status']), '',
+                              '실패 원본: ' + _reference('experiment', doc['failure_experiment_id'], records), '',
+                              '해결 관측 원본: ' + _reference('experiment', doc['resolution_experiment_id'], records), ''])
             else:
                 original = records['experiment'].get(doc['experiment_id'])
                 lines.extend(['연결 원본 실험: ' + _reference('experiment', doc['experiment_id'], records), '',

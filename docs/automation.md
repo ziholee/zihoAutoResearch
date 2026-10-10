@@ -10,9 +10,10 @@
 | JSON 원본 보존, 원자적 저장, 상태 전이 | `tests/test_experiments.py`, `tests/test_records.py`, `tests/test_review_fixes.py` | 실패 후 원본과 선택 상태가 유지되는가 |
 | 비교 조건·불명확한 근거·선택 분리 | `tests/test_comparisons.py`, `tests/test_reviews.py` | 숫자 개선만으로 유효성을 주장하지 않는가 |
 | 제한된 재개 맥락과 원문 근거 조회 | `tests/test_context.py`, `tests/test_evidence.py` | [조회 계약](context-and-evidence.md)의 경고·페이지·스냅샷 의미를 유지하는가 |
+| 실패 기억 원본·근거·조건·정정·폐기와 제한 재조회 | `tests/test_memories.py`, `tests/test_memory_core.py` | [실패 기억 계약](failure-memory.md)의 조건 일치와 실제 해결 검증을 혼동하지 않는가 |
 | 제출 기록과 실제 외부 제출 분리 | `tests/test_submissions.py` | artifact identity와 correction 연결을 보존하는가 |
 | 보고서 원본 필드·경로·덮어쓰기 계약 | `tests/test_reports.py` | [필드 매핑](report-field-mapping.md)에 없는 추론을 사실처럼 쓰지 않는가 |
-| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 예제 두 시나리오 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
+| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오와 실패 기억 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
 | 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
 
 이 표는 주요 요구의 추적표이며 CI는 표의 일부 검사만 선택하지 않고 전체 unittest를 실행한다. 링크 검사는 파일 존재를 확인하며 Markdown anchor나 설명의 진위를 증명하지 않는다. 스킬 검사는 기본 필수 메타데이터만 검사하고 완전한 YAML/스킬 실행 검증을 대체하지 않는다.
@@ -50,4 +51,4 @@ Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트�
 
 [PR #13](https://github.com/ziholee/zihoAutoResearch/pull/13)의 구현 커밋 `98b072d`에 대한 [GitHub 검사](https://github.com/ziholee/zihoAutoResearch/actions/runs/38060908959)가 모두 성공했다. Linux 3.11/3.14와 macOS 3.14는 각각 144개, Windows 3.14는 140개 성공·POSIX 전용 4개 skip이다. 설치 패키지의 모의 시나리오 두 개도 성공했다. 해시가 저장된 fixture는 `.gitattributes`로 checkout 줄바꿈 변환을 막고 원문 비교는 실제 바이트를 사용한다.
 
-[dev 보호 규칙](https://github.com/ziholee/zihoAutoResearch/rules/24842957)은 활성화되었다. 이는 특정 커밋의 검증 기록이며 이후 PR은 새 검사 결과를 충족해야 한다. 워크플로가 기본 브랜치에 정착하려면 PR 머지가 필요하다. 실제 태그 릴리스와 AI 자동 리뷰 활성화는 아직 수행하지 않았다.
+[dev 보호 규칙](https://github.com/ziholee/zihoAutoResearch/rules/24842957)은 활성화되었다. 이는 특정 커밋의 검증 기록이며 이후 PR은 새 검사 결과를 충족해야 한다. PR #13은 머지되었으며 워크플로는 기본 브랜치에 반영되었다. 실제 태그 릴리스와 AI 자동 리뷰 활성화는 아직 수행하지 않았다.
