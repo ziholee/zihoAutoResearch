@@ -174,6 +174,9 @@ class Validator:
 
 
 def validate_document(doc, kind):
+    if kind == 'memory':
+        from .memories import validate_memory
+        return validate_memory(doc)
     v = Validator()
     fields = {'project':'name objective comparison environment commands budget editable_paths selected_experiment_id next_action',
               'review':'supersedes_id code_ref data_ref items',
@@ -270,7 +273,7 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
             error['path'] = str(path) + ':' + error['path']
         result.extend(errors)
         if not errors:
-            if (isinstance(project, dict) and proposed_id == project.get('id')) or any(proposed_id in records[kind] for kind in ('review', 'submission')):
+            if (isinstance(project, dict) and proposed_id == project.get('id')) or any(proposed_id in group for kind, group in records.items() if kind != 'experiment'):
                 result.append(diagnostic('conflict', path, 'Duplicate record ID'))
             records['experiment'][proposed_id] = experiment
             paths[proposed_id] = path
@@ -404,6 +407,8 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
         tuples.setdefault(key, []).append(doc)
     for docs in tuples.values():
         if len([d for d in docs if d['supersedes_id'] is None]) > 1: issue(docs[-1], 'Duplicate submission identity without correction')
+    from .memories import validate_links
+    validate_links(records, issue)
     for group in records.values():
         for doc in group.values(): evidence_walk(doc, paths[doc['id']])
     return result

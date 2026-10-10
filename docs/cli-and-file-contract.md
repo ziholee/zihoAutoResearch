@@ -1,8 +1,8 @@
 # v1 사용 흐름·CLI·파일 계약
 
-상태: 구현 기준 v1 · 2026-10-07
+상태: 구현 기준 v1 · 2026-10-11
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
 
 ## 1. 역할과 사용자 경험
 
@@ -31,6 +31,7 @@
     reviews/<review-id>.json
     experiments/<experiment-id>.json
     submissions/<submission-id>.json
+    memories/<memory-id>.json # 선택적 실패 기억 확장; 기존 프로젝트는 생략 가능
     reports/                 # 요청 시 생성하는 파생 Markdown
 ```
 
@@ -60,6 +61,8 @@
 | `zar experiment correct <id> --file <json>` | 종료 관측의 오기를 원본 보존 정정 레코드로 기록. 새 ID·원본 revision·새 execution·reason·evidence 필수 |
 | `zar experiment compare <base-id> <candidate-id>` | 로컬 비교 조건을 검사하고 차이 표시. 코드 변경·판단 저장 없음 |
 | `zar experiment decide <id> --file <json>` | revision·판단·근거·후속 행동을 담은 입력으로 판단 저장. keep/discard가 실제 파일을 변경하지 않음 |
+| `zar memory add --file <json>` | 작성한 실패 기억을 불변 기록으로 추가. 정정·폐기는 새 ID와 supersedes_id 사용; [실패 기억 계약](failure-memory.md) |
+| `zar context --memories` | 활성 실패 기억 카드를 제한된 크기로 조회. 기존 context의 강조·페이지·스냅샷 인자 지원 |
 | `zar submission add --file <json>` | 이미 확인된 제출 결과 기록. 외부 서비스 호출·제출 없음 |
 | `zar report --output <path>` | `.autoresearch/reports/` 기준 상대 경로에 Markdown 생성. 기존 파일이 있으면 오류; `--overwrite`는 아래 소유 표식이 있는 보고서만 교체 |
 
@@ -76,7 +79,7 @@ report의 `--output`은 `summary.md`처럼 reports 폴더 안의 `.md` 상대 �
 ## 4. 공통 파일 규칙
 
 - UTF-8 JSON, 객체 하나, `schema_version: 1`. 알 수 없는 필드·중복 키·NaN·Infinity는 거부합니다. 각 필드 표의 필수 필드는 모두 존재하며 미정값은 허용한 곳에서만 null입니다. 호환 예외인 experiment.correction과 선택적 run_context는 과거 v1 레코드의 생략을 null로 취급합니다. 새 레코드에는 correction을 기록합니다.
-- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
+- 모든 레코드는 `id`(소문자 영문/숫자/하이픈, 1~64자), `revision`(1 이상 정수), `created_at`, `updated_at`(UTC RFC 3339)을 가집니다. 프로젝트 ID는 init이 생성하고, review/experiment/submission/memory ID는 작성자가 지정합니다. UUID는 init의 생성 방식이며 공통 ID 검증의 필수 형식이 아닙니다. 따라서 예제의 `project-demo`도 유효합니다. CLI는 공통 형식·중복·경로 이탈을 검사합니다.
 - 생성 입력에는 본문과 id를 제공합니다. CLI가 만드는 메타데이터는 schema_version·revision·created_at·updated_at 네 필드입니다. 실행 시각·제출 시각은 관측한 작성자가 제공하며 CLI가 추정하지 않습니다. project set/experiment update는 현재 파일 전체의 수정본을 받습니다. 수정 시 CLI가 revision을 1 증가시키고 updated_at을 갱신합니다.
 - ID와 created_at, 실험의 계획 필드는 불변입니다. updated_at은 CLI가 갱신하며 실행 시각은 상태 전이에 따라 설정합니다. 이미 설정한 실행 시각은 수정하지 않습니다. 새 실행에는 새 실험 ID를 씁니다. 실행을 다시 하지 않고 종료 관측만 정정할 때는 아래 correct 명령으로 별도의 정정 ID를 연결합니다. review/submission은 생성 후 불변이며 정정은 새 ID와 `supersedes_id`로 연결합니다. 대체된 기록도 보존합니다.
 - 경로는 대상 프로젝트 기준 `/` 구분 상대 경로를 기본으로 합니다. 기존 외부 데이터 경로는 절대 경로도 기록할 수 있으나 이동 시 가용성 재검사 대상입니다. 기록 경로에 `..`나 저장 폴더 밖 쓰기는 허용하지 않습니다.
@@ -201,6 +204,10 @@ decide는 `{revision, decision}`을 검증하고 decision_history에 시각과 �
 
 submission add 입력은 생성 메타데이터를 제외한 위 제출 필드 전부와 id만 받으며 submitted_at/observed_at도 필수입니다. 실험은 succeeded여야 하며 artifact의 path/sha256은 해당 실험의 role=submission 산출물과 정확히 일치해야 합니다. 따라서 제출 파일을 먼저 experiment update로 등록합니다. 파일이 존재하면 해시를 확인하고 불일치는 거부합니다. 외부로 이동해 파일이 없으면 등록된 해시와 제출 출처로 연결하되 현재 파일 확인 불가를 표시합니다.
 
+### 실패 기억 확장
+
+`memory add`는 `id`, `supersedes_id`, `status`, `cause`, `remedy`, `limitation`, `evidence`, `failure_experiment_id`, `resolution_experiment_id`를 받습니다. 생성 메타데이터와 실패 당시 conditions는 CLI가 원본 실험에서 만듭니다. 기존 프로젝트의 memories 폴더 부재는 정상이며 마이그레이션하지 않습니다. 이 확장의 관리·검사에는 memory 명령을 지원하는 새 CLI를 사용합니다. 정정은 실패 실험과 조건을 보존하고, retired는 정정 계보의 종점입니다. 근거·조건·폐기 규칙은 [실패 기억 계약](failure-memory.md)을 따릅니다.
+
 ## 9. 저장·충돌·복구
 
 쓰기 명령은 프로젝트 단위 잠금을 잡고 검증 후 같은 파일시스템의 임시 파일을 원자적으로 교체합니다. 각 명령은 원본 파일 하나만 갱신합니다. 오류 시 대상 원본은 그대로 둡니다. 잠금을 얻지 못하면 자동 삭제하지 않고 충돌을 보고합니다.
@@ -222,6 +229,8 @@ init은 완성된 임시 디렉터리를 옮겨 초기화를 완료하고, 기�
 - report 재생성과 JSON 원본 일관성, 중간 쓰기 실패 시 원본 보존.
 - reports 밖 경로·링크 경로·표식 없는 파일 덮어쓰기 거부, 동일 프로젝트 보고서의 명시적 교체.
 - 모든 명령을 샘플 파일·가짜 로그·가짜 점수로 검증. 실제 학습·외부 제출·LLM API 호출 불필요.
+
+- 실패 기억의 필수 한계·실패/해결 근거, 원본 보존 정정·폐기, 조건 불일치·미확인, 제한된 재조회와 근거 원문 접근을 모의 기록으로 확인.
 
 각 파일의 완성 형태는 [예제 폴더](../examples/contract-v1/README.md)에 둡니다. 예제 수치는 모의 데이터이며 실행된 ML 결과가 아닙니다. 현재 CLI 검증 코드는 이 계약의 파일 형식·참조·정적 상태 조건을 검사합니다. 실험 생성·실행 갱신의 상태 전이와 비교·판정은 구현했습니다. [실행 가능한 모의 예제](../examples/mock-cycle.py)는 점검 등록부터 기준·후보 기록·비교·판단·선택·모의 제출 결과·보고서를 연결합니다. 보고서 명령도 구현했습니다. 별도의 JSON Schema 배포 파일은 아직 없습니다.
 

@@ -1,6 +1,6 @@
 # 보고서 필드와 JSON 원본 매핑
 
-갱신: 2026-10-07 · [보고서 양식](../templates/experiment.md) · [v1 계약](cli-and-file-contract.md)
+갱신: 2026-10-11 · [보고서 양식](../templates/experiment.md) · [v1 계약](cli-and-file-contract.md)
 
 `report`는 프로젝트 전체 JSON에서 Markdown을 생성합니다. 원본 필드는 경로와 함께 표시하고, 파생 비교·기록된 경과 시간은 저장 필드와 구분합니다. 활성 기록을 먼저 표시하되 대체된 기록과 전체 정정 계보도 남깁니다. `E`는 대상 `experiments/<id>.json`, `P`는 `project.json`, `R`은 `E.review_ids`로 찾은 review, `S`는 `S.experiment_id == E.id`인 submission입니다. 배열은 원본 순서를 보존합니다. 원본 문자열은 Markdown/HTML 구문으로 실행되지 않게 이스케이프하며 표시되는 값은 보존합니다. 생성 시각을 제외한 결과는 동일한 기록·진단에서 재현됩니다. Evidence는 kind/ref/locator/sha256을 그대로 표시하며 임의의 외부 문서·로그에서 값을 자동 추출하지 않습니다. 정정 계보는 전체 같은 종류의 JSON을 조회해 계산합니다.
 
@@ -41,6 +41,10 @@
 | 제출 점수 종류·지표·방향·값·확인·출처 | `S.competition`, `.leaderboard`, `.metric`, `.direction`, `.score`, `.observed_at`, `.evidence[]` |
 | 로컬과 제출 차이 관측·가설 | `S.evidence[]`, `E.decision.evidence[]`에 명시된 관측·해석만 출처와 함께 표시. 별도 가설 필드는 없고 인과관계를 자동 생성하지 않음 |
 | 제출 정정 계보·연결 실험 대체 여부 | `S.supersedes_id`, 다른 submission의 `supersedes_id == S.id`, 연결된 원래 실험을 대체하는 correction 존재 여부 |
+
+## 실패 기억 원본
+
+`M`은 `.autoresearch/memories/<id>.json`입니다. 보고서는 M의 모든 필드를 JSON Pointer와 함께 표시합니다. id·메타데이터, supersedes_id, status, cause/remedy/limitation, failure_experiment_id/resolution_experiment_id, conditions(environment/comparison/code_ref/config_ref), evidence 배열을 원문 값으로 보존합니다. 대체 여부·정정 계보와 원래 실험 참조를 표시하며 retired도 보고서에서 삭제하지 않습니다. 해결 기록과 검증된 해결책을 구분하고 현재 폴더로 과거 조건을 보완하지 않습니다. context의 applicability는 재개용 파생 대조이며 저장된 원인이나 해결의 증명이 아닙니다.
 
 ## 근거와 과거 상태
 

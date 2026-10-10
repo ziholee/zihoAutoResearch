@@ -67,7 +67,7 @@ def card(doc, corrected):
 
 
 def build_context(project, records, diagnostics, *, experiment=None, limit=5,
-                  offset=0, max_bytes=16384, snapshot=None):
+                  offset=0, max_bytes=16384, snapshot=None, memories=False):
     if not 1 <= limit <= 100 or offset < 0 or not 2048 <= max_bytes <= 1048576:
         raise ContextError('arguments', 'limit: 1..100; offset: >=0; max-bytes: 2048..1048576.', 2)
     experiments = records['experiment']
@@ -117,6 +117,12 @@ def build_context(project, records, diagnostics, *, experiment=None, limit=5,
     compact_diagnostics = [dict(severity=severity, code=code, path='.autoresearch',
                                message=f'{count} occurrence(s); run check for full evidence diagnostics.')
                            for (severity,code),count in sorted(diagnostic_counts.items())]
+    memory_records = records.get('memory', {})
+    replaced = {doc['supersedes_id'] for doc in memory_records.values() if doc['supersedes_id']}
+    active_memories = [doc for doc in memory_records.values() if doc['id'] not in replaced and doc['status'] == 'active']
+    memory_counts = dict(total=len(memory_records), active=len(active_memories),
+                         retired=sum(doc['id'] not in replaced and doc['status'] == 'retired' for doc in memory_records.values()),
+                         superseded=len(replaced))
     cards = [card(experiments[identifier], corrected) for identifier in ordering[offset:offset+limit]]
     data = dict(view='research_context', snapshot_id=identity, project_id=project['id'], revision=project['revision'],
                 project_source='.autoresearch/project.json', program_source='.autoresearch/program.md',
@@ -132,6 +138,18 @@ def build_context(project, records, diagnostics, *, experiment=None, limit=5,
                 cards=cards, truncated_fields=fields,
                 diagnostic_counts=[dict(severity=s,code=c,count=n) for (s,c),n in sorted(diagnostic_counts.items())],
                 page={}, omissions={})
+    if memory_records or memories:
+        data['memory_counts'] = memory_counts
+        data['memory_recall'] = 'context --memories: recorded summaries, not verified remedies; use the same focus and snapshot.'
+    if memories:
+        from .memories import memory_card
+        ordered = sorted(active_memories, key=lambda doc: (datetime.fromisoformat(doc['created_at'].replace('Z', '+00:00')), doc['id']), reverse=True)
+        projected = [memory_card(doc, experiments, anchor, corrected=corrected) for doc in ordered]
+        projected.sort(key=lambda item: {'matched': 0, 'unknown': 1, 'mismatch': 2}[item['applicability']])
+        ordering = [item['id'] for item in projected]
+        cards = projected[offset:offset+limit]
+        data['cards'] = cards
+        data['card_kind'] = 'memory'
     while True:
         returned = len(cards)
         next_offset = offset+returned if offset+returned < len(ordering) else None
