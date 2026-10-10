@@ -322,3 +322,9 @@ Completion: malformed inputs and conflicting updates preserve originals; existin
 - Verification: 196 tests passed in 43.356s (/private/tmp/zar-release-prep-tests.log); document contracts and diff whitespace passed. Fresh build validated wheel/sdist metadata, README/license bytes and source release documents, followed by all five installed synthetic scenarios. A wheel with the license removed was independently rejected.
 - Independent review found no blocking defect. Removed redundant exact version/backend literals in the packaging gate so future valid version updates remain possible; artifact metadata must match source metadata. Clarified that final CHANGELOG edits also require PR/CI before tagging.
 - Final package rebuild includes those review refinements. Delivery is a dev PR only, MIT adoption remains reviewable there. No tag, draft/public release or PyPI upload performed; no assertion of real ML quality or exhaustive third-party provenance audit.
+
+## v0.1.0 draft release execution — 2026-10-11
+
+- User approved checking post-merge CI, creating v0.1.0 and producing a verified draft release without publication. PR #17 merged at 7c0f49d; no pre-existing tag or release was found.
+- Follow the release guide: finalize CHANGELOG candidate wording via PR/CI before the immutable tag, then confirm the final dev commit gate, create the tag without force, wait for Draft release, download all three assets and verify checksums and installed metadata/scenarios. Keep draft=true and provide a pre-publication briefing.
+- MIT adoption is approved. Final wording removes a soon-stale no-tag claim; it does not claim public release. Preserve unrelated .DS_Store.
