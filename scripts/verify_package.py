@@ -62,7 +62,7 @@ def read_json(path: Path):
 
 def canonical_bytes(store: Path) -> dict[str, bytes]:
     paths = [store / 'project.json']
-    for directory in ('reviews', 'experiments', 'submissions'):
+    for directory in ('reviews', 'experiments', 'submissions', 'memories'):
         paths.extend(sorted((store / directory).glob('*.json')))
     return {path.relative_to(store).as_posix(): path.read_bytes() for path in paths}
 
@@ -141,6 +141,14 @@ def verify(dist: Path) -> None:
             require(report.is_file() and report.stat().st_size > 0, f'{scenario}: regenerated report is empty')
             require(not list(output.rglob('TRAINING_WAS_EXECUTED')), f'{scenario}: training marker was created')
             print(f'PASS: installed wheel + sdist {scenario}; report preserves canonical JSON')
+        memory_example = source / 'examples/mock-memory.py'
+        require(memory_example.is_file(), 'Source distribution is missing examples/mock-memory.py')
+        summary = json.loads(run([str(python), '-I', str(memory_example), '--output', str(workspace / 'memory-cycle')],
+                                 workspace, environment))
+        require(summary == dict(simulated=True, memory_counts=dict(total=3, active=0, retired=1, superseded=2),
+                                originals_preserved=True, evidence_hash_matched=True, budget_used=2),
+                'Unexpected installed-package memory lifecycle result')
+        print('PASS: installed wheel + sdist failure memory; recall, evidence, retirement and original preservation')
     print('Package verification passed; observations were synthetic and no training was requested.')
 
 

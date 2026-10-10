@@ -36,3 +36,8 @@
 - A fixture containing stored hashes must preserve bytes at Git checkout; disable text conversion for those fixture paths instead of weakening evidence validation or recalculating trusted expectations.
 - Build byte-sensitive test evidence with write_bytes and compare retrieved excerpts to original bytes, including CRLF. Text-mode I/O may translate line endings on Windows.
 - Separate POSIX-only FIFO/trailing-space cases from portable directory/symlink/space-path tests. Skip only the unsupported primitive with an explicit reason and retain native OS coverage.
+
+## 2026-10-11 — Partial condition evidence and historical judgments
+- Compare known condition leaves before classifying unknown fields. One missing device/seed must not hide a known OS/scope mismatch or raise its recall priority.
+- Provenance can reference an earlier recorded decision. Validate against preserved decision history rather than forcing the current decision to remain unchanged merely because memory exists.
+- An unsuperseded record is not necessarily active: retirement must remain explicit in both recall and reports.
