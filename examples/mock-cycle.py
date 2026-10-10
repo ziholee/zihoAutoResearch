@@ -69,7 +69,7 @@ class MockCycle:
                          'identify its bytes; they do not claim Git or execution verification. '
                          'Comparison settings and next action are in project.json.\n')
 
-    def observe(self, identifier, score, scope, baseline=None):
+    def observe(self, identifier, score, scope, baseline=None, *, candidate_id=None):
         # This file is a sentinel, not a model; invoking it would leave a marker.
         source = (f'# Synthetic code identity: {identifier}\n'
                   'from pathlib import Path\n'
@@ -94,6 +94,8 @@ class MockCycle:
             config_ref='synthetic-config-v1', command=self.read('project.json')['commands'][0],
             review_ids=[review_id], run_context=dict(scope=scope, seed=42, budget_ref='mock-60-seconds-v1'),
         )
+        if candidate_id is not None:
+            plan['candidate_id'] = candidate_id
         self.cli('experiment', 'create', '--file', self.draft(identifier + '-plan.json', plan))
         document = self.read(f'experiments/{identifier}.json')
         start = '2026-01-01T00:02:00Z' if baseline else '2026-01-01T00:00:00Z'
