@@ -1,6 +1,6 @@
 # v0.1.0 설치와 배포 준비
 
-이 문서는 첫 배포를 위한 절차입니다. 릴리스가 이미 공개됐다는 뜻은 아닙니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [작업 기록](../tasks/todo.md)을 함께 확인합니다.
+[v0.1.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)은 2026-10-11 KST에 공개했습니다. 아래에는 설치 방법과 재사용할 유지관리 절차를 기록합니다. 이미 존재하는 v0.1.0 태그를 다시 생성하거나 이동하지 않습니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [작업 기록](../tasks/todo.md)을 함께 확인합니다.
 
 ## 배포 형태
 
