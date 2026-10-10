@@ -24,6 +24,12 @@ Serialize CLI calls against the same project: read commands also acquire its coo
 
 Keep the reusable loop small: one hypothesis, bounded execution, observed result and explicit decision per iteration. Use original records as memory; do not create a second status ledger or expand a persistent orchestration service. Invocation-scoped snapshots do not guarantee that another process cannot change files. Preserve verification and unknown-state handling even when minimizing output.
 
+## Recall and maintain failure memories
+
+When context reports active memories, call `context --memories` with the same experiment focus before execution or reusing a remedy. Follow next_offset/snapshot for omitted cards; inspect original memory and experiment records, evidence through `evidence read --kind memory`, and applicability against actual current conditions. matched means declared fields agree, not verified diagnosis or workspace state. Unknown, mismatched or superseded-source observations require reassessment; never reuse retired records as active guidance.
+
+Record a supported failure explanation with `memory add` using the recipe. Distinguish the author’s causal explanation from observed repair: a succeeded resolution experiment plus retained evidence records an observation, not proof of causality or generality. Keep a nonempty limitation. Corrections and retirement create new IDs with supersedes_id and preserve originals; retirement is terminal within that chain. Do not silently redirect original experiment references. Older projects need no migration, but use a memory-capable CLI when managing this extension.
+
 ## Understand and prepare
 
 Fill the project interpretation in `.autoresearch/program.md`: prediction unit/time, target meaning, preprocessing/training/validation/inference flow, evidence locations, data time/group structure, uncertainties, and the code/data versions inspected. Keep metric, budget, commands, selection and next action in `project.json`, not duplicated prose values. Write a separate current-revision draft for `project set`; never edit stored JSON to bypass validation.

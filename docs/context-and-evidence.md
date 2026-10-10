@@ -1,6 +1,6 @@
 # 맥락 조회와 근거 재조회
 
-갱신: 2026-10-07 · 구현된 CLI 계약. [제품 정의](product-direction.md)의 가벼운 연구 루프를 유지합니다.
+갱신: 2026-10-11 · 구현된 CLI 계약. [제품 정의](product-direction.md)의 가벼운 연구 루프를 유지합니다.
 
 ## 구조와 책임
 
@@ -20,7 +20,7 @@ flowchart TD
     Mutate --> JSON
 ```
 
-- `records.py`: 한 CLI 호출에서 review/experiment/submission JSON을 한 번씩 읽고 검증합니다. 디스크 캐시·DB·새 기억 원본을 만들지 않습니다.
+- `records.py`: 한 CLI 호출에서 review/experiment/submission/memory JSON을 한 번씩 읽고 검증합니다. 디스크 캐시·DB를 만들지 않습니다. 작성자가 추가한 memory JSON도 원본 기록이며 context는 별도 요약 저장소를 만들지 않습니다.
 - `validation.py`: 스냅샷의 연결·정정·상태 조건을 검사합니다. 쓰기 전후 후보 검사는 같은 기록 스냅샷에 변경 후보를 겹쳐 수행하며 원본 스냅샷을 수정하지 않습니다.
 - `context.py`: 원본에서 재개에 필요한 카드와 전체 집계를 계산합니다. 결정론적 조회이며 생성형 요약·성능 판정·선택 변경을 하지 않습니다.
 - `evidence.py`: 등록된 근거의 원문을 지정한 줄 범위로 읽고 내용 식별자를 확인합니다. 해시와 발췌는 같은 스트림에서 얻습니다.
@@ -41,9 +41,10 @@ zar context --project /path/to/project --experiment exp-candidate --offset <next
 
 | 인자 | 동작 |
 |---|---|
+| `--memories` | 실험 카드 대신 활성 실패 기억 카드 조회. 나머지 페이지·바이트·강조·스냅샷 계약 동일 |
 | `--experiment` | 강조할 실험 ID. 생략하면 현재 선택을 기준으로 조회 |
-| `--limit` | 페이지의 최대 실험 카드 수. 기본 5, 1~100 |
-| `--offset` | 정렬된 실험 목록의 시작 위치. 기본 0, 음수 금지 |
+| `--limit` | 페이지의 최대 카드 수. 기본 5, 1~100 |
+| `--offset` | 선택한 카드 목록의 시작 위치. 기본 0, 음수 금지 |
 | `--max-bytes` | 성공한 JSON envelope 전체와 개행의 상한. 기본 16384, 2048~1048576 |
 | `--snapshot` | 이전 응답의 snapshot_id. 기록이 바뀌었으면 종료 3으로 거부 |
 
@@ -64,6 +65,12 @@ zar context --project /path/to/project --experiment exp-candidate --offset <next
 
 context는 모든 기록의 형식·참조·상태를 검사하지만 근거/산출물 파일 존재·해시는 확인하지 않습니다. `evidence_not_checked` 경고를 항상 반환하므로 근거가 유효하다고 해석할 수 없습니다. JSON이 손상됐거나 선택·baseline 연결이 잘못되면 기존 종료 코드로 실패합니다. 설정 미완료는 ready:false와 missing으로 조회할 수 있습니다.
 
+### 실패 기억 조회
+
+기억이 있으면 기본 context에도 memory_counts(total/active/retired/superseded)와 memory_recall 안내가 포함됩니다. `context --memories`의 카드 목록은 대체되지 않은 active 기억만 포함하며, 전체 applicability의 matched → unknown → mismatch 순, 각 그룹은 created_at·ID 역순입니다. 강조 실험을 생략하면 현재 선택을 기준으로 선언 조건을 대조하고 기준이 없으면 unknown입니다. 오래된 정정 원본을 참조하는 기억은 mismatch로 표시합니다. 원본 실험 참조를 최신 정정본으로 바꾸지 않습니다.
+
+카드는 작성자의 원인·대응·한계 미리보기, 원본 실패/해결 실험 참조, recorded/unresolved 해결 상태, 조건별 대조, stale_source, 최대 3개 근거 핸들을 제공합니다. recorded는 성공 실행 연결이 기록되었다는 뜻이며 검증된 해결책이라는 뜻이 아닙니다. resolution_scope는 실패와 해결 실행의 scope/budget 대조이며 미기록 조건은 다른 알려진 불일치가 없을 때 전체 applicability를 unknown으로 낮춥니다. 알려진 불일치는 미기록 필드보다 우선합니다. evidence_checked/workspace_verified는 false입니다. 원문과 적용 한계는 [실패 기억 계약](failure-memory.md)을 확인합니다. 페이지 종류를 바꾸면 offset은 0에서 다시 시작하고 같은 강조 조건과 snapshot을 유지합니다.
+
 ## evidence read 명령
 
 ```sh
@@ -71,7 +78,7 @@ zar evidence read --project /path/to/project --kind experiment --id exp-candidat
   --pointer /execution/evidence/0 --revision 3 --start-line 1 --max-lines 80 --max-bytes 16384 --json
 ```
 
-`--kind`는 experiment/review/submission입니다. `--pointer`는 해당 JSON의 정확한 Evidence 객체를 가리키는 JSON Pointer이며, 임의 경로 입력이나 객체 일부 문자열은 받지 않습니다. 예: `/execution/evidence/0`, `/decision/evidence/0`, `/items/0/evidence/0`. `--revision`을 주면 핸들을 받은 이후 기록이 바뀐 경우 종료 3으로 거부합니다.
+`--kind`는 experiment/review/submission/memory입니다. memory의 근거 포인터는 `/evidence/0`처럼 지정합니다. `--pointer`는 해당 JSON의 정확한 Evidence 객체를 가리키는 JSON Pointer이며, 임의 경로 입력이나 객체 일부 문자열은 받지 않습니다. 예: `/execution/evidence/0`, `/decision/evidence/0`, `/items/0/evidence/0`. `--revision`을 주면 핸들을 받은 이후 기록이 바뀐 경우 종료 3으로 거부합니다.
 
 `start-line`은 1부터, max-lines는 기본 80·최대 1000, max-bytes는 발췌 UTF-8 원문의 바이트 상한으로 기본 16384·최대 1048576입니다. **context와 달리 envelope 전체 크기는 제한하지 않습니다.**
 
