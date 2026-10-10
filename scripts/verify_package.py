@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 from decimal import Decimal
+from email import policy
+from email.parser import BytesParser
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -12,7 +14,9 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import tomllib
 import venv
+import zipfile
 
 
 def require(condition: bool, message: str) -> None:
@@ -67,6 +71,57 @@ def canonical_bytes(store: Path) -> dict[str, bytes]:
     return {path.relative_to(store).as_posix(): path.read_bytes() for path in paths}
 
 
+def verify_release_metadata(wheel: Path, source: Path, checkout: Path) -> None:
+    """Check the shipped metadata, license and release instructions themselves."""
+    for relative in ('pyproject.toml', 'README.md', 'LICENSE', 'CHANGELOG.md', 'docs/releasing.md'):
+        shipped = source / relative
+        require(shipped.is_file(), f'Source distribution is missing {relative}')
+        require(shipped.read_bytes() == (checkout / relative).read_bytes(),
+                f'Source distribution contains stale {relative}')
+    project_file = tomllib.loads((source / 'pyproject.toml').read_text(encoding='utf-8'))
+    project = project_file['project']
+    expected = {'name': 'ziho-autoresearch', 'requires-python': '>=3.11',
+                'dependencies': [], 'license': 'MIT', 'license-files': ['LICENSE'], 'readme': 'README.md'}
+    for key, value in expected.items():
+        require(project.get(key) == value, f'Unexpected release project metadata: {key}')
+    urls = project['urls']
+    require(set(urls) == {'Repository', 'Issues', 'Documentation'}, 'Missing release project URLs')
+    for value in urls.values():
+        require(isinstance(value, str)
+                and (value == 'https://github.com/ziholee/zihoAutoResearch'
+                     or value.startswith('https://github.com/ziholee/zihoAutoResearch/')),
+                f'Unexpected release project URL: {value}')
+    readme = (source / 'README.md').read_text(encoding='utf-8').strip()
+    require(bool(readme), 'Release README must not be empty')
+    metadata_fields = {'Name': project['name'], 'Version': project['version'],
+                       'Requires-Python': project['requires-python'], 'License-Expression': project['license'],
+                       'Description-Content-Type': 'text/markdown'}
+    with zipfile.ZipFile(wheel) as bundle:
+        metadata_paths = [name for name in bundle.namelist() if name.endswith('.dist-info/METADATA')]
+        require(len(metadata_paths) == 1, 'Wheel must contain exactly one distribution METADATA')
+        wheel_metadata = BytesParser(policy=policy.default).parsebytes(bundle.read(metadata_paths[0]))
+        source_metadata = BytesParser(policy=policy.default).parsebytes((source / 'PKG-INFO').read_bytes())
+        for label, metadata in (('wheel', wheel_metadata), ('sdist', source_metadata)):
+            require(tuple(int(part) for part in metadata.get('Metadata-Version', '0').split('.')) >= (2, 4),
+                    f'{label}: PEP 639-capable metadata version expected')
+            for key, value in metadata_fields.items():
+                require(metadata.get_all(key) == [value], f'{label}: unexpected {key} metadata')
+            require(not metadata.get_all('Requires-Dist'), f'{label}: runtime dependencies must remain empty')
+            require(metadata.get_all('License-File') == ['LICENSE'], f'{label}: missing LICENSE metadata reference')
+            require(sorted(metadata.get_all('Project-URL', []))
+                    == sorted(f'{key}, {value}' for key, value in urls.items()),
+                    f'{label}: project URL metadata differs from pyproject.toml')
+            require(metadata.get_payload(decode=True).decode('utf-8').strip() == readme,
+                    f'{label}: README body differs from source')
+        require(wheel_metadata['Metadata-Version'] == source_metadata['Metadata-Version'],
+                'Wheel and source metadata versions differ')
+        license_path = str(PurePosixPath(metadata_paths[0]).parent / 'licenses' / 'LICENSE')
+        require(license_path in bundle.namelist(), 'Wheel is missing the referenced LICENSE file')
+        require(bundle.read(license_path) == (source / 'LICENSE').read_bytes(),
+                'Wheel LICENSE differs from source distribution')
+    print('PASS: wheel/sdist release metadata, README, MIT license and release documentation')
+
+
 def verify(dist: Path) -> None:
     dist = dist.resolve()
     wheels = sorted(dist.glob('*.whl'))
@@ -94,6 +149,7 @@ def verify(dist: Path) -> None:
         require(site.is_relative_to(virtual.resolve()) and module.is_relative_to(site),
                 f'zar was not imported from the fresh environment site-packages: {module}')
         source = unpack_source(sources[0], workspace / 'source')
+        verify_release_metadata(wheels[0], source, checkout)
         example = source / 'examples/mock-cycle.py'
         require(example.is_file(), 'Source distribution is missing examples/mock-cycle.py')
         require((source / 'skills/ziho-autoresearch/SKILL.md').is_file(),
@@ -176,7 +232,8 @@ def main() -> int:
     arguments = parser.parse_args()
     try:
         verify(arguments.dist)
-    except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, subprocess.TimeoutExpired) as exc:
+    except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, zipfile.BadZipFile,
+            subprocess.TimeoutExpired) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         return 1
     return 0
