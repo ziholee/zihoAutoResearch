@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from importlib.resources import files
 import os
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 import shutil
 import sys
 from uuid import uuid4
@@ -18,6 +18,7 @@ from .validation import ID, validate_document, inspect_project, readiness_missin
 from .records import RecordSnapshot, load_records
 from .reviews import prepare_add as prepare_review
 from .submissions import prepare_add as prepare_submission
+from .reporting import render_report
 from .context import build_context, ContextError
 from .evidence import read_evidence, EvidenceError
 
@@ -206,6 +207,36 @@ def save_observation(args, root, project, snapshot):
     return {kind: candidate}, diagnostics
 
 
+def save_report(args, root, project, snapshot):
+    reports = root / '.autoresearch' / 'reports'
+    relative = Path(args.output)
+    if (not args.output or relative.is_absolute() or PureWindowsPath(args.output).drive
+            or '\\' in args.output or '..' in relative.parts or relative.suffix != '.md'):
+        reject('conflict', args.output, 'Report output must be a reports-relative .md path without parent traversal.')
+    current = reports
+    for part in relative.parts[:-1]:
+        current = current / part
+        if current.is_symlink() or not current.is_dir():
+            reject('conflict', current, 'Report parent must be an existing ordinary directory.')
+    path = reports / relative
+    if path.is_symlink() or (path.exists() and not path.is_file()):
+        reject('conflict', path, 'Report destination must be an ordinary file.')
+    marker = f"<!-- zar-report:v1 project_id={project['id']} -->"
+    if path.exists():
+        if not args.overwrite:
+            reject('conflict', path, 'Report exists; use --overwrite for a report owned by this project.')
+        with path.open('rb') as stream:
+            first = stream.readline(len(marker.encode('utf-8')) + 3)
+        if first.rstrip(b'\r\n') != marker.encode('utf-8'):
+            reject('conflict', path, 'Only reports with this project ownership marker may be overwritten.')
+    diagnostics = inspect_project(root, project, snapshot=snapshot)
+    enforce(diagnostics)
+    stamp = now()
+    rendered = render_report(project, snapshot.records, diagnostics, stamp)
+    atomic_write(path, rendered)
+    return dict(view='research_report', output=str(path), project_id=project['id'], generated_at=stamp), diagnostics
+
+
 def inspect_git(root):
     try:
         return snapshot(root)
@@ -258,6 +289,8 @@ def execute(args):
             return save_experiment(args, root, project, snapshot)
         if args.command in ('review', 'submission'):
             return save_observation(args, root, project, snapshot)
+        if args.command == 'report':
+            return save_report(args, root, project, snapshot)
         if args.command == 'project':
             candidate = read_document(Path(args.file))
             enforce(validate_document(candidate, 'project'))
@@ -317,6 +350,9 @@ def parse(arguments):
     reader.add_argument('--start-line', type=int, default=1)
     reader.add_argument('--max-lines', type=int, default=80)
     reader.add_argument('--max-bytes', type=int, default=16384)
+    report = commands.add_parser('report')
+    report.add_argument('--output', required=True)
+    report.add_argument('--overwrite', action='store_true')
     project = commands.add_parser('project')
     actions = project.add_subparsers(dest='action', required=True, parser_class=Parser)
     setter = actions.add_parser('set')
@@ -365,6 +401,7 @@ def main(argv=None):
         if json_mode and ('--help' in arguments or '-h' in arguments):
             data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
                                  'review add --file <json>', 'submission add --file <json>',
+                                 'report --output <relative.md> [--overwrite]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
                                  'experiment correct <id> --file <json>', 'experiment compare <base-id> <candidate-id>',
                                  'experiment decide <id> --file <json>', 'git status',
@@ -389,6 +426,8 @@ def main(argv=None):
         if data is not None:
             if data.get('view') in ('research_context', 'evidence_page'):
                 emit_text(dumps(data).rstrip('\n'))
+            elif data.get('view') == 'research_report':
+                emit_text('Report: ' + data['output'])
             elif 'comparable' in data:
                 emit_text('Comparable: ' + ('yes' if data['comparable'] else 'no'))
                 emit_text('Reasons: ' + (', '.join(data['reasons']) or 'none'))
