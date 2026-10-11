@@ -52,3 +52,7 @@
 ## 2026-10-11 — Installed-environment verification
 - Keep virtualenv interpreter paths lexical: resolving a symlink can select the base interpreter and lose installed dependencies. Exercise normal symlink virtualenvs on POSIX as well as native Windows environments.
 - Filter generated subdirectories relative to the canonical root, never by all absolute ancestor names. Assert preservation checks actually cover records before claiming unchanged bytes.
+
+## 2026-10-11 — Measure shared ancestry work
+- Deep linked records can turn per-record validation into repeated quadratic ancestor walks. Profile the full command, then retain cycle-tail and diagnostic-order semantics with invocation-scoped memoization; use operation-count regressions rather than CI timing thresholds.
+- Before/after benchmarks must share fixture bytes/paths, timing method and bytecode-cache state. Record individual trials and per-child peak RSS; unchanged output and input hashes are part of the performance claim. Do not equate bounded output with bounded memory.
