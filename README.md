@@ -62,7 +62,7 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 설치와 기본 사용
 
-Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. 저장소에서 가상환경을 만든 뒤 설치합니다.
+Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 현재 공개 wheel과 향후 PyPI 설치 경로를 확인하세요. 개발 버전 0.2.0은 아직 배포하지 않았으며, [PyPI 자동화](docs/pypi-publishing.md)는 설정 완료 후에만 활성화합니다. 저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
 
 ```sh
 python -m venv .venv
@@ -78,7 +78,7 @@ zar status --project /path/to/ml-project
 
 ### LLM 스킬 사용
 
-스킬은 이 저장소와 소스 배포본의 `skills/ziho-autoresearch/` 폴더로 배포합니다. `references/`를 포함한 폴더 전체가 한 단위이며, 외부 저장소 파일 없이 절차와 CLI 입력 방법을 읽을 수 있습니다. wheel은 CLI를 설치하며 스킬을 포함하거나 에이전트의 전역 설정에 자동 설치하지 않습니다. 소스 체크아웃 또는 압축 해제한 소스 배포본을 보관하고 기존 에이전트에 다음처럼 경로를 지정해 사용하세요.
+스킬 원본은 `skills/ziho-autoresearch/`이며 `references/`를 포함한 폴더 전체가 한 단위입니다. 0.2.0 개발본부터 wheel에도 같은 파일을 포함합니다. `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 새 폴더에 설치하고 반환된 `SKILL.md` 경로를 에이전트에 알려주세요. 기존 폴더를 덮어쓰거나 전역 설정에 자동 등록하지 않습니다. 자세한 갱신 절차는 [스킬 설치 안내](docs/uv-installation.md)를 따릅니다. 공개 v0.1.1에서는 기존처럼 소스 배포본의 스킬 폴더를 사용합니다. 소스 스킬을 직접 사용할 때는 다음처럼 경로를 지정합니다.
 
 > `/absolute/path/to/zihoAutoResearch/skills/ziho-autoresearch/SKILL.md`를 읽고 `/absolute/path/to/ml-project`를 점검해줘. 우선 실행 없이 프로젝트 해석과 누락 정보를 정리해줘.
 
