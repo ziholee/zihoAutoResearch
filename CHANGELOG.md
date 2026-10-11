@@ -1,8 +1,8 @@
 # 변경 내역
 
-## 0.1.1
+## 0.1.1 — 2026-10-11 (KST)
 
-공개 여부는 [GitHub Releases](https://github.com/ziholee/zihoAutoResearch/releases)에서 확인합니다.
+[v0.1.1](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.1)을 2026-10-11 07:14:48 UTC (16:14:48 KST)에 공개했습니다. 태그는 검증된 커밋 a00e941을 유지합니다.
 
 - 공개 v0.1.0 배포본과 문서만으로 설치·기록·중단·재개를 독립 검증했습니다. 실제 학습은 실행하지 않았습니다.
 - 초안 디렉터리를 먼저 생성하도록 안내하고 근거 조회 종류 설명에 memory/candidate를 반영합니다.
