@@ -137,7 +137,7 @@ def verify(dist: Path) -> None:
         checkout = Path(__file__).resolve().parents[1]
         require(not workspace.is_relative_to(checkout), 'Package verification must run outside the checkout')
         virtual = workspace / 'venv'
-        venv.EnvBuilder(with_pip=True).create(virtual)
+        venv.EnvBuilder(with_pip=True, symlinks=(os.name != 'nt')).create(virtual)
         python = virtual / ('Scripts/python.exe' if os.name == 'nt' else 'bin/python')
         run([str(python), '-I', '-m', 'pip', 'install', '--no-index', '--no-deps',
              '--disable-pip-version-check', str(wheels[0])], workspace, environment)
@@ -223,6 +223,37 @@ def verify(dist: Path) -> None:
                                 training_executed=False, budget_used=2),
                 'Unexpected installed-package lineage result')
         print('PASS: installed wheel + sdist lineage; Git history differs from experiment ancestry, originals preserved')
+        resume_example = source / 'examples/mock-resume.py'
+        require(resume_example.is_file(), 'Source distribution is missing examples/mock-resume.py')
+        for scope in ('full', 'proxy'):
+            # Exercise record preservation even with a drafts-named ancestor.
+            target = workspace / 'drafts' / ('resume-' + scope)
+            # Separate harness invocations discard all in-memory state at the checkpoint.
+            run([str(python), '-I', str(resume_example), 'prepare', '--root', str(target),
+                 '--scope', scope], workspace, environment)
+            run([str(python), '-I', str(resume_example), 'resume', '--root', str(target)],
+                workspace, environment)
+            result = read_json(target.parent / (target.name + '-result.json'))
+            for field in ('baseline_preserved', 'read_and_report_canonical_preserved',
+                          'unknown_same_id_resolved', 'evidence_prefix_preserved', 'workspace_files_preserved'):
+                require(result[field] is True, f'{scope}: resume failed {field}')
+            state = result['final_status']['data']
+            require(state['budget_used'] == 2 and state['unfinished'] == []
+                    and state['selected_experiment_id'] == 'demand-base', 'Resume altered budget or selection')
+            require(result['training_invoked'] is False, 'Resume executed the training sentinel')
+            comparison = result['comparison']['data']
+            require(comparison['comparable'] is (scope == 'full'), 'Unexpected resumed comparison')
+            if scope == 'full':
+                require(comparison['improvement'] == Decimal('0.2'), 'Unexpected resumed numeric improvement')
+            else:
+                require(comparison['improvement'] is None and 'scope_mismatch' in comparison['reasons'],
+                        'Resumed proxy/full mismatch not preserved')
+            require(result['mismatch']['ok'] is False and result['mismatch']['data'] is None,
+                    'Changed evidence returned content')
+            require(any(item['code'] == 'evidence_changed'
+                        for item in result['changed_evidence_comparison']['diagnostics']),
+                    'Changed evidence warning was lost')
+            print(f'PASS: installed wheel + sdist {scope} resume; fresh process, unknown evidence, hold and preservation')
     print('Package verification passed; observations were synthetic and no training was requested.')
 
 
