@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ziho-autoresearch"
-version = "0.1.1"
+version = "0.2.0"
 description = "Lightweight local ML project records and validation"
 readme = "README.md"
 license = "MIT"
@@ -21,7 +21,12 @@ Documentation = "https://github.com/ziholee/zihoAutoResearch/blob/dev/README.md"
 zar = "zar.cli:main"
 
 [tool.setuptools]
-packages = ["zar"]
+packages = ["zar", "zar._bundled_skill"]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+"zar._bundled_skill" = "skills/ziho-autoresearch"
 
 [tool.setuptools.package-data]
 zar = ["program.md"]
+"zar._bundled_skill" = ["*", "**/*"]
