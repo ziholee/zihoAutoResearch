@@ -1,13 +1,13 @@
-# v0.1.0 설치와 배포 준비
+# v0.1.1 설치와 배포 준비
 
-[v0.1.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)은 2026-10-11 KST에 공개했습니다. 아래에는 설치 방법과 재사용할 유지관리 절차를 기록합니다. 이미 존재하는 v0.1.0 태그를 다시 생성하거나 이동하지 않습니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [작업 기록](../tasks/todo.md)을 함께 확인합니다.
+[v0.1.1](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.1)은 2026-10-11 KST에 공개했습니다. 아래에는 설치 방법과 재사용할 유지관리 절차를 기록합니다. 이미 존재하는 v0.1.1 태그를 다시 생성하거나 이동하지 않습니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [작업 기록](../tasks/todo.md)을 함께 확인합니다.
 
 ## 배포 형태
 
 | 파일 | 포함 내용 |
 |---|---|
-| ziho_autoresearch-0.1.0-py3-none-any.whl | CLI, program 템플릿, 패키지 메타데이터, LICENSE |
-| ziho_autoresearch-0.1.0.tar.gz | CLI 소스, 스킬과 references, 문서, 예제, 템플릿, CHANGELOG, LICENSE |
+| ziho_autoresearch-0.1.1-py3-none-any.whl | CLI, program 템플릿, 패키지 메타데이터, LICENSE |
+| ziho_autoresearch-0.1.1.tar.gz | CLI 소스, 스킬과 references, 문서, 예제, 템플릿, CHANGELOG, LICENSE |
 | SHA256SUMS | 위 두 배포 파일의 SHA-256; 릴리스 워크플로가 생성 |
 
 GitHub가 자동 제공하는 Source code 압축파일과 워크플로가 빌드해 첨부한 `.tar.gz`는 구분합니다. 아래 절차에는 릴리스 첨부 파일을 사용합니다. 최초 배포 채널은 GitHub Release이며 PyPI 설치 가능 여부를 가정하지 않습니다.
@@ -23,8 +23,8 @@ from hashlib import sha256
 from pathlib import Path
 
 expected_names = {
-    "ziho_autoresearch-0.1.0-py3-none-any.whl",
-    "ziho_autoresearch-0.1.0.tar.gz",
+    "ziho_autoresearch-0.1.1-py3-none-any.whl",
+    "ziho_autoresearch-0.1.1.tar.gz",
 }
 seen = set()
 for line in Path("SHA256SUMS").read_text(encoding="utf-8").splitlines():
@@ -46,7 +46,7 @@ python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install --no-index --no-deps ./ziho_autoresearch-0.1.0-py3-none-any.whl
+python -m pip install --no-index --no-deps ./ziho_autoresearch-0.1.1-py3-none-any.whl
 python -m pip show ziho-autoresearch
 zar --help
 ```
@@ -59,8 +59,8 @@ zar --help
 
 1. 배포 준비 PR을 dev에 머지하고 해당 커밋의 Contract CI 성공을 확인합니다. 이전 PR의 통과만으로 새 배포 커밋을 승인하지 않습니다.
 2. [변경 내역](../CHANGELOG.md)의 준비 중 표시를 실제 배포 상태에 맞게 갱신합니다. 이 최종 문서 변경도 PR과 CI를 거쳐 dev에 통합하고 해당 최종 커밋의 성공을 확인합니다. 기능 변경과 함께 태그를 만들지 않고 검증된 커밋을 지정합니다.
-3. `pyproject.toml`의 현재 버전과 새 태그 `v<version>`이 일치하고 그 태그가 아직 없는지 확인합니다. 이미 공개한 v0.1.0의 위 설치 안내는 그대로 사용할 수 있습니다. 기존 태그를 이동하거나 강제 푸시하지 않습니다.
-4. 새 출력 디렉터리에 wheel/sdist를 빌드하고 `python scripts/verify_package.py --dist <빌드 디렉터리>`를 실행합니다. 라이선스·메타데이터·문서 포함 및 설치된 CLI의 합성 시나리오를 확인합니다. v0.1.1 개발 검증은 기존 5개와 별도 프로세스 재개 2개를 포함합니다.
+3. `pyproject.toml`의 현재 버전과 새 태그 `v<version>`이 일치하고 그 태그가 아직 없는지 확인합니다. 이미 공개한 v0.1.1의 위 설치 안내는 그대로 사용할 수 있습니다. 기존 태그를 이동하거나 강제 푸시하지 않습니다.
+4. 새 출력 디렉터리에 wheel/sdist를 빌드하고 `python scripts/verify_package.py --dist <빌드 디렉터리>`를 실행합니다. 라이선스·메타데이터·문서 포함 및 설치된 CLI의 합성 시나리오를 확인합니다. v0.1.1 검증은 기존 5개와 별도 프로세스 재개 2개를 포함합니다.
 5. 실제 태그 생성과 공개를 진행할 때는 유지관리자의 실행 승인을 기준으로 합니다. 이 배포 준비 작업 자체는 태그·릴리스를 만들지 않습니다.
 
 ## 태그부터 초안 공개까지
