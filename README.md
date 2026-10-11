@@ -74,6 +74,8 @@ zar init --project /path/to/ml-project
 zar status --project /path/to/ml-project
 ```
 
+처음 설정하거나 중단한 작업을 이어갈 때는 [처음 사용과 재개 안내](docs/first-run-and-resume.md)를 따르세요. 현재 개발 버전 0.1.1은 문서 보완과 재개 검증을 포함하며 아직 공개 릴리스하지 않았습니다. [공개 배포본 검증 결과](docs/public-onboarding-validation.md)에 수정 근거를 기록했습니다.
+
 ### LLM 스킬 사용
 
 스킬은 이 저장소와 소스 배포본의 `skills/ziho-autoresearch/` 폴더로 배포합니다. `references/`를 포함한 폴더 전체가 한 단위이며, 외부 저장소 파일 없이 절차와 CLI 입력 방법을 읽을 수 있습니다. wheel은 CLI를 설치하며 스킬을 포함하거나 에이전트의 전역 설정에 자동 설치하지 않습니다. 소스 체크아웃 또는 압축 해제한 소스 배포본을 보관하고 기존 에이전트에 다음처럼 경로를 지정해 사용하세요.
@@ -110,7 +112,7 @@ zar evidence read --project /path/to/ml-project --kind experiment --id exp-candi
 
 초기화는 `.autoresearch/`만 생성하고 기존 코드·루트 `program.md`·`AGENTS.md`를 보존합니다. `--project`를 생략하면 현재 폴더를 사용하며 상위 폴더를 탐색하지 않습니다.
 
-생성된 `.autoresearch/project.json`을 별도 파일로 복사해 목표·비교 조건·명령·예산·수정 허용 경로를 채웁니다. `environment.os`는 사용자가 `windows`, `linux`, `macos`, `other` 중 선택하고 `runtime`, `device`도 직접 기록합니다. 기록된 명령은 실행하지 않습니다.
+초안은 원본과 다른 파일에 작성합니다. `.autoresearch/drafts/`를 사용한다면 `init`이 만들지 않는 선택 폴더이므로 먼저 생성하세요. 프로젝트 밖에 초안을 두어도 됩니다. 생성된 `.autoresearch/project.json`을 별도 파일로 복사해 목표·비교 조건·명령·예산·수정 허용 경로를 채웁니다. `environment.os`는 사용자가 `windows`, `linux`, `macos`, `other` 중 선택하고 `runtime`, `device`도 직접 기록합니다. 기록된 명령은 실행하지 않습니다.
 
 ```sh
 zar project set --project /path/to/ml-project --file edited-project.json

@@ -15,7 +15,7 @@
 | 실험 부모·비교 기준·정정의 읽기 전용 계보 | `tests/test_lineage.py`, `tests/test_lineage_core.py` | [계보 계약](experiment-lineage.md)의 원본 참조·정정 집계를 보존하고 Git 조상·실행 횟수를 추론하지 않는가 |
 | 제출 기록과 실제 외부 제출 분리 | `tests/test_submissions.py` | artifact identity와 correction 연결을 보존하는가 |
 | 보고서 원본 필드·경로·덮어쓰기 계약 | `tests/test_reports.py` | [필드 매핑](report-field-mapping.md)에 없는 추론을 사실처럼 쓰지 않는가 |
-| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거·계보 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
+| 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거·계보·full/proxy 중단 재개 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
 | 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
 
 이 표는 주요 요구의 추적표이며 CI는 표의 일부 검사만 선택하지 않고 전체 unittest를 실행한다. 링크 검사는 파일 존재를 확인하며 Markdown anchor나 설명의 진위를 증명하지 않는다. 스킬 검사는 기본 필수 메타데이터만 검사하고 완전한 YAML/스킬 실행 검증을 대체하지 않는다.
@@ -64,3 +64,7 @@ Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트�
 ## 계보 통합 확인 — 2026-10-11
 
 PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoResearch/actions/runs/38071425224)가 통과했다. 로컬 전체 테스트 196개와 설치 합성 시나리오 5개를 검증했으며, 계보까지 초기 기능 이슈가 모두 종료되었다. v0.1.0 배포 준비는 실제 태그 릴리스 성공을 뜻하지 않는다. 배포 검증은 wheel/sdist 메타데이터·라이선스·README·릴리스 문서 포함 여부도 검사한다.
+
+## 공개 배포본 사용 경로 검증
+
+[독립 검증 기록](public-onboarding-validation.md)과 [처음 사용·재개 안내](first-run-and-resume.md)를 따른다. `scripts/verify_package.py`는 설치된 CLI와 소스 배포본의 `examples/mock-resume.py`를 prepare/resume 별도 프로세스로 호출한다. 기존 5개에 full/proxy 재개 2개를 추가해 unknown 새 근거 요구, 변조 근거 진단, hold, 예산·선택·원본 보존을 확인한다. 실제 프로세스를 강제 종료하거나 학습하지 않는다.
