@@ -15,6 +15,7 @@
 | 실험 부모·비교 기준·정정의 읽기 전용 계보 | `tests/test_lineage.py`, `tests/test_lineage_core.py` | [계보 계약](experiment-lineage.md)의 원본 참조·정정 집계를 보존하고 Git 조상·실행 횟수를 추론하지 않는가 |
 | 제출 기록과 실제 외부 제출 분리 | `tests/test_submissions.py` | artifact identity와 correction 연결을 보존하는가 |
 | 보고서 원본 필드·경로·덮어쓰기 계약 | `tests/test_reports.py` | [필드 매핑](report-field-mapping.md)에 없는 추론을 사실처럼 쓰지 않는가 |
+| 깊은 계보의 참조 검증 비용과 기존 진단 의미 | `tests/test_validation_scale.py`: 작은 그래프 전수 대조, overlay·원본 보존, 깊은 계보의 작업 횟수 상한 | [성능 측정](record-scale-performance.md)의 조건·수치·남은 비용을 구분하는가 |
 | 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거·계보·full/proxy 중단 재개 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
 | 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
 

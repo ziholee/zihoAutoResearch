@@ -255,6 +255,28 @@ def validate_document(doc, kind):
     return v.errors
 
 
+def _cycle_reachable(records, field):
+    """IDs whose single-field ancestry reaches a cycle, in linear total work.
+
+    Memoize completed walks for this invocation only. Missing references end a
+    walk; their existing per-document diagnostics are emitted by the caller.
+    Include tails entering cycles, preserving the former per-start walk result.
+    """
+    reaches_cycle = {}
+    for start in records:
+        if start in reaches_cycle:
+            continue
+        path = set()
+        cursor = start
+        while cursor in records and cursor not in reaches_cycle and cursor not in path:
+            path.add(cursor)
+            cursor = records[cursor][field]
+        cyclic = cursor in path or reaches_cycle.get(cursor, False)
+        for identifier in path:
+            reaches_cycle[identifier] = cyclic
+    return {identifier for identifier, cyclic in reaches_cycle.items() if cyclic}
+
+
 def inspect_project(root, project, *, experiment=None, snapshot=None, check_files=True):
     """Validate a snapshot, optionally overlaying an unwritten experiment.
 
@@ -380,17 +402,16 @@ def inspect_project(root, project, *, experiment=None, snapshot=None, check_file
     for original_id, replacement in corrected.items():
         if original_id in experiments:
             issue(experiments[original_id], 'Superseded by correction: ' + replacement, 'experiment_superseded', 'warning')
+    ancestry_cycles = {field: _cycle_reachable(experiments, field)
+                       for field in ('parent_id', 'baseline_id')}
     for doc in experiments.values():
         for field in ('parent_id','baseline_id'):
             ref = doc[field]
             if ref in corrected:
                 issue(doc, 'Referenced experiment was corrected; reassess before reuse: ' + ref, 'reference_superseded', 'warning')
             if ref is not None and (ref not in experiments or ref == doc['id']): issue(doc, 'Invalid ' + field)
-            seen = {doc['id']}; cursor = ref
-            while cursor in experiments:
-                if cursor in seen:
-                    issue(doc, field + ' contains a cycle'); break
-                seen.add(cursor); cursor = experiments[cursor][field]
+            if doc['id'] in ancestry_cycles[field]:
+                issue(doc, field + ' contains a cycle')
         base = experiments.get(doc['baseline_id'])
         if base and doc['comparison'] != base['comparison']: issue(doc, 'Baseline comparison differs')
         for ref in doc['review_ids']:
