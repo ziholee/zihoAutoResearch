@@ -269,6 +269,14 @@ def inspect_git(root):
 
 
 def execute(args):
+    if args.command == 'skill':
+        from .skill_install import DestinationExists, install_skill
+        if not args.dest.strip():
+            reject('arguments', 'dest', 'Destination must be an explicit new directory.', 2)
+        try:
+            return install_skill(args.dest), []
+        except DestinationExists:
+            reject('conflict', args.dest, 'Destination already exists; choose a new skill directory.')
     root = Path(args.project).expanduser().resolve()
     if args.command == 'init':
         return initialize(root)
@@ -368,6 +376,10 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
+    skill = commands.add_parser('skill', help='export the bundled agent skill')
+    skill_actions = skill.add_subparsers(dest='action', required=True, parser_class=Parser)
+    install = skill_actions.add_parser('install', help='copy into a new directory; no agent registration')
+    install.add_argument('--dest', required=True, help='exact new skill directory; parent must exist')
     lineage = commands.add_parser('lineage', help='read-only experiment relations; no evidence or Git verification')
     lineage.add_argument('--format', choices=('json', 'mermaid'), default='json')
     context = commands.add_parser('context', help='bounded metadata context; evidence files are not checked')
@@ -440,7 +452,7 @@ def main(argv=None):
     code, data, diagnostics = 0, None, []
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
-            data = {'commands': ['init', 'project set --file <json>', 'status', 'check',
+            data = {'commands': ['skill install --dest <new-directory>', 'init', 'project set --file <json>', 'status', 'check',
                                  'candidate add --file <json>', 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
                                  'report --output <relative.md> [--overwrite]', 'lineage [--format json|mermaid]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
@@ -465,7 +477,9 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if data.get('view') == 'experiment_lineage':
+            if data.get('view') == 'skill_install':
+                emit_text('Skill exported: ' + data['destination'])
+            elif data.get('view') == 'experiment_lineage':
                 emit_text(data['mermaid'].rstrip('\n') if 'mermaid' in data else dumps(data).rstrip('\n'))
             elif data.get('view') in ('research_context', 'evidence_page'):
                 emit_text(dumps(data).rstrip('\n'))

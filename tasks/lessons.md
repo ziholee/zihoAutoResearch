@@ -3,6 +3,7 @@
 ## 2026-10-07 — Bounded projections and faithful fixtures
 - Audit every projected field against its actual schema bounds. A field called an ID may be an unrestricted string; preserve source linkage and explicit truncation rather than making the entire context inaccessible.
 - Use the project's lossless JSON codec in test helpers when reading canonical records containing Decimal values. A standard json.dumps fixture error is not a product regression.
+- Compare directory identity with samefile (or resolve both operands) when Windows short/long aliases can differ. Do not require a lexical output path to equal a canonicalized fixture.
 - Resolve both paths when counting filesystem reads on macOS; /var and /private/var can refer to the same temporary file.
 - Read-only CLI commands can still share a cooperative project lock. Serialize calls for one project and wait for owned pending calls; do not remove a lock to force parallelism.
 
@@ -50,6 +51,8 @@
 - When a human command intentionally emits reusable JSON or Mermaid, keep diagnostic warnings on stderr so valid projects with warnings still produce parseable stdout. Test the warning-bearing path, not only an empty happy-path graph.
 
 ## 2026-10-11 — Installed-environment verification
+- Bundled skills must work outside the repository: compare canonical, wheel and exported bytes and validate local reference targets inside the export. Repository-relative links can silently break after installation.
+- When adding a CLI command, update explicit command fixtures alongside the public documentation; retain independent fixture expectations so missing command documentation still fails.
 - Keep virtualenv interpreter paths lexical: resolving a symlink can select the base interpreter and lose installed dependencies. Exercise normal symlink virtualenvs on POSIX as well as native Windows environments.
 - Filter generated subdirectories relative to the canonical root, never by all absolute ancestor names. Assert preservation checks actually cover records before claiming unchanged bytes.
 

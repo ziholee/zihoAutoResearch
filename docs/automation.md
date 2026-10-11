@@ -16,6 +16,8 @@
 | 제출 기록과 실제 외부 제출 분리 | `tests/test_submissions.py` | artifact identity와 correction 연결을 보존하는가 |
 | 보고서 원본 필드·경로·덮어쓰기 계약 | `tests/test_reports.py` | [필드 매핑](report-field-mapping.md)에 없는 추론을 사실처럼 쓰지 않는가 |
 | 깊은 계보의 참조 검증 비용과 기존 진단 의미 | `tests/test_validation_scale.py`: 작은 그래프 전수 대조, overlay·원본 보존, 깊은 계보의 작업 횟수 상한 | [성능 측정](record-scale-performance.md)의 조건·수치·남은 비용을 구분하는가 |
+| 스킬의 독립 설치·원본 일치·덮어쓰기 거부 | `tests/test_skill_install.py`, `scripts/verify_package.py`: wheel/sdist/export 바이트와 로컬 링크 확인 | 프로젝트 기록이나 기존 스킬을 수정하지 않는가 |
+| 공개 릴리스 파일만 PyPI로 전달 | `tests/test_release_assets.py`: 릴리스 상태·체크섬·소스 불일치 거부 | 활성화·환경 보호·OIDC 설정과 실제 업로드 검증을 구분하는가 |
 | 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거·계보·full/proxy 중단 재개 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
 | 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
 
@@ -36,7 +38,7 @@
 
 최초 v0.1.0의 파일 구성·설치·체크섬 확인·초안 공개 절차는 [배포 안내](releasing.md), 사용자 변경 내역은 [CHANGELOG](../CHANGELOG.md)를 따른다.
 
-[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. 자동 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출은 포함하지 않는다.
+[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. Draft release 자체에는 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출이 없다. 별도 [PyPI 발행 설정](pypi-publishing.md)은 공개된 정식 릴리스 첨부 파일을 검증한 후 OIDC로 발행한다. 기본 비활성 상태이며 신뢰 발행자·환경·활성화 변수 설정이 필요하다. 실제 PyPI 업로드는 아직 검증하지 않았다.
 
 태그 생성·공개는 별도 릴리스 행위다. 워크플로 설정 검증만으로 실제 릴리스 성공을 주장하지 않는다. 빌드 도구는 개발 의존성이며 제품 런타임에는 추가되지 않는다.
 

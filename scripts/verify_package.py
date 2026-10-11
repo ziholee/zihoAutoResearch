@@ -8,6 +8,7 @@ from email import policy
 from email.parser import BytesParser
 import json
 import os
+import re
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ import tempfile
 import tomllib
 import venv
 import zipfile
+from urllib.parse import unquote, urlsplit
 
 
 def require(condition: bool, message: str) -> None:
@@ -122,7 +124,53 @@ def verify_release_metadata(wheel: Path, source: Path, checkout: Path) -> None:
     print('PASS: wheel/sdist release metadata, README, MIT license and release documentation')
 
 
-def verify(dist: Path) -> None:
+def verify_skill_export(wheel: Path, source: Path, checkout: Path, workspace: Path,
+                        virtual: Path, environment: dict[str, str]) -> None:
+    canonical = checkout / 'skills/ziho-autoresearch'
+    expected = {path.relative_to(canonical).as_posix(): path.read_bytes()
+                for path in canonical.rglob('*') if path.is_file()}
+    require('SKILL.md' in expected and 'references/cli-recipes.md' in expected,
+            'Canonical skill or its CLI recipes are missing')
+    source_skill = source / 'skills/ziho-autoresearch'
+    shipped = {path.relative_to(source_skill).as_posix(): path.read_bytes()
+               for path in source_skill.rglob('*') if path.is_file()}
+    require(shipped == expected, 'Source distribution skill differs from canonical source')
+    with zipfile.ZipFile(wheel) as bundle:
+        prefix = 'zar/_bundled_skill/'
+        bundled = {name.removeprefix(prefix): bundle.read(name) for name in bundle.namelist()
+                   if name.startswith(prefix) and not name.endswith('/')}
+    require(bundled == expected, 'Wheel skill differs from canonical source')
+    cli = virtual / ('Scripts/zar.exe' if os.name == 'nt' else 'bin/zar')
+    destination = workspace / 'exported-skill'
+    command = [str(cli), 'skill', 'install', '--dest', str(destination), '--json']
+    result = json.loads(run(command, workspace, environment))
+    require(result['ok'] is True and result['data']['destination'] == str(destination)
+            and result['data']['files'] == sorted(expected), 'Unexpected skill export result')
+    exported = {path.relative_to(destination).as_posix(): path.read_bytes()
+                for path in destination.rglob('*') if path.is_file()}
+    require(exported == expected, 'Exported skill differs from canonical source')
+    for name, content in exported.items():
+        if not name.endswith('.md'):
+            continue
+        for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', content.decode('utf-8')):
+            link = urlsplit(target)
+            if link.scheme or link.netloc or not link.path:
+                continue
+            referenced = (destination / name).parent / unquote(link.path)
+            require(referenced.resolve().is_relative_to(destination.resolve()) and referenced.is_file(),
+                    f'Exported skill has missing or escaping reference: {name}: {target}')
+    rejected = subprocess.run(command, cwd=workspace, env=environment, capture_output=True,
+                              text=True, encoding='utf-8', timeout=90)
+    require(rejected.returncode == 3 and json.loads(rejected.stdout)['ok'] is False,
+            'Installed skill export did not reject an existing destination')
+    require(exported == {path.relative_to(destination).as_posix(): path.read_bytes()
+                         for path in destination.rglob('*') if path.is_file()},
+            'Rejected skill export modified existing files')
+    require(not (workspace / '.autoresearch').exists(), 'Skill export initialized a project')
+    print('PASS: installed wheel skill export; complete bytes, local references and overwrite refusal')
+
+
+def verify(dist: Path, checkout: Path | None = None) -> None:
     dist = dist.resolve()
     wheels = sorted(dist.glob('*.whl'))
     sources = sorted(dist.glob('*.tar.gz'))
@@ -134,7 +182,7 @@ def verify(dist: Path) -> None:
     environment['PYTHONNOUSERSITE'] = '1'
     with tempfile.TemporaryDirectory(prefix='zar-package-check-') as temporary:
         workspace = Path(temporary).resolve()
-        checkout = Path(__file__).resolve().parents[1]
+        checkout = (checkout or Path(__file__).resolve().parents[1]).resolve()
         require(not workspace.is_relative_to(checkout), 'Package verification must run outside the checkout')
         virtual = workspace / 'venv'
         venv.EnvBuilder(with_pip=True, symlinks=(os.name != 'nt')).create(virtual)
@@ -150,6 +198,7 @@ def verify(dist: Path) -> None:
                 f'zar was not imported from the fresh environment site-packages: {module}')
         source = unpack_source(sources[0], workspace / 'source')
         verify_release_metadata(wheels[0], source, checkout)
+        verify_skill_export(wheels[0], source, checkout, workspace, virtual, environment)
         example = source / 'examples/mock-cycle.py'
         require(example.is_file(), 'Source distribution is missing examples/mock-cycle.py')
         require((source / 'skills/ziho-autoresearch/SKILL.md').is_file(),
@@ -260,9 +309,10 @@ def verify(dist: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dist', type=Path, default=Path('dist'), help='directory containing one wheel and sdist')
+    parser.add_argument('--checkout', type=Path, help='source checkout matching these distributions')
     arguments = parser.parse_args()
     try:
-        verify(arguments.dist)
+        verify(arguments.dist, arguments.checkout)
     except (OSError, ValueError, KeyError, TypeError, tarfile.TarError, zipfile.BadZipFile,
             subprocess.TimeoutExpired) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
