@@ -216,6 +216,8 @@ zar report --project /path/to/ml-project --output summary.md --overwrite --json
 
 문서의 요구사항과 회귀 테스트, PR 필수 검사, 리뷰 기준 및 초안 릴리스 절차는 [문서 기반 자동화](docs/automation.md)를 따릅니다. 자동 검사는 소프트웨어 계약을 확인하며 실제 ML 유효성이나 비용 절감을 대신 증명하지 않습니다.
 
+기록 수가 늘 때의 응답 시간·최대 메모리·출력 크기와 측정 한계는 [기록 규모별 성능 측정](docs/record-scale-performance.md)을 참고하세요.
+
 ## 다음 실험 후보 기록
 
 `zar candidate add --project /path/to/ml-project --file candidate-draft.json --json`으로 관측·가설·예상 효과·비용·불확실성·선택 또는 보류 이유를 기록합니다. `zar context --candidates --project /path/to/ml-project --json`은 후보의 예측과 연결된 실제 관측을 구분하여 보여줍니다. selected는 다음에 시도할 의도이며 `selected_experiment_id`의 채택 결과와 다릅니다. 실험 생성에 선택적 candidate_id를 넣으면 정확한 selected 버전과 연결합니다. 자동 점수·순위·실행·예산 확대는 하지 않습니다. 입력·정정·재평가 절차는 [후보 기록 계약](docs/candidate-rationale.md)을 따릅니다.
