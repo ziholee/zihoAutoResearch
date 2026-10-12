@@ -1,8 +1,8 @@
 # 변경 내역
 
-## 0.2.0 — 릴리스 후보
+## 0.2.0 — 2026-10-12 (KST)
 
-태그·초안 검증 대상입니다. GitHub 정식 공개와 PyPI 업로드는 별도 승인 후 진행합니다.
+[v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 태그는 검증된 커밋 2eae0ac을 유지합니다. PyPI 업로드는 별도 환경 승인과 성공 확인이 필요합니다.
 
 - wheel에 스킬과 references를 포함하고 `zar skill install --dest`로 새 폴더에 설치합니다. 기존 경로는 덮어쓰지 않습니다.
 - uv 설치·업데이트·버전 고정 안내와, 검증된 GitHub 릴리스 첨부 파일을 발행하는 기본 비활성 PyPI Trusted Publishing 자동화를 준비합니다. 실제 PyPI 공개는 별도 설정·배포가 필요합니다.
