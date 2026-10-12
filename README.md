@@ -58,11 +58,11 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 배포와 라이선스
 
-[v0.1.1 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.1)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. PyPI에 공개됐다고 가정하지 않으며, 아래 소스 설치 방법은 현재 사용할 수 있습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
+[v0.2.0 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. PyPI에 공개됐다고 가정하지 않으며, 아래 소스 설치 방법은 현재 사용할 수 있습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
 
 ## 설치와 기본 사용
 
-Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 현재 공개 wheel과 향후 PyPI 설치 경로를 확인하세요. 개발 버전 0.2.0은 아직 배포하지 않았으며, [PyPI 자동화](docs/pypi-publishing.md)는 설정 완료 후에만 활성화합니다. 저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
+Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 현재 공개 wheel과 향후 PyPI 설치 경로를 확인하세요. v0.2.0은 GitHub에 공개했으며, [PyPI 자동화](docs/pypi-publishing.md)는 별도 검증·환경 승인·업로드를 거칩니다. 저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
 
 ```sh
 python -m venv .venv
@@ -74,11 +74,11 @@ zar init --project /path/to/ml-project
 zar status --project /path/to/ml-project
 ```
 
-처음 설정하거나 중단한 작업을 이어갈 때는 [처음 사용과 재개 안내](docs/first-run-and-resume.md)를 따르세요. 공개 버전 0.1.1은 문서 보완과 재개 검증을 포함합니다. [공개 배포본 검증 결과](docs/public-onboarding-validation.md)에 수정 근거를 기록했습니다.
+처음 설정하거나 중단한 작업을 이어갈 때는 [처음 사용과 재개 안내](docs/first-run-and-resume.md)를 따르세요. v0.1.1에서 추가한 문서 보완과 재개 검증은 v0.2.0에도 포함됩니다. [공개 배포본 검증 결과](docs/public-onboarding-validation.md)에 수정 근거를 기록했습니다.
 
 ### LLM 스킬 사용
 
-스킬 원본은 `skills/ziho-autoresearch/`이며 `references/`를 포함한 폴더 전체가 한 단위입니다. 0.2.0 개발본부터 wheel에도 같은 파일을 포함합니다. `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 새 폴더에 설치하고 반환된 `SKILL.md` 경로를 에이전트에 알려주세요. 기존 폴더를 덮어쓰거나 전역 설정에 자동 등록하지 않습니다. 자세한 갱신 절차는 [스킬 설치 안내](docs/uv-installation.md)를 따릅니다. 공개 v0.1.1에서는 기존처럼 소스 배포본의 스킬 폴더를 사용합니다. 소스 스킬을 직접 사용할 때는 다음처럼 경로를 지정합니다.
+스킬 원본은 `skills/ziho-autoresearch/`이며 `references/`를 포함한 폴더 전체가 한 단위입니다. 0.2.0부터 wheel에도 같은 파일을 포함합니다. `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 새 폴더에 설치하고 반환된 `SKILL.md` 경로를 에이전트에 알려주세요. 기존 폴더를 덮어쓰거나 전역 설정에 자동 등록하지 않습니다. 자세한 갱신 절차는 [스킬 설치 안내](docs/uv-installation.md)를 따릅니다. 이전 v0.1.1에서는 기존처럼 소스 배포본의 스킬 폴더를 사용합니다. 소스 스킬을 직접 사용할 때는 다음처럼 경로를 지정합니다.
 
 > `/absolute/path/to/zihoAutoResearch/skills/ziho-autoresearch/SKILL.md`를 읽고 `/absolute/path/to/ml-project`를 점검해줘. 우선 실행 없이 프로젝트 해석과 누락 정보를 정리해줘.
 
