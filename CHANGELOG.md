@@ -2,6 +2,8 @@
 
 ## 미배포
 
+- `zar skill install --agent codex|claude`로 프로젝트 또는 사용자 스킬 발견 경로에 설치하고 호출 안내를 제공합니다. `--dry-run`으로 경로를 미리 확인하며 기존 스킬·지침을 덮어쓰지 않습니다.
+
 - `zar` 명령 이름의 의미와 대상 프로젝트 AGENTS.md에 스킬을 연결하는 방법을 설명합니다.
 - `zar skill guidance --skill-dir`로 기존 스킬 경로를 포함한 연결 문구를 Markdown 또는 JSON으로 출력합니다. 프로젝트 파일과 에이전트 설정을 수정하지 않습니다.
 

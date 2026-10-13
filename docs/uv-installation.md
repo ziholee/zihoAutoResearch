@@ -34,6 +34,10 @@ uvx --from 'ziho-autoresearch==0.2.1' zar --help
 
 고정 버전으로 설치하면 upgrade도 그 제약을 지킵니다. 기존 고정 버전이나 URL 설치를 최신 PyPI 패키지로 전환할 때는 `uv tool install --force ziho-autoresearch`를 명시적으로 사용합니다. CLI 설치 버전은 `uv tool list`로 확인하고 제거는 `uv tool uninstall ziho-autoresearch`로 수행합니다.
 
+## 에이전트 발견 경로에 설치 (미배포)
+
+개발 소스에서는 `zar skill install --agent codex` 또는 `zar skill install --agent claude`로 프로젝트 스킬 폴더에 설치할 수 있습니다. 사용자 범위·미리보기·호출·업데이트 절차는 [에이전트 설치 안내](agent-installation.md)를 참고하세요. 공개 v0.2.1에서는 다음 수동 추출 방식을 사용합니다.
+
 ## 스킬을 지정 폴더에 설치
 
 이 명령은 0.2.0부터 지원하며, 설치한 CLI와 같은 버전의 스킬을 추출합니다. PyPI 설치에서도 같은 명령을 사용할 수 있습니다. wheel에 스킬과 references 전체가 포함되므로 소스 배포본을 별도로 풀 필요가 없습니다.

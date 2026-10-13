@@ -178,6 +178,32 @@ def verify_skill_export(wheel: Path, source: Path, checkout: Path, workspace: Pa
             guidance['data']['markdown'].rstrip('\n'), 'Guidance text and JSON differ')
     require(instructions.read_bytes() == b'existing project instructions\n'
             and not (workspace / '.autoresearch').exists(), 'Guidance modified project files')
+    for agent, directory, invocation in (('codex', '.agents', '$ziho-autoresearch'),
+                                          ('claude', '.claude', '/ziho-autoresearch')):
+        target = workspace / (agent + '-project')
+        target.mkdir()
+        for name in ('AGENTS.md', 'CLAUDE.md'):
+            (target / name).write_bytes(b'original rules\n')
+        command = [str(cli), 'skill', 'install', '--agent', agent, '--project', str(target)]
+        preview = json.loads(run([*command, '--dry-run', '--json'], workspace, environment))
+        require(preview['ok'] and preview['data']['dry_run']
+                and not (target / directory).exists(), 'Preview wrote discovery files')
+        installed_skill = json.loads(run([*command, '--json'], workspace, environment))
+        location = target / directory / 'skills/ziho-autoresearch'
+        require(installed_skill['ok'] and installed_skill['data']['invocation'] == invocation
+                and Path(installed_skill['data']['destination']).samefile(location),
+                'Unexpected agent installation result')
+        require(expected == {path.relative_to(location).as_posix(): path.read_bytes()
+                             for path in location.rglob('*') if path.is_file()},
+                'Agent installation differs from the bundled skill')
+        conflict = subprocess.run([*command, '--json'], cwd=workspace, env=environment,
+                                  capture_output=True, text=True, encoding='utf-8', timeout=90)
+        require(conflict.returncode == 3 and not json.loads(conflict.stdout)['ok'],
+                'Existing agent skill was overwritten')
+        for name in ('AGENTS.md', 'CLAUDE.md'):
+            require((target / name).read_bytes() == b'original rules\n', 'Instructions modified')
+        require(not (target / '.autoresearch').exists(), 'Agent installation initialized a project')
+    print('PASS: installed wheel Codex/Claude discovery directories, preview, contents and conflicts')
     print('PASS: installed wheel guidance text/JSON and existing instructions preserved')
     print('PASS: installed wheel skill export; complete bytes, local references and overwrite refusal')
 

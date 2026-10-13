@@ -56,7 +56,27 @@ zar status --project ./my-ml-project --json
 
 처음에는 `ready:false`가 정상입니다. 목표, 비교 지표, 데이터·코드 식별자, 실행 환경, 명령, 예산, 수정 허용 경로를 채워야 합니다. 다음 단계의 에이전트에 설정을 도와달라고 하거나 [처음 사용 안내](docs/first-run-and-resume.md)를 따라 직접 작성하세요.
 
-## 3. 에이전트에 스킬 전달
+## 3. 에이전트에서 스킬 사용
+
+### Codex / Claude Code에 바로 설치 (미배포)
+
+**현재 개발 소스의 기능으로 공개 v0.2.1에는 없습니다.** 소스 설치 방법과 전체 절차는 [에이전트 설치 안내](docs/agent-installation.md)를 참고하세요. CLI가 설치된 뒤 사용할 에이전트 하나를 선택합니다.
+
+```sh
+# Codex: 지정한 ML 프로젝트에만 설치
+zar skill install --agent codex --project ./my-ml-project
+
+# Claude Code를 사용하는 경우
+zar skill install --agent claude --project ./my-ml-project
+```
+
+필요한 스킬 폴더를 만들고 번들 전체를 복사합니다. 기존 스킬은 덮어쓰지 않습니다. 대상 프로젝트를 에이전트에서 연 뒤, Codex에서는 `$ziho-autoresearch`, Claude Code에서는 `/ziho-autoresearch`를 선택하고 다음처럼 요청하세요.
+
+> 이 프로젝트를 학습 실행 없이 점검하고 첫 실험 계획을 제안해줘.
+
+목록에 나타나지 않으면 에이전트를 재시작하고 스킬 설정을 확인하세요. 에이전트의 실행 환경에서도 `zar --help`가 실행되어야 합니다. 발견 경로에 설치하므로 기본 사용에 `AGENTS.md` 수동 연결은 필수가 아닙니다. 설치가 학습 실행을 승인하거나 실제 인식을 검증하지는 않습니다.
+
+### 다른 에이전트 또는 공개 v0.2.1에서 수동 연결
 
 ML 프로젝트 밖의 편한 작업 폴더에서 실행하세요. `--dest`는 **새로 만들 스킬 폴더**이며 상위 폴더는 이미 있어야 합니다.
 
@@ -72,7 +92,7 @@ wheel에 포함된 `SKILL.md`와 `references/` 전체를 추출합니다. 기존
 
 ### 프로젝트의 AGENTS.md에 연결하기
 
-매번 스킬 경로를 전달하지 않으려면 **실험 대상 프로젝트**의 `AGENTS.md`에 스킬의 `SKILL.md` 경로와 적용 조건을 추가하세요. 기존 규칙은 유지하고, 스킬 전문이나 수시로 바뀌는 실험 상태를 복사하지 않습니다. 에이전트가 해당 지침 파일을 읽도록 설정되어 있는지는 사용하는 도구에서 확인하세요.
+수동 연결을 유지하거나 프로젝트별 적용 조건을 명시하려면 **실험 대상 프로젝트**의 `AGENTS.md`에 스킬의 `SKILL.md` 경로와 적용 조건을 추가하세요. 기존 규칙은 유지하고, 스킬 전문이나 수시로 바뀌는 실험 상태를 복사하지 않습니다. 에이전트가 해당 지침 파일을 읽도록 설정되어 있는지는 사용하는 도구에서 확인하세요.
 
 **개발 브랜치 기능·아직 미배포:** 아래 문구 생성 명령은 공개 v0.2.1에는 없습니다. 이 소스에서 설치한 CLI에서 사용할 수 있습니다.
 
@@ -108,6 +128,7 @@ JSON 입력을 직접 작성하거나 에이전트가 작성한 초안을 검토
 |---|---|---|
 | 프로젝트 초기화 | `zar init` | 기존 프로젝트에 기록 폴더 생성 |
 | 연결 문구 생성 (미배포) | `zar skill guidance --skill-dir` | 기존 스킬 경로로 AGENTS.md용 문구 출력 |
+| 에이전트 설치 (미배포) | `zar skill install --agent` | Codex/Claude Code 발견 경로에 설치 |
 | 스킬 추출 | `zar skill install` | 새 폴더로 스킬 복사 |
 | 설정 저장 | `zar project set --file <json>` | 현재 project.json을 별도 초안으로 복사해 수정 |
 | 실행 전 점검 | `zar review add --file <json>` | 확인한 근거와 미검증 항목 기록 |
@@ -148,6 +169,7 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 ## 더 알아보기
 
+- [에이전트 설치·호출·문제 해결](docs/agent-installation.md)
 - [설치·업데이트·스킬 갱신](docs/uv-installation.md)
 - [처음 설정부터 중단·재개까지](docs/first-run-and-resume.md)
 - [연구 절차와 판단 규칙](docs/research-workflow.md)
