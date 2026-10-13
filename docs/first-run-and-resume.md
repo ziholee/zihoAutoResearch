@@ -4,7 +4,7 @@ CLI는 실험을 실행하거나 프로세스 생존 여부를 확인하지 않�
 
 ## 1. 설치와 작업 경로
 
-[배포 안내](releasing.md)에 따라 공개 wheel을 가상환경에 설치하고 소스 배포본의 스킬 폴더를 보관합니다. 가상환경을 다시 열 때 같은 Python/CLI를 사용합니다. `python -m pip show ziho-autoresearch`로 설치 버전을 확인할 수 있습니다. 새로운 대상 프로젝트 폴더는 먼저 생성하고, 도구 소스 폴더와 구분합니다.
+[uv 설치 안내](uv-installation.md)에 따라 CLI를 설치하고 `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 스킬을 새 폴더에 추출합니다. uv 설치 버전은 `uv tool list`로 확인합니다. pip 가상환경을 사용했다면 다시 열 때 같은 환경을 활성화하고 `python -m pip show ziho-autoresearch`로 확인합니다. 새로운 대상 프로젝트 폴더는 먼저 생성하고, 도구 소스 폴더와 구분합니다.
 
 ```sh
 zar --help --json
@@ -64,7 +64,7 @@ context의 생략 수·미완료 집계를 읽고, status의 unfinished에서 �
 
 ## 학습 없는 두 세션 연습
 
-v0.1.1 소스 배포본 또는 이 변경이 포함된 체크아웃에서, CLI가 설치된 Python으로 실행합니다. 각 명령은 별도 프로세스이며 prepare가 종료된 뒤 resume를 실행합니다. `<new-project>`는 기존 상위 폴더 아래의 새 경로입니다.
+v0.1.1 이상 소스 배포본 또는 이 변경이 포함된 체크아웃에서, CLI가 설치된 Python으로 실행합니다. 각 명령은 별도 프로세스이며 prepare가 종료된 뒤 resume를 실행합니다. `<new-project>`는 기존 상위 폴더 아래의 새 경로입니다.
 
 ```sh
 python examples/mock-resume.py prepare --root <new-project> --scope full

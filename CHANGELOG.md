@@ -1,5 +1,10 @@
 # 변경 내역
 
+## 미배포
+
+- README를 설치·프로젝트 연결·스킬 사용·재개 중심으로 정리합니다.
+- 향후 소스 배포본에서 내부 작업 기록(tasks)을 제외하고 로컬 환경 파일·macOS 메타데이터의 우발적 포함을 방지합니다. 이미 공개된 버전은 변경하지 않습니다.
+
 ## 0.2.0 — 2026-10-12 (KST)
 
 [v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 태그는 검증된 커밋 2eae0ac을 유지합니다. 2026-10-13 KST에 [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/) 공개와 실제 uv 설치·스킬 추출을 확인했습니다.
