@@ -2,10 +2,10 @@
 
 ## 0.2.0 — 2026-10-12 (KST)
 
-[v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 태그는 검증된 커밋 2eae0ac을 유지합니다. PyPI 업로드는 별도 환경 승인과 성공 확인이 필요합니다.
+[v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 태그는 검증된 커밋 2eae0ac을 유지합니다. 2026-10-13 KST에 [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/) 공개와 실제 uv 설치·스킬 추출을 확인했습니다.
 
 - wheel에 스킬과 references를 포함하고 `zar skill install --dest`로 새 폴더에 설치합니다. 기존 경로는 덮어쓰지 않습니다.
-- uv 설치·업데이트·버전 고정 안내와, 검증된 GitHub 릴리스 첨부 파일을 발행하는 기본 비활성 PyPI Trusted Publishing 자동화를 준비합니다. 실제 PyPI 공개는 별도 설정·배포가 필요합니다.
+- uv 설치·업데이트·버전 고정 안내와, 검증된 GitHub 릴리스 첨부 파일을 발행하는 기본 비활성 PyPI Trusted Publishing 자동화를 준비합니다. 설정 완료 후 v0.2.0의 실제 PyPI 발행을 검증했습니다.
 
 - 합성 기록 100·1,000·10,000개로 CLI 응답 시간·최대 RSS·출력 크기를 측정하고 원자료를 제공합니다.
 - 깊은 parent/baseline 계보의 반복 검증을 호출 내 선형 탐색으로 줄입니다. 진단과 출력은 유지하며 전체 기록 로딩·메모리 상한은 변경하지 않습니다. 측정 조건과 한계는 [성능 기록](docs/record-scale-performance.md)을 참고하세요.
