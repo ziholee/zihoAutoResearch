@@ -44,10 +44,11 @@
 
 ## 3. 명령
 
-모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `skill install`은 지정 폴더에 스킬을 복사하는 프로젝트 독립 명령이며 `--project`의 기록을 읽거나 변경하지 않습니다. `init`, `git status`, `skill install` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
+모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `skill install`과 `skill guidance`는 프로젝트 독립 명령이며 `--project`의 기록을 읽거나 변경하지 않습니다. `init`, `git status`, `skill install`, `skill guidance` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
 
 | 명령 | 정확한 동작 |
 |---|---|
+| `zar skill guidance --skill-dir <기존 스킬 폴더>` | 미배포. SKILL.md 존재 확인 후 절대 경로를 포함한 AGENTS.md 연결 Markdown 출력. JSON data는 view=skill_guidance, skill_file, markdown. 파일 쓰기·자동 등록 없음. 누락/제어 문자/홈 경로 확장 불가 인자 exit 2, SKILL.md 부재/디렉터리 등 I/O 오류 exit 4; [상세 계약](uv-installation.md#프로젝트-지침에-연결) |
 | `zar skill install --dest <새 폴더>` | 0.2.0부터 번들 스킬 전체를 명시한 새 폴더에 설치. 상위 폴더 필요, 기존 경로 덮어쓰기 금지, 자동 등록 없음; [설치 계약](uv-installation.md) |
 | `zar init` | `.autoresearch`와 revision 1의 미설정 project.json, program.md 생성. 프로젝트 ID는 `project-<UUID>`로 생성. 재호출 시 기존 파일 보존·변경 없음; 부분 초기화는 진단하고 중단 |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |

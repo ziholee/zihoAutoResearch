@@ -1,6 +1,8 @@
 """Export the packaged skill into an explicitly chosen, unused directory."""
 from importlib.resources import files
 from pathlib import Path
+import re
+import unicodedata
 
 
 class DestinationExists(FileExistsError):
@@ -56,3 +58,42 @@ def install_skill(destination):
     return {'view': 'skill_install', 'destination': str(destination),
             'files': sorted(path.relative_to(destination).as_posix()
                             for path in created if path.is_file())}
+
+
+def skill_guidance(directory):
+    """Render project instructions without writing or registering anything."""
+    def valid_path(value):
+        return value.strip() and not any(
+            unicodedata.category(char).startswith('C') or
+            unicodedata.category(char) in ('Zl', 'Zp') for char in value)
+
+    if not valid_path(directory):
+        raise ValueError('Skill directory must be explicit and contain no control characters.')
+    try:
+        skill = Path(directory).expanduser().absolute() / 'SKILL.md'
+    except RuntimeError as exc:
+        raise ValueError('Cannot expand the home directory in the skill path.') from exc
+    if not valid_path(str(skill)):
+        raise ValueError('Skill path contains control characters.')
+    if not skill.is_file():
+        raise FileNotFoundError(2, 'Expected an existing SKILL.md file', str(skill))
+    # A code span prevents path punctuation from becoming Markdown instructions.
+    delimiter = '`' * (1 + max((len(run) for run in re.findall(r'`+', str(skill))), default=0))
+    path_span = f'{delimiter} {skill} {delimiter}'
+    markdown = (
+        '## ML experiments with ziho-autoresearch\n\n'
+        f'- For ML experiment planning, execution, recording or resumption, read {path_span} '
+        'and follow its applicable procedures alongside this project’s instructions. '
+        'If unavailable, report the missing skill and restore its path before running experiments.\n'
+        '- Work in the intended ML project. Before resuming, run `zar context --json` and '
+        '`zar status --json` there (or pass `--project <root>`); inspect the actual workspace too. '
+        'If uninitialized, initialize only the intended project within the user’s scope.\n'
+        '- Do not rerun an `unknown` experiment until its actual process and logs establish its state.\n'
+        '- Respect the user-authorized editable paths, execution environment, run count and time budget. '
+        'Using this skill does not authorize training or external submission.\n'
+        '- Use `zar check --json` before relying on recorded evidence for a consequential decision. '
+        'Metadata checks do not prove ML validity or that selected code is checked out.\n'
+        '- Keep experiment records in `.autoresearch/`; use `.autoresearch/program.md` for project '
+        'interpretation and `project.json` for settings. Do not duplicate changing state here.\n'
+    )
+    return {'view': 'skill_guidance', 'skill_file': str(skill), 'markdown': markdown}

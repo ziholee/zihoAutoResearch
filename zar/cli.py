@@ -270,7 +270,12 @@ def inspect_git(root):
 
 def execute(args):
     if args.command == 'skill':
-        from .skill_install import DestinationExists, install_skill
+        from .skill_install import DestinationExists, install_skill, skill_guidance
+        if args.action == 'guidance':
+            try:
+                return skill_guidance(args.skill_dir), []
+            except ValueError as exc:
+                reject('arguments', 'skill_dir', str(exc), 2)
         if not args.dest.strip():
             reject('arguments', 'dest', 'Destination must be an explicit new directory.', 2)
         try:
@@ -376,10 +381,12 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
-    skill = commands.add_parser('skill', help='export the bundled agent skill')
+    skill = commands.add_parser('skill', help='export the agent skill or render project guidance')
     skill_actions = skill.add_subparsers(dest='action', required=True, parser_class=Parser)
     install = skill_actions.add_parser('install', help='copy into a new directory; no agent registration')
     install.add_argument('--dest', required=True, help='exact new skill directory; parent must exist')
+    guidance = skill_actions.add_parser('guidance', help='print instructions for manual AGENTS.md integration; no writes')
+    guidance.add_argument('--skill-dir', required=True, help='existing directory containing SKILL.md')
     lineage = commands.add_parser('lineage', help='read-only experiment relations; no evidence or Git verification')
     lineage.add_argument('--format', choices=('json', 'mermaid'), default='json')
     context = commands.add_parser('context', help='bounded metadata context; evidence files are not checked')
@@ -452,7 +459,7 @@ def main(argv=None):
     code, data, diagnostics = 0, None, []
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
-            data = {'commands': ['skill install --dest <new-directory>', 'init', 'project set --file <json>', 'status', 'check',
+            data = {'commands': ['skill install --dest <new-directory>', 'skill guidance --skill-dir <existing-directory>', 'init', 'project set --file <json>', 'status', 'check',
                                  'candidate add --file <json>', 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
                                  'report --output <relative.md> [--overwrite]', 'lineage [--format json|mermaid]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
@@ -479,6 +486,8 @@ def main(argv=None):
         if data is not None:
             if data.get('view') == 'skill_install':
                 emit_text('Skill exported: ' + data['destination'])
+            elif data.get('view') == 'skill_guidance':
+                emit_text(data['markdown'].rstrip('\n'))
             elif data.get('view') == 'experiment_lineage':
                 emit_text(data['mermaid'].rstrip('\n') if 'mermaid' in data else dumps(data).rstrip('\n'))
             elif data.get('view') in ('research_context', 'evidence_page'):
