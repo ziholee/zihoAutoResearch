@@ -1,13 +1,14 @@
 # 변경 내역
 
-## 미배포
+## 0.2.1 — 준비 중
 
 - README를 설치·프로젝트 연결·스킬 사용·재개 중심으로 정리합니다.
-- 향후 소스 배포본에서 내부 작업 기록(tasks)을 제외하고 로컬 환경 파일·macOS 메타데이터의 우발적 포함을 방지합니다. 이미 공개된 버전은 변경하지 않습니다.
+- 소스 배포본에서 내부 작업 기록(tasks)을 제외하고 로컬 환경 파일·macOS 메타데이터의 우발적 포함을 방지합니다. 내부 작업 기록은 로컬에서만 유지하고 공개 문서는 PR·CI를 검증 근거로 연결합니다.
+- 승인된 개인정보 정리를 위해 과거 Git 이메일·내부 기록 이력과 기존 소스 배포 파일을 정리합니다. 진행 상태와 한계는 [공개 파일 점검](docs/public-content-audit.md)에 기록합니다. 기존 PyPI 버전 파일을 다른 내용으로 재업로드하지 않습니다.
 
 ## 0.2.0 — 2026-10-12 (KST)
 
-[v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 태그는 검증된 커밋 2eae0ac을 유지합니다. 2026-10-13 KST에 [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/) 공개와 실제 uv 설치·스킬 추출을 확인했습니다.
+[v0.2.0](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 2026-10-12 04:10:19 UTC (13:10:19 KST)에 GitHub에 공개했습니다. 당시 검증한 커밋은 2eae0ac입니다. 2026-10-13 KST에 [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/) 공개와 실제 uv 설치·스킬 추출을 확인했습니다.
 
 - wheel에 스킬과 references를 포함하고 `zar skill install --dest`로 새 폴더에 설치합니다. 기존 경로는 덮어쓰지 않습니다.
 - uv 설치·업데이트·버전 고정 안내와, 검증된 GitHub 릴리스 첨부 파일을 발행하는 기본 비활성 PyPI Trusted Publishing 자동화를 준비합니다. 설정 완료 후 v0.2.0의 실제 PyPI 발행을 검증했습니다.
@@ -17,7 +18,7 @@
 
 ## 0.1.1 — 2026-10-11 (KST)
 
-[v0.1.1](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.1)을 2026-10-11 07:14:48 UTC (16:14:48 KST)에 공개했습니다. 태그는 검증된 커밋 a00e941을 유지합니다.
+[v0.1.1](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.1)을 2026-10-11 07:14:48 UTC (16:14:48 KST)에 공개했습니다. 당시 검증한 커밋은 a00e941입니다.
 
 - 공개 v0.1.0 배포본과 문서만으로 설치·기록·중단·재개를 독립 검증했습니다. 실제 학습은 실행하지 않았습니다.
 - 초안 디렉터리를 먼저 생성하도록 안내하고 근거 조회 종류 설명에 memory/candidate를 반영합니다.
@@ -25,7 +26,7 @@
 
 ## 0.1.0 — 2026-10-11 (KST)
 
-[첫 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)입니다. 버전 번호는 패키지 버전이며 JSON 파일 계약의 schema_version=1과는 별개입니다. 2026-10-10 17:50:40 UTC (2026-10-11 02:50:40 KST)에 공개했습니다. 태그는 검증된 커밋 5942ed6을 유지합니다.
+[첫 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.1.0)입니다. 버전 번호는 패키지 버전이며 JSON 파일 계약의 schema_version=1과는 별개입니다. 2026-10-10 17:50:40 UTC (2026-10-11 02:50:40 KST)에 공개했습니다. 당시 검증한 커밋은 5942ed6입니다.
 
 ### 제공 기능
 

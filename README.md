@@ -25,7 +25,9 @@ uv tool install ziho-autoresearch
 zar --help
 ```
 
-`zar`를 찾지 못하면 `uv tool update-shell`을 실행하고 터미널을 다시 여세요. 버전 고정은 `uv tool install 'ziho-autoresearch==0.2.0'`, 업데이트는 `uv tool upgrade ziho-autoresearch`로 합니다. 고정 버전이나 URL 설치의 업데이트 방법은 [uv 안내](docs/uv-installation.md)를 참고하세요.
+아래 버전 고정 예시는 v0.2.1 공개 후 사용합니다. 현재 공개 상태는 [릴리스 목록](https://github.com/ziholee/zihoAutoResearch/releases)을 확인하세요.
+
+`zar`를 찾지 못하면 `uv tool update-shell`을 실행하고 터미널을 다시 여세요. 버전 고정은 `uv tool install 'ziho-autoresearch==0.2.1'`, 업데이트는 `uv tool upgrade ziho-autoresearch`로 합니다. 고정 버전이나 URL 설치의 업데이트 방법은 [uv 안내](docs/uv-installation.md)를 참고하세요.
 
 uv 없이 설치하려면:
 
@@ -57,7 +59,7 @@ zar status --project ./my-ml-project --json
 ML 프로젝트 밖의 편한 작업 폴더에서 실행하세요. `--dest`는 **새로 만들 스킬 폴더**이며 상위 폴더는 이미 있어야 합니다.
 
 ```sh
-zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json
+zar skill install --dest ./ziho-autoresearch-skill-0.2.1 --json
 ```
 
 wheel에 포함된 `SKILL.md`와 `references/` 전체를 추출합니다. 기존 폴더를 덮어쓰거나 에이전트에 자동 등록하지 않습니다. 출력된 절대 경로를 사용 중인 코딩 에이전트에 전달하세요.
@@ -109,7 +111,7 @@ JSON 입력을 직접 작성하거나 에이전트가 작성한 초안을 검토
 
 ## 학습 없이 체험하기
 
-예제는 wheel에 포함되지 않습니다. [소스 배포본](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 풀거나 이 저장소를 내려받고, CLI가 설치된 Python 환경에서 소스 폴더를 기준으로 실행하세요.
+예제는 wheel에 포함되지 않습니다. [소스 배포본](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.1)을 풀거나 이 저장소를 내려받고, CLI가 설치된 Python 환경에서 소스 폴더를 기준으로 실행하세요.
 
 ```sh
 python -m venv .venv

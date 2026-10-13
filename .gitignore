@@ -12,3 +12,6 @@ dist/
 !.env.example
 !.env.sample
 .autoresearch/
+
+# Maintainer plans, approval notes and lessons stay local
+/tasks/
