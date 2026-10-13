@@ -12,7 +12,10 @@ passed release verification, protected environment approval and OIDC publication
 Both PyPI distributions match the original GitHub release SHA-256 values.
 An isolated uv installation from production PyPI passed CLI help/list, complete
 skill export byte comparison against the tag, and overwrite refusal.
-The GitHub release and tag were not rebuilt or replaced.
+The GitHub release and tag were not rebuilt or replaced during that verification.
+The later privacy cleanup rewrites historical tags and withdraws old source
+distributions. Those historical releases must not be retried or republished;
+use a newly verified release such as v0.2.1.
 
 ## Maintainer setup
 
@@ -48,7 +51,7 @@ assets must be exactly one wheel, one `.tar.gz` source distribution, and
 workflow when it is enabled. Drafts and prereleases are not published to PyPI.
 
 For a retry, select **Run workflow**, choose branch **`dev`**, and enter the exact
-published tag, for example `v0.2.0`. Arbitrary workflow refs, branch names as tags,
+published tag, for example `v0.2.1`. Arbitrary workflow refs, branch names as tags,
 prerelease versions, and unpublished releases are rejected. The tag must resolve
 to a commit in `dev` history. Manual dispatch looks up the existing release;
 it does not create a release or rebuild its assets.
@@ -82,5 +85,6 @@ PyPI upload after initial registration failures. A successful run does not
 guarantee future releases: each requires its own verification and approval.
 When `invalid-publisher` occurs, inspect the saved publisher on production PyPI;
 GitHub environment setup alone does not register a PyPI publisher. If temporary
-Actions artifacts have expired, manually dispatch from dev for the existing tag
-to verify and retrieve its unchanged release files again.
+Actions artifacts have expired, manually dispatch from dev only for a release
+whose tag and complete verified assets remain intact. Withdrawn historical
+releases are not retry targets.
