@@ -1,16 +1,16 @@
-# v0.2.1 설치와 배포
+# v0.3.0 설치와 배포
 
-아래 설치 예시는 v0.2.1 배포 파일 기준입니다. 실제 공개 상태와 검증 결과는 [GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.1)에서 확인합니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [공개 파일 점검](public-content-audit.md)을 함께 확인합니다. 내부 계획·승인 진단·교훈은 Git에서 제외한 로컬 `tasks/`에만 기록하고, 공개 검증 근거는 PR·CI와 사용자 문서에 남깁니다.
+아래 설치 예시는 v0.3.0 배포 파일 기준입니다. 실제 공개 상태와 검증 결과는 [GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.3.0)에서 확인합니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [공개 파일 점검](public-content-audit.md)을 함께 확인합니다. 내부 계획·승인 진단·교훈은 Git에서 제외한 로컬 `tasks/`에만 기록하고, 공개 검증 근거는 PR·CI와 사용자 문서에 남깁니다.
 
 ## 배포 형태
 
 | 파일 | 포함 내용 |
 |---|---|
-| ziho_autoresearch-0.2.1-py3-none-any.whl | CLI, program 템플릿, 스킬과 references, 패키지 메타데이터, LICENSE |
-| ziho_autoresearch-0.2.1.tar.gz | CLI 소스, 스킬과 references, 문서, 예제, 템플릿, CHANGELOG, LICENSE |
+| ziho_autoresearch-0.3.0-py3-none-any.whl | CLI, program 템플릿, 스킬과 references, 패키지 메타데이터, LICENSE |
+| ziho_autoresearch-0.3.0.tar.gz | CLI 소스, 스킬과 references, 문서, 예제, 템플릿, CHANGELOG, LICENSE |
 | SHA256SUMS | 위 두 배포 파일의 SHA-256; 릴리스 워크플로가 생성 |
 
-GitHub가 자동 제공하는 Source code 압축파일과 워크플로가 빌드해 첨부한 `.tar.gz`는 구분합니다. 아래 절차에는 릴리스 첨부 파일을 사용합니다. 공개 완료 후 GitHub Release와 [PyPI](https://pypi.org/project/ziho-autoresearch/)에서 설치할 수 있습니다. [uv 설치 안내](uv-installation.md)와 [PyPI 자동화 설정](pypi-publishing.md)을 참고하세요. v0.2.1 wheel에는 스킬과 references도 포함됩니다.
+GitHub가 자동 제공하는 Source code 압축파일과 워크플로가 빌드해 첨부한 `.tar.gz`는 구분합니다. 아래 절차에는 릴리스 첨부 파일을 사용합니다. 공개 완료 후 GitHub Release와 [PyPI](https://pypi.org/project/ziho-autoresearch/)에서 설치할 수 있습니다. [uv 설치 안내](uv-installation.md)와 [PyPI 자동화 설정](pypi-publishing.md)을 참고하세요. v0.3.0 wheel에는 스킬과 references도 포함됩니다.
 
 Python 3.11 이상이 필요합니다. CLI 런타임 의존성은 없습니다. `git status`, `experiment create --git-head` 및 Git 계보 모의 예제에는 Git 실행 파일이 필요합니다. Mermaid 출력의 렌더링은 별도 도구가 담당합니다.
 
@@ -23,8 +23,8 @@ from hashlib import sha256
 from pathlib import Path
 
 expected_names = {
-    "ziho_autoresearch-0.2.1-py3-none-any.whl",
-    "ziho_autoresearch-0.2.1.tar.gz",
+    "ziho_autoresearch-0.3.0-py3-none-any.whl",
+    "ziho_autoresearch-0.3.0.tar.gz",
 }
 seen = set()
 for line in Path("SHA256SUMS").read_text(encoding="utf-8").splitlines():
@@ -46,12 +46,12 @@ python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 # Windows PowerShell: .venv\Scripts\Activate.ps1
-python -m pip install --no-index --no-deps ./ziho_autoresearch-0.2.1-py3-none-any.whl
+python -m pip install --no-index --no-deps ./ziho_autoresearch-0.3.0-py3-none-any.whl
 python -m pip show ziho-autoresearch
 zar --help
 ```
 
-`zar skill install --dest ./ziho-autoresearch-skill-0.2.1 --json`으로 스킬을 새 폴더에 추출합니다. 소스 배포본의 `skills/ziho-autoresearch/` 폴더 전체를 직접 사용해도 됩니다. wheel 설치만으로 스킬이 에이전트에 자동 등록되지는 않습니다. 에이전트에 해당 `SKILL.md`의 절대 경로와 대상 ML 프로젝트 경로를 알려줍니다. 스킬 사용법은 [README](../README.md)의 안내를 따릅니다.
+`zar skill install --dest ./ziho-autoresearch-skill-0.3.0 --json`으로 스킬을 새 폴더에 추출합니다. 소스 배포본의 `skills/ziho-autoresearch/` 폴더 전체를 직접 사용해도 됩니다. wheel 설치만으로 스킬이 에이전트에 자동 등록되지는 않습니다. `zar skill install --agent codex --project <ML 프로젝트>` 또는 `--agent claude`로 발견 경로에 설치할 수도 있습니다. 수동 추출한 경우 에이전트에 해당 `SKILL.md`의 절대 경로와 대상 ML 프로젝트 경로를 알려줍니다. 스킬 사용법은 [README](../README.md)의 안내를 따릅니다.
 
 압축 해제한 소스 폴더에서 `python examples/mock-cycle.py --output <새 출력 경로>`로 학습 없이 기록 흐름을 확인할 수 있습니다. 출력 경로는 기존 상위 폴더 아래의 존재하지 않는 경로여야 합니다. 소스 자체를 설치하려면 `python -m pip install .`을 사용할 수 있지만, 이때 빌드용 setuptools를 준비해야 합니다. 일반 사용자는 검증된 wheel을 우선 사용합니다.
 

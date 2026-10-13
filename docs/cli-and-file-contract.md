@@ -48,8 +48,8 @@
 
 | 명령 | 정확한 동작 |
 |---|---|
-| `zar skill guidance --skill-dir <기존 스킬 폴더>` | 미배포. SKILL.md 존재 확인 후 절대 경로를 포함한 AGENTS.md 연결 Markdown 출력. JSON data는 view=skill_guidance, skill_file, markdown. 파일 쓰기·자동 등록 없음. 누락/제어 문자/홈 경로 확장 불가 인자 exit 2, SKILL.md 부재/디렉터리 등 I/O 오류 exit 4; [상세 계약](uv-installation.md#프로젝트-지침에-연결) |
-| `zar skill install --agent <codex 또는 claude> [--scope project 또는 user] [--dry-run]` | 미배포. 기본 project. 발견 경로에 스킬 전체 복사, 필요한 상위 폴더 생성, 기존/리디렉션 경로 충돌 exit 3. 잘못된 옵션/홈 해석/제어 문자 exit 2, 없는 루트/I/O exit 4. JSON skill_install에 agent, scope, dry_run, invocation, next_steps 추가; 미리보기 files=[]; [설치 계약](agent-installation.md) |
+| `zar skill guidance --skill-dir <기존 스킬 폴더>` | 0.3.0부터. SKILL.md 존재 확인 후 절대 경로를 포함한 AGENTS.md 연결 Markdown 출력. JSON data는 view=skill_guidance, skill_file, markdown. 파일 쓰기·자동 등록 없음. 누락/제어 문자/홈 경로 확장 불가 인자 exit 2, SKILL.md 부재/디렉터리 등 I/O 오류 exit 4; [상세 계약](uv-installation.md#프로젝트-지침에-연결) |
+| `zar skill install --agent <codex 또는 claude> [--scope project 또는 user] [--dry-run]` | 0.3.0부터. 기본 project. 발견 경로에 스킬 전체 복사, 필요한 상위 폴더 생성, 기존/리디렉션 경로 충돌 exit 3. 잘못된 옵션/홈 해석/제어 문자 exit 2, 없는 루트/I/O exit 4. JSON skill_install에 agent, scope, dry_run, invocation, next_steps 추가; 미리보기 files=[]; [설치 계약](agent-installation.md) |
 | `zar skill install --dest <새 폴더>` | 0.2.0부터 번들 스킬 전체를 명시한 새 폴더에 설치. 상위 폴더 필요, 기존 경로 덮어쓰기 금지, 자동 등록 없음; [설치 계약](uv-installation.md) |
 | `zar init` | `.autoresearch`와 revision 1의 미설정 project.json, program.md 생성. 프로젝트 ID는 `project-<UUID>`로 생성. 재호출 시 기존 파일 보존·변경 없음; 부분 초기화는 진단하고 중단 |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
