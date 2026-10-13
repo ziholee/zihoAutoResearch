@@ -1,239 +1,142 @@
 # zihoAutoResearch
 
-**LLM이 기존 ML 프로젝트를 이해하고 전처리·학습·검증을 점검하며, 코드 수정과 실험을 반복하도록 돕는 가벼운 연구 도구.**
+**기존 ML 프로젝트의 실험 근거·결과·판단을 로컬에 기록하고, 다음 세션에서 이어가는 가벼운 CLI와 에이전트 스킬입니다.**
 
-사용자가 선택한 기존 환경과 실행 명령을 활용하며, Git 코드 커밋과 후속 실험 기록 커밋을 연결해 연구 이력을 쌓습니다. 대회에서는 주최측 데이터·평가 지표·제출 규칙을 읽고, 로컬 검증 결과와 제출 점수를 실험 변경에 연결합니다. Docker나 별도 실행 플랫폼은 초기 범위에 포함하지 않습니다.
+전처리, 모델, 손실 함수, 최적화 방법을 바꿀 때 “왜 시도했는지, 어떤 조건에서 비교했는지, 무엇을 채택했는지”를 함께 남깁니다. 데이터나 학습 환경을 새 플랫폼으로 옮길 필요 없이 기존 프로젝트에서 사용합니다.
 
-## 작업 흐름
+[PyPI](https://pypi.org/project/ziho-autoresearch/) · [GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases) · [변경 내역](CHANGELOG.md) · [문제 제보](https://github.com/ziholee/zihoAutoResearch/issues)
 
-프로젝트 이해 → 연구 지침 작성 → 현재 실험 점검 → 유효한 기준 확보 → 가설·코드 수정 → 실행·비교 → 유지·되돌리기·보류 → 다음 실험
+## 어떤 도구인가요?
 
-카파시의 AutoResearch에서 작은 연구 지침과 반복 실험 방식을 가져옵니다. 여기에 기존 프로젝트 이해, 전처리·학습의 근거 기반 점검, 제출 결과 연결을 보완합니다. 전체 파이프라인을 연구 대상으로 삼으며 특정 데이터셋에 제품을 고정하지 않습니다.
+- **CLI (`zar`)**: 실험 계획·관측·비교·판단을 JSON으로 저장하고 형식·참조·근거 파일을 검사합니다.
+- **에이전트 스킬**: 사용 중인 코딩 에이전트가 프로젝트를 읽고, 허용된 범위 안에서 연구 절차를 따르도록 안내합니다.
+- **재개와 보고서**: 미완료 실험, 실패 기억, 후보 근거, 실험 계보를 조회하고 Markdown 보고서를 만듭니다.
 
-## 아키텍처
+CLI 자체는 LLM을 호출하거나 학습·코드 복구·대회 제출을 실행하지 않습니다. 실행은 사용자 또는 기존 에이전트가 담당하고, CLI에는 실제로 확인한 결과를 기록합니다. `check` 통과도 데이터 누수나 모델 품질의 자동 판정을 뜻하지 않습니다.
 
-현재 구조는 연구 판단, 원본 기록, 재개용 조회를 분리합니다. 스킬이 프로젝트를 해석하고 판단하며 CLI는 기록·검사·비교와 근거 조회를 담당합니다. 상세 계약은 [맥락 조회와 근거 재조회](docs/context-and-evidence.md)를 따릅니다.
+## 1. 설치
 
-```mermaid
-flowchart TD
-    U[사용자: 목표 · 변경 범위 · 예산] --> S[LLM 연구 스킬]
-    S --> C[CLI: 기록 변경 · 비교 · 판단 저장]
-    C --> J[원본 JSON + Git 코드 이력]
-    J --> R[공통 기록 스냅샷과 검증]
-    R --> C
-    R --> Q[context: 제한된 재개 정보]
-    Q --> S
-    R --> E[evidence read: 근거 원문 부분 조회]
-    L[기존 로그 · 데이터 · 산출물] --> E
-    E --> S
-    S --> X[기존 에이전트 도구: 허용된 코드 수정과 실행]
-    X --> L
-    J --> P[JSON 기반 보고서 생성]
-```
+Python **3.11 이상**이 필요합니다. 런타임 외부 라이브러리 의존성은 없습니다. Git 연결 기능을 사용할 때만 Git 실행 파일이 필요합니다.
 
-
-CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행하지 않습니다. 실제 사용 중 실행은 기존 에이전트 도구가 맡으며, 도구 개발 검증에서는 로그와 점수를 모의 데이터로 대체합니다.
-
-## 현재 상태
-
-로컬 CLI의 JSON 저장·검증 기반과 `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `lineage`, `report`를 구현했습니다. [LLM용 스킬](skills/ziho-autoresearch/SKILL.md)과 실행 가능한 [모의 연구 예제](examples/mock-cycle.py)를 제공합니다. `check`는 기록의 형식·연결·근거 파일을 검사하며 ML 과정의 타당성을 판정하지 않습니다.
-
-- [실험 계보의 JSON·Mermaid 조회](docs/experiment-lineage.md)
-- [다음 실험 후보의 근거·예상 비용·선택 이유](docs/candidate-rationale.md)
-- [실패 기억의 기록·정정·재조회](docs/failure-memory.md)
-- [맥락 조회·근거 재조회와 구조](docs/context-and-evidence.md)
-- [최근 관련 연구와 개선 이슈](docs/research-update-2026-10.md)
-- [보고서 필드별 원본 매핑](docs/report-field-mapping.md)
-- [Git 기반 연구 이력과 사용 순서](docs/git-research-history.md)
-- [현재 제품 정의](docs/product-direction.md)
-- [v1 사용 흐름·CLI·파일 계약](docs/cli-and-file-contract.md)
-- [실제 학습 없이 확인하는 모의 파일 예제](examples/contract-v1/README.md)
-- [연구 절차와 판정 규칙](docs/research-workflow.md)
-- [기존 프로젝트 연결과 실행 환경](docs/project-adapter-and-environment.md)
-- [프로젝트 연구 지침 템플릿](templates/program.md)
-- [실험 기록 템플릿](templates/experiment.md)
-- [작업 기록](tasks/todo.md)
-
-목표는 사용자가 적용할 수 있는 도구를 완성하는 것입니다. 스킬은 기존 CLI로 실험 기록·비교·판단·선택을 연결하며, 확인된 제출 결과를 실험·파일 해시와 연결합니다. 보고서는 원본 JSON에서 생성하며 미기록 값과 근거의 한계를 표시합니다. 제품 개발 중 실제 ML 학습·대회 제출은 하지 않으며, 완성 후 실제 적용은 사용자가 수행합니다.
-
-## 배포와 라이선스
-
-[v0.2.0 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/)도 공개됐습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
-
-## 설치와 기본 사용
-
-Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 PyPI 설치와 공개 GitHub wheel 경로를 확인하세요. v0.2.0은 GitHub에 공개했으며, [PyPI 자동화](docs/pypi-publishing.md)는 별도 검증·환경 승인·업로드를 거칩니다. 빠른 설치는 다음과 같습니다.
+[uv](https://docs.astral.sh/uv/getting-started/installation/)가 있다면:
 
 ```sh
 uv tool install ziho-autoresearch
 zar --help
-zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json
 ```
 
-저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
+`zar`를 찾지 못하면 `uv tool update-shell`을 실행하고 터미널을 다시 여세요. 버전 고정은 `uv tool install 'ziho-autoresearch==0.2.0'`, 업데이트는 `uv tool upgrade ziho-autoresearch`로 합니다. 고정 버전이나 URL 설치의 업데이트 방법은 [uv 안내](docs/uv-installation.md)를 참고하세요.
+
+uv 없이 설치하려면:
 
 ```sh
 python -m venv .venv
-# Linux/macOS
+# macOS / Linux
 source .venv/bin/activate
-# Windows PowerShell에서는 .venv\Scripts\Activate.ps1
-python -m pip install .
-zar init --project /path/to/ml-project
-zar status --project /path/to/ml-project
+# Windows PowerShell에서는 위 줄 대신:
+# .venv\Scripts\Activate.ps1
+python -m pip install ziho-autoresearch
+zar --help
 ```
 
-처음 설정하거나 중단한 작업을 이어갈 때는 [처음 사용과 재개 안내](docs/first-run-and-resume.md)를 따르세요. v0.1.1에서 추가한 문서 보완과 재개 검증은 v0.2.0에도 포함됩니다. [공개 배포본 검증 결과](docs/public-onboarding-validation.md)에 수정 근거를 기록했습니다.
+## 2. 기존 프로젝트 연결
 
-### LLM 스킬 사용
-
-스킬 원본은 `skills/ziho-autoresearch/`이며 `references/`를 포함한 폴더 전체가 한 단위입니다. 0.2.0부터 wheel에도 같은 파일을 포함합니다. `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 새 폴더에 설치하고 반환된 `SKILL.md` 경로를 에이전트에 알려주세요. 기존 폴더를 덮어쓰거나 전역 설정에 자동 등록하지 않습니다. 자세한 갱신 절차는 [스킬 설치 안내](docs/uv-installation.md)를 따릅니다. 이전 v0.1.1에서는 기존처럼 소스 배포본의 스킬 폴더를 사용합니다. 소스 스킬을 직접 사용할 때는 다음처럼 경로를 지정합니다.
-
-> `/absolute/path/to/zihoAutoResearch/skills/ziho-autoresearch/SKILL.md`를 읽고 `/absolute/path/to/ml-project`를 점검해줘. 우선 실행 없이 프로젝트 해석과 누락 정보를 정리해줘.
-
-실험까지 맡길 때는 목표, 허용 변경 경로, 실행 환경, 횟수·시간 한도를 함께 지정하거나 이미 확정한 project.json을 참조합니다. 스킬은 현재 기록을 읽고 미완료 실행을 확인한 뒤 이어갑니다. `keep` 판단, 기록상 선택, 실제 작업 폴더의 코드는 각각 확인합니다. 모든 지침이 설치된 에이전트에서 자동 발견된다고 보장하지는 않습니다.
-
-### 학습 없이 한 사이클 확인
-
-위 CLI 설치 후, 저장소에서 실행합니다. 출력 경로는 **존재하지 않는 새 폴더**이고 그 상위 폴더는 있어야 합니다.
+아래 `./my-ml-project`를 **이미 존재하는 ML 프로젝트 폴더**로 바꾸세요. Windows에서도 경로에 공백이 있으면 따옴표로 감싸면 됩니다.
 
 ```sh
-python examples/mock-cycle.py --output /tmp/zar-mock-adopt
-python examples/mock-cycle.py --output /tmp/zar-mock-hold --scenario scope-mismatch
+zar init --project ./my-ml-project
+zar status --project ./my-ml-project --json
 ```
 
-Windows에서는 `/tmp/...` 대신 존재하는 임시 폴더 아래의 새 경로를 지정하세요. 예제는 기준/후보의 가짜 코드·로그·시각·점수를 생성하고 CLI로 초기화 → 모의 점검 등록 → 기준 선택 → 후보 기록 → 비교 → 판단 → 선택/보류 → 모의 제출 결과 기록 → 보고서 → check/status를 수행합니다. 학습 명령은 호출하지 않습니다. 예제의 고정 판단은 모의 시나리오이며 실제 연구의 자동 채택 정책이 아닙니다.
+프로젝트 안에 `.autoresearch/`가 생성됩니다. 기존 코드·루트 `program.md`·`AGENTS.md`는 보존합니다. `--project`를 생략하면 현재 폴더를 사용하며 상위 폴더를 자동 탐색하지 않습니다.
 
-각 출력 폴더에 `project/.autoresearch/` 기록, 호출과 진단의 `events.json`, 결과의 `summary.json`, 제한된 조회의 `context.json`, 원문 발췌의 `evidence-page.json`과 `project/.autoresearch/reports/summary.md`를 보존합니다. 점검·제출 결과도 모두 합성 관측이며 실제 학습·제출을 증명하지 않습니다. 기본 예제는 정확한 0.1 개선으로 후보를 선택합니다. scope-mismatch 예제는 proxy/full 불일치로 후보를 보류하고 기준 선택을 유지합니다. 이때 작업 폴더에는 후보 코드가 남으므로 `workspace_matches_selection:false`를 명시합니다. 기록상 선택이 코드를 복구하지 않는다는 예제입니다. 기존 출력 폴더는 덮어쓰지 않으며 재실행에는 새 경로를 사용합니다.
+처음에는 `ready:false`가 정상입니다. 목표, 비교 지표, 데이터·코드 식별자, 실행 환경, 명령, 예산, 수정 허용 경로를 채워야 합니다. 다음 단계의 에이전트에 설정을 도와달라고 하거나 [처음 사용 안내](docs/first-run-and-resume.md)를 따라 직접 작성하세요.
 
-### 필요한 맥락과 근거만 읽기
+## 3. 에이전트에 스킬 전달
+
+ML 프로젝트 밖의 편한 작업 폴더에서 실행하세요. `--dest`는 **새로 만들 스킬 폴더**이며 상위 폴더는 이미 있어야 합니다.
 
 ```sh
-zar context --project /path/to/ml-project --experiment exp-candidate-1 --max-bytes 16384 --json
-zar evidence read --project /path/to/ml-project --kind experiment --id exp-candidate-1 --pointer /execution/evidence/0 --max-lines 80 --json
+zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json
 ```
 
-`context`는 기록의 형식·참조를 확인하고 선택/후보/미완료/실패 정보를 제한된 크기로 제공합니다. 전체 로그의 존재·해시는 확인하지 않으며 `evidence_not_checked`를 명시합니다. 누락 카드와 잘린 필드를 확인하고 `next_offset`과 `--snapshot`으로 이어 읽습니다.
+wheel에 포함된 `SKILL.md`와 `references/` 전체를 추출합니다. 기존 폴더를 덮어쓰거나 에이전트에 자동 등록하지 않습니다. 출력된 절대 경로를 사용 중인 코딩 에이전트에 전달하세요.
 
-`evidence read`는 등록된 근거의 해시와 원문을 같은 스트림에서 확인하며 UTF-8 줄을 그대로 반환합니다. 등록 해시가 바뀌었으면 내용을 반환하지 않습니다. 해시가 없는 파일은 미검증으로 표시하고, 다음 페이지에는 이전 `actual_sha256`을 `--sha256`으로 전달할 수 있습니다. 원본은 자동 보관·복원하지 않습니다. 전체 근거 검사는 기존 `check`, ML 해석은 스킬이 담당합니다. 정확한 상한·오류·동시 변경 한계는 [조회 계약](docs/context-and-evidence.md)을 참고하세요.
+> `<출력된 스킬 폴더>/SKILL.md`를 읽고 `<ML 프로젝트 절대 경로>`를 점검해줘. 우선 실행 없이 현재 코드·데이터·평가 방법과 누락된 설정을 정리하고, 첫 실험 계획을 제안해줘.
 
-### 프로젝트 설정과 검사
+실험 실행까지 맡길 때는 **목표, 허용 변경 경로, 실행 환경, 횟수·시간 한도**도 지정하세요. 비밀 키나 원본 개인정보를 대화 또는 실험 근거에 붙여넣지 마세요. 스킬을 업데이트할 때는 새 폴더로 추출해 사용자 수정과 비교합니다.
 
-초기화는 `.autoresearch/`만 생성하고 기존 코드·루트 `program.md`·`AGENTS.md`를 보존합니다. `--project`를 생략하면 현재 폴더를 사용하며 상위 폴더를 탐색하지 않습니다.
-
-초안은 원본과 다른 파일에 작성합니다. `.autoresearch/drafts/`를 사용한다면 `init`이 만들지 않는 선택 폴더이므로 먼저 생성하세요. 프로젝트 밖에 초안을 두어도 됩니다. 생성된 `.autoresearch/project.json`을 별도 파일로 복사해 목표·비교 조건·명령·예산·수정 허용 경로를 채웁니다. `environment.os`는 사용자가 `windows`, `linux`, `macos`, `other` 중 선택하고 `runtime`, `device`도 직접 기록합니다. 기록된 명령은 실행하지 않습니다.
+## 4. 기록 확인과 재개
 
 ```sh
-zar project set --project /path/to/ml-project --file edited-project.json
-zar status --project /path/to/ml-project --json
-zar check --project /path/to/ml-project --json
+zar status --project ./my-ml-project --json
+zar context --project ./my-ml-project --max-bytes 16384 --json
+zar check --project ./my-ml-project --json
 ```
 
-`project set`은 현재 revision의 전체 수정본을 받아 검증 후 revision을 올립니다. ID·생성 시각은 유지하고 updated_at은 CLI가 기록합니다. 같은 comparison ID의 조건을 바꾸려면 새 ID를 지정합니다. 미완성 설정도 저장할 수 있으며 `status`는 누락을 보여주고 `check`는 종료 코드 3을 반환합니다. 성공은 0, 인자·형식 오류는 2, 상태·참조 충돌은 3, 파일·잠금 오류는 4입니다.
+- `status`: 설정 누락, 현재 선택, 미완료 실험과 예산 확인.
+- `context`: 새 세션에 전달할 제한된 크기의 맥락 조회. 근거 파일의 존재·해시는 검사하지 않습니다.
+- `check`: 기록과 근거 검사. 종료 코드뿐 아니라 경고 내용도 읽으세요. 초기 설정이 미완성이면 종료 코드 3이 나올 수 있습니다.
 
-CLI는 `.autoresearch/.lock`으로 동시 접근을 조정하며 잠금이 있으면 자동 삭제하지 않습니다. 중단으로 잠금이 남으면 실행 중인 CLI가 없는지 확인한 뒤 수동으로 복구합니다. `init`은 프로젝트 루트의 `.autoresearch.init.lock`을 사용합니다. CLI 밖의 동시 파일 편집은 보호하지 않습니다.
+중단 후에는 에이전트에게 이렇게 요청할 수 있습니다.
 
-`check`는 저장된 review/experiment/submission/memory/candidate 파일도 검사합니다. 파일 근거의 누락·해시 미기록·변경과 확인하지 못한 코드/데이터 최신성은 진단으로 표시하고 URL에 접속하지 않습니다. 실제 ML 실행이나 제출 없이 테스트합니다.
+> 같은 스킬과 프로젝트를 읽고 `context`와 `status`로 현재 상태를 확인해줘. `unknown` 실험은 실제 로그·프로세스 상태를 확인하기 전 재실행하지 말고, 새 근거로 상태를 정리해줘.
+
+**기록상 채택과 실제 작업 폴더의 코드는 별개입니다.** `keep` 판단이나 선택 변경이 코드를 되돌리지 않습니다. 정확한 중단·재개 절차는 [처음 사용·재개 안내](docs/first-run-and-resume.md)를 참고하세요.
+
+## 직접 기록할 때의 순서
+
+JSON 입력을 직접 작성하거나 에이전트가 작성한 초안을 검토할 수 있습니다. [CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md)에 입력 예제가 있고, [파일 계약](docs/cli-and-file-contract.md)에 필수 필드와 상태 전이가 정리돼 있습니다.
+
+| 목적 | 명령 | 안내 |
+|---|---|---|
+| 프로젝트 초기화 | `zar init` | 기존 프로젝트에 기록 폴더 생성 |
+| 스킬 추출 | `zar skill install` | 새 폴더로 스킬 복사 |
+| 설정 저장 | `zar project set --file <json>` | 현재 project.json을 별도 초안으로 복사해 수정 |
+| 실행 전 점검 | `zar review add --file <json>` | 확인한 근거와 미검증 항목 기록 |
+| 다음 후보 기록 | `zar candidate add --file <json>` | [관측·예측·선택 이유](docs/candidate-rationale.md) |
+| 실험 생성·결과 갱신 | `zar experiment create`, `zar experiment update` | [입력 예제](examples/experiment-create.json), 실제 관측만 기록 |
+| 비교·판단 | `zar experiment compare`, `zar experiment decide` | proxy/full 등 비교 조건 확인; 자동 코드 채택 없음 |
+| 완료 결과 정정 | `zar experiment correct` | 새 ID로 원본 보존 |
+| 실패 기억 | `zar memory add --file <json>` | [실패 원인·대응과 한계](docs/failure-memory.md) |
+| 확인된 외부 점수 | `zar submission add --file <json>` | 실제 제출은 별도 수행 |
+| 근거 원문 조회 | `zar evidence read` | [해시·부분 조회](docs/context-and-evidence.md) |
+| 실험 관계 조회 | `zar lineage` | [JSON·Mermaid 계보](docs/experiment-lineage.md) |
+| 보고서 생성 | `zar report --output summary.md` | `.autoresearch/reports/summary.md`에 저장 |
+| 코드 커밋 연결 | `zar git status`, `zar experiment create --git-head` | [Git 이력 사용법](docs/git-research-history.md) |
+
+위 명령에도 `--project <프로젝트 경로>`를 붙일 수 있습니다. 자세한 인자는 `zar <명령> --help`로 확인하세요. JSON 입력은 원본과 다른 파일에 작성합니다. `.autoresearch/drafts/`를 쓴다면 먼저 직접 생성해야 합니다.
+
+## 학습 없이 체험하기
+
+예제는 wheel에 포함되지 않습니다. [소스 배포본](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)을 풀거나 이 저장소를 내려받고, CLI가 설치된 Python 환경에서 소스 폴더를 기준으로 실행하세요.
 
 ```sh
-python -m unittest discover -s tests -v
+python -m venv .venv
+# macOS / Linux
+source .venv/bin/activate
+# Windows PowerShell에서는 위 줄 대신:
+# .venv\Scripts\Activate.ps1
+python -m pip install ziho-autoresearch
+python examples/mock-cycle.py --output ./demo-cycle
 ```
 
-기존 자동화는 Linux·Windows·macOS의 GitHub 호스팅 runner에서 검증했습니다. 변경별 결과는 해당 PR의 CI와 작업 기록을 확인하세요. 실제 ML 프로젝트의 학습·장치 호환성 검증을 뜻하지 않습니다.
+`demo-cycle`은 존재하지 않는 새 경로여야 합니다. 예제는 가짜 점수와 로그로 기록 → 비교 → 판단 → 보고서 흐름을 보여주며 학습하지 않습니다. uv tool의 Python 환경과 별도 Python 환경은 패키지를 공유하지 않으므로, 위 예제용 가상환경에도 패키지를 설치합니다. 두 세션의 재개 연습은 [재개 예제](docs/first-run-and-resume.md#학습-없는-두-세션-연습)를 참고하세요.
 
-## 실험 생성과 관측 결과 기록
+## 기록을 공유하기 전에
 
-설정을 채운 프로젝트에서 [생성 입력 예제](examples/experiment-create.json)를 복사하고 실험 ID·가설·코드/설정 식별자·명령을 실제 프로젝트에 맞게 수정합니다.
+`.autoresearch/`와 보고서에는 직접 기록한 명령, 파일 경로, 로그 발췌, 근거가 포함될 수 있습니다. 커밋·업로드 전에 비밀 키, 개인 데이터, 비공개 데이터셋·로그를 확인하세요. CLI의 JSON 검사는 비밀정보 탐지나 자동 익명화를 제공하지 않습니다. 원본 증거를 수정하면 저장된 해시와 달라질 수 있으므로 공개용 사본을 따로 만드세요.
 
-```sh
-zar experiment create --project /path/to/ml-project --file experiment-create.json
-zar experiment update exp-baseline-1 --project /path/to/ml-project --file experiment-update.json
-```
+잠금이 남아 있으면 실행 중인 CLI가 없는지 확인한 뒤 복구하세요. `.autoresearch/.lock`이나 프로젝트 루트의 `.autoresearch.init.lock`을 무조건 지우지 않습니다. 기록 이력이 크면 `context`를 먼저 사용하세요. `report`와 `lineage`의 전체 출력에는 크기 제한이 없습니다.
 
-`create`는 현재 comparison/environment를 복사하고 `planned` 기록을 만듭니다. 설정 누락, 실험 수 한도, 중복 ID와 존재하지 않는 참조는 거부합니다. `update` 입력은 생성된 `.autoresearch/experiments/exp-baseline-1.json`의 **전체 수정본**입니다. 현재 revision을 유지하고 execution에 실제 관측값을 채우면 CLI가 revision과 updated_at을 갱신합니다.
+## 더 알아보기
 
-- `planned → running → succeeded/failed/interrupted/unknown`을 기록합니다. 이미 종료한 실행은 시작·종료 시각과 근거를 갖춰 planned에서 바로 종료 상태로 기록할 수 있습니다.
-- `unknown`을 해소하려면 기존 근거와 구별되는 확인 근거를 추가합니다. 새 실행은 새 ID로 기록합니다.
-- 계획·이미 기록한 실행 시각·판단은 update로 바꿀 수 없습니다. 종료 결과는 고정하며 산출물만 새 경로로 추가할 수 있습니다. 제출용 산출물은 SHA-256 해시가 필요합니다.
+- [설치·업데이트·스킬 갱신](docs/uv-installation.md)
+- [처음 설정부터 중단·재개까지](docs/first-run-and-resume.md)
+- [연구 절차와 판단 규칙](docs/research-workflow.md)
+- [프로젝트 연결·환경 설정](docs/project-adapter-and-environment.md)
+- [기록 규모별 성능 측정과 한계](docs/record-scale-performance.md)
+- [제품 방향과 참고 연구](docs/product-direction.md)
+- [배포 파일 검증](docs/releasing.md) · [기여·CI 기준](docs/automation.md)
 
-이 명령은 프로세스를 시작하거나 실행 상태를 자동 탐지하지 않습니다. 실험을 생성·갱신해도 project.json의 선택 실험은 바뀌지 않습니다. 새 실험 파일은 소유자 전용 권한으로 생성되고, 이후 갱신은 기존 파일 권한을 유지합니다.
-
-## Git 커밋으로 쌓는 연구 이력
-
-코드·설정을 커밋한 뒤 다음 명령으로 실험을 연결합니다. CLI는 Git 조회만 수행합니다.
-
-```sh
-zar git status --project /path/to/ml-project --json
-zar experiment create --git-head --project /path/to/ml-project --file /path/to/experiment-create.json
-```
-
-`--git-head`는 입력 code_ref를 `git:<전체 HEAD SHA>`로 대체하며 커밋되지 않은 코드·설정 변경이 있으면 거부합니다. `.autoresearch/`의 기록 변경은 허용합니다. 입력 파일은 대상 프로젝트 밖이나 `.autoresearch/drafts/`에 두세요. 실행 결과 JSON은 코드 커밋을 계속 가리키며, 기존 에이전트가 별도의 결과 기록 커밋으로 보존합니다.
-
-추적할 파일·잠금 제외 규칙·실행 직전 확인·검사 한계는 [Git 연구 이력](docs/git-research-history.md)에 정리했습니다. 과거 JSON 예제의 수동 code_ref는 실제 Git SHA가 아닙니다.
-
-## 미실행 취소·시작 미확인·관측 정정
-
-- 실행하지 않은 planned는 `experiment update`로 `cancelled`와 사유 note를 남깁니다. 시작·종료·점수·exit code는 null, artifacts는 []입니다. 미완료 목록에서 닫히고 횟수 예산을 반환합니다.
-- 실행 시작 여부를 모르면 note/evidence와 함께 `unknown`을 기록하며 시작 시각을 추정하지 않습니다. 확인 전 재실행하지 않고, 새 근거로 실행 상태를 해소합니다.
-- 완료 결과의 오기는 원본을 덮어쓰지 않고 새 정정 ID로 연결합니다.
-
-```sh
-zar experiment correct exp-baseline-1 --project /path/to/ml-project --file correction.json
-```
-
-정정 입력은 `{id, revision, execution, reason, evidence}`이며 원본 revision과 새 ID를 제공합니다. 같은 실행 계획·산출물을 보존하고 결과만 정정합니다. 새 실행 횟수는 늘지 않으며 새 판단은 비어 있습니다. 선택된 원본은 먼저 선택 해제해야 합니다. 자세한 상태·정정 규칙은 [파일 계약](docs/cli-and-file-contract.md), 보고서의 출처는 [필드 매핑](docs/report-field-mapping.md)을 따릅니다.
-
-## 실험 비교와 판단 기록
-
-생성 입력에 `run_context`를 지정합니다. `scope`는 `proxy` 또는 `full`, `seed`는 정수 또는 미확인 시 null, `budget_ref`는 실행 예산 조건 식별자입니다. [생성 예제](examples/experiment-create.json)의 값은 실제 조건으로 바꾸세요.
-
-```sh
-zar experiment compare exp-baseline-1 exp-candidate-1 --project /path/to/ml-project --json
-zar experiment decide exp-candidate-1 --project /path/to/ml-project --file decision.json
-```
-
-[판단 입력 예제](examples/experiment-decision.json)의 revision은 대상 실험의 현재 값으로 바꿉니다. compare는 조건 일치 여부, 정확한 십진 개선 폭, 명시적으로 연결한 확인 실험의 횟수·분산을 보여줍니다. 미기록 조건·proxy/full 혼합·정정된 baseline은 비교를 제한하고, 근거 확인 한계는 별도로 출력합니다. decide는 사용자의 근거 있는 판단을 이력에 추가하며 코드·Git·현재 선택을 바꾸지 않습니다. 자세한 의미와 기존 기록 호환성은 [비교 계약](docs/cli-and-file-contract.md#8-비교와-submissionsidjson)을 따릅니다.
-
-## 실행 전 점검 기록
-
-`zar review add --project /path/to/ml-project --file review-draft.json --json`으로 점검 결과를 등록합니다. 입력은 `id`, `supersedes_id`, `code_ref`, `data_ref`, `items`이며 생성 메타데이터는 CLI가 채웁니다. 프로젝트 설정이 미완성이어도 점검을 남길 수 있습니다. 입력 예시는 [스킬의 CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md#register-a-review)에 있습니다.
-
-실험 전 변경 범위·가설과 실제 diff를 대조하고, 데이터 누수·평가 방법 변경·검증하지 못한 항목을 근거와 함께 남깁니다. 등록한 ID를 새 실험의 `review_ids`에 연결합니다. 등록 성공은 점검 내용이나 ML 타당성의 자동 승인을 뜻하지 않습니다. 같은 코드·데이터의 점검 정정은 새 ID와 `supersedes_id`로 원본을 보존하며, 기존 실험 참조는 바꾸지 않습니다. [RRSI 적용 범위](docs/research-update-2026-10.md#rrsi-적용-실행-전-점검)를 참고하세요.
-
-## 확인된 제출 결과 기록
-
-`zar submission add --project /path/to/ml-project --file submission-draft.json --json`은 이미 확인한 외부 점수와 제출 근거를 기록합니다. 먼저 성공한 실험의 artifacts에 role=submission 파일 경로와 SHA-256을 등록해야 합니다. 점수가 아직 없으면 산출물만 보존합니다. 입력 필드는 [v1 계약](docs/cli-and-file-contract.md)과 [CLI 레시피](skills/ziho-autoresearch/references/cli-recipes.md#register-an-observed-submission-result)를 따릅니다.
-
-중복 외부 결과는 거부하고, 정정은 같은 competition/external_id/leaderboard의 활성 기록을 새 ID로 대체합니다. 원본·실험 로컬 점수·판단·현재 선택은 보존됩니다. 실제 파일 해시가 다르면 등록을 거부하며, 파일이 없으면 확인 불가 경고를 남깁니다. CLI는 외부 제출이나 점수 조회를 수행하지 않습니다.
-
-## 실패 기억 기록과 재조회
-
-`zar memory add --project /path/to/ml-project --file memory-draft.json --json`으로 실패 원인·대응·한계와 원본 실험·근거를 연결합니다. 실패 기억이 있으면 기본 context가 집계와 조회 안내를 제공합니다. 활성 기억은 `zar context --memories --project /path/to/ml-project --experiment exp-candidate-1 --json`으로 읽습니다. 선언 조건의 일치만으로 해결책이 검증되었다고 판단하지 않습니다. 원본 근거와 현재 조건을 확인하고, 정정·폐기는 새 ID로 원본을 보존합니다. 입력과 호환성은 [실패 기억 계약](docs/failure-memory.md)을 따릅니다. 설치 후 `python examples/mock-memory.py --output /tmp/zar-mock-memory`로 합성 기록의 등록·조회·정정·폐기를 확인할 수 있습니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 해당 환경의 임시 경로로 바꿉니다.
-
-## 연구 보고서 생성
-
-```sh
-zar report --project /path/to/ml-project --output summary.md --json
-zar report --project /path/to/ml-project --output summary.md --overwrite --json
-```
-
-프로젝트 전체 설정·점검·실험·제출 결과·실패 기억·후보 근거를 `.autoresearch/reports/summary.md`에 생성합니다. 활성 기록을 먼저 표시하고 정정된 원본도 보존해 보여줍니다. 저장된 판단과 현재 기록에서 계산한 비교 결과는 구분하며, 없는 값은 “미기록”, unknown은 “상태 불명”으로 표시합니다. 로그에서 사실을 추정하거나 LLM·Git·외부 서비스를 호출하지 않습니다. 근거 검사의 경고도 보고서에 포함합니다.
-
-출력은 reports 내부의 `.md` 상대 경로만 허용하며 중첩 경로의 부모 폴더는 미리 존재해야 합니다. 기존 파일은 기본적으로 보존하고, `--overwrite`도 같은 프로젝트의 보고서 표식이 있는 일반 파일만 교체합니다. 원본 JSON은 변경하지 않습니다. 보고서는 모든 기록을 포함하므로 큰 이력의 재개에는 제한된 `context`를 먼저 사용하세요.
-
-## 구현 기준과 자동 검증
-
-문서의 요구사항과 회귀 테스트, PR 필수 검사, 리뷰 기준 및 초안 릴리스 절차는 [문서 기반 자동화](docs/automation.md)를 따릅니다. 자동 검사는 소프트웨어 계약을 확인하며 실제 ML 유효성이나 비용 절감을 대신 증명하지 않습니다.
-
-기록 수가 늘 때의 응답 시간·최대 메모리·출력 크기와 측정 한계는 [기록 규모별 성능 측정](docs/record-scale-performance.md)을 참고하세요.
-
-## 다음 실험 후보 기록
-
-`zar candidate add --project /path/to/ml-project --file candidate-draft.json --json`으로 관측·가설·예상 효과·비용·불확실성·선택 또는 보류 이유를 기록합니다. `zar context --candidates --project /path/to/ml-project --json`은 후보의 예측과 연결된 실제 관측을 구분하여 보여줍니다. selected는 다음에 시도할 의도이며 `selected_experiment_id`의 채택 결과와 다릅니다. 실험 생성에 선택적 candidate_id를 넣으면 정확한 selected 버전과 연결합니다. 자동 점수·순위·실행·예산 확대는 하지 않습니다. 입력·정정·재평가 절차는 [후보 기록 계약](docs/candidate-rationale.md)을 따릅니다.
-
-설치 후 `python examples/mock-candidates.py --output /tmp/zar-mock-candidates`로 합성 예측·관측·보류 흐름을 확인할 수 있습니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 임시 경로를 바꿉니다. 실제 학습·비용 검증은 하지 않습니다.
-
-## 실험 계보 조회
-
-`zar lineage --project /path/to/ml-project --json`은 기존 실험 JSON에서 계획 부모·비교 기준·관측 정정 관계를 구분해 전체 그래프를 반환합니다. `zar lineage --project /path/to/ml-project --format mermaid`는 Mermaid 원문을 출력합니다. 실패·취소·정정 원본을 남기고, 정정은 같은 실행 계보로 묶어 중복 집계하지 않습니다. 집계에는 planned/cancelled도 포함되므로 실제 실행 횟수나 소비 예산으로 해석하지 않습니다.
-
-코드 식별자와 원래 참조를 표시하지만 Git 조상 관계·실제 실행·근거 파일을 검증하지는 않습니다. 전체 출력에는 크기 제한이 없으므로 제한된 재개 맥락에는 `context`를 사용합니다. [계보 조회 계약](docs/experiment-lineage.md)에서 방향·집계·한계를 확인할 수 있습니다. 설치 후 `python examples/mock-lineage.py --output /tmp/zar-mock-lineage`로 합성 이력의 JSON·Mermaid 조회와 원본 보존을 확인합니다. 출력은 상위 폴더가 존재하는 새 경로를 사용하며 Windows에서는 해당 환경의 임시 경로로 바꿉니다.
+소프트웨어 검증은 합성 기록 중심이며 실제 ML 품질이나 학습 비용 절감을 보장하지 않습니다. 라이선스는 [MIT](LICENSE)입니다.

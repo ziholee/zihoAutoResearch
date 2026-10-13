@@ -59,3 +59,7 @@
 ## 2026-10-11 — Measure shared ancestry work
 - Deep linked records can turn per-record validation into repeated quadratic ancestor walks. Profile the full command, then retain cycle-tail and diagnostic-order semantics with invocation-scoped memoization; use operation-count regressions rather than CI timing thresholds.
 - Before/after benchmarks must share fixture bytes/paths, timing method and bytecode-cache state. Record individual trials and per-child peak RSS; unchanged output and input hashes are part of the performance claim. Do not equate bounded output with bounded memory.
+
+## 2026-10-13 — Public distribution boundaries
+- Audit Git author metadata separately from source content; a clean token scan does not mean no personal data was published. Redact findings and distinguish public refs from local checkpoint refs.
+- Keep internal work journals out of user distributions. Ignore rules do not remove tracked files, published history or existing release assets; disclose those limits and use a new release for packaging changes.

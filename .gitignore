@@ -4,3 +4,11 @@ __pycache__/
 build/
 dist/
 .venv/
+
+# Local metadata, credentials and private experiment records
+.DS_Store
+.env
+.env.*
+!.env.example
+!.env.sample
+.autoresearch/

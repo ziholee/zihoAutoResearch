@@ -3,6 +3,7 @@ graft skills/ziho-autoresearch
 recursive-include examples *.py *.json *.md *.txt
 recursive-include docs *.md *.json *.txt
 recursive-include templates *.md
-recursive-include tasks *.md
+prune tasks
 recursive-include scripts *.py
 recursive-include .github *.md *.yml *.json
+global-exclude .DS_Store .env .env.*
