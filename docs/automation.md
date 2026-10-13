@@ -52,7 +52,7 @@ python3 -m build
 python3 scripts/verify_package.py --dist dist
 ```
 
-Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트에서 플랫폼별로 지원하지 않는 권한 검사는 skip될 수 있으므로 작업 로그의 skip 사유도 확인한다. 실제 실행 결과와 남은 제한은 [작업 기록](https://github.com/ziholee/zihoAutoResearch/blob/dev/tasks/todo.md)에 남긴다. 모의 검증은 실데이터 모델 선택·데이터 누수 판정·대표 성능·비용 절감을 입증하지 않는다.
+Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트에서 플랫폼별로 지원하지 않는 권한 검사는 skip될 수 있으므로 작업 로그의 skip 사유도 확인한다. 실제 실행 결과와 남은 제한은 해당 PR과 CI에 남긴다. 내부 계획·승인 진단은 Git에서 제외한 로컬 `tasks/`에만 기록한다. 모의 검증은 실데이터 모델 선택·데이터 누수 판정·대표 성능·비용 절감을 입증하지 않는다.
 
 ## 적용 확인 — 2026-10-10
 
@@ -62,7 +62,7 @@ Windows에서는 `python3` 대신 설치된 `python`을 사용한다. 테스트�
 
 ## 후속 구현 반영 — 2026-10-11
 
-[PR #14](https://github.com/ziholee/zihoAutoResearch/pull/14)의 실패 기억과 [PR #15](https://github.com/ziholee/zihoAutoResearch/pull/15)의 후보 근거가 머지되어 관련 회귀 검사와 설치 예제가 추가되었다. 계보 조회 변경에서는 JSON·Mermaid 관계 표시, 원본 보존, 정정 중복 제외, 메타데이터 조회 범위를 검사하고 설치 패키지에서도 `examples/mock-lineage.py`를 실행한다. 위 PR #13의 검사 수는 당시 기록이며 현재 테스트 수를 뜻하지 않는다. 각 변경의 실제 실행 결과는 [작업 기록](https://github.com/ziholee/zihoAutoResearch/blob/dev/tasks/todo.md)과 해당 PR의 CI를 기준으로 확인한다.
+[PR #14](https://github.com/ziholee/zihoAutoResearch/pull/14)의 실패 기억과 [PR #15](https://github.com/ziholee/zihoAutoResearch/pull/15)의 후보 근거가 머지되어 관련 회귀 검사와 설치 예제가 추가되었다. 계보 조회 변경에서는 JSON·Mermaid 관계 표시, 원본 보존, 정정 중복 제외, 메타데이터 조회 범위를 검사하고 설치 패키지에서도 `examples/mock-lineage.py`를 실행한다. 위 PR #13의 검사 수는 당시 기록이며 현재 테스트 수를 뜻하지 않는다. 각 변경의 실제 실행 결과는 해당 PR과 CI를 기준으로 확인한다.
 
 ## 계보 통합 확인 — 2026-10-11
 

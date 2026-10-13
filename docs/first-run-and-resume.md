@@ -4,7 +4,7 @@ CLI는 실험을 실행하거나 프로세스 생존 여부를 확인하지 않�
 
 ## 1. 설치와 작업 경로
 
-[uv 설치 안내](uv-installation.md)에 따라 CLI를 설치하고 `zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json`으로 스킬을 새 폴더에 추출합니다. uv 설치 버전은 `uv tool list`로 확인합니다. pip 가상환경을 사용했다면 다시 열 때 같은 환경을 활성화하고 `python -m pip show ziho-autoresearch`로 확인합니다. 새로운 대상 프로젝트 폴더는 먼저 생성하고, 도구 소스 폴더와 구분합니다.
+[uv 설치 안내](uv-installation.md)에 따라 CLI를 설치하고 `zar skill install --dest ./ziho-autoresearch-skill-0.2.1 --json`으로 스킬을 새 폴더에 추출합니다. uv 설치 버전은 `uv tool list`로 확인합니다. pip 가상환경을 사용했다면 다시 열 때 같은 환경을 활성화하고 `python -m pip show ziho-autoresearch`로 확인합니다. 새로운 대상 프로젝트 폴더는 먼저 생성하고, 도구 소스 폴더와 구분합니다.
 
 ```sh
 zar --help --json
