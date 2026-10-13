@@ -1,6 +1,6 @@
 # uv로 설치·업데이트하고 스킬 사용하기
 
-현재 공개 버전은 GitHub Release의 v0.2.0입니다. **PyPI 배포는 별도 환경 승인과 업로드 성공 확인이 필요합니다.** 아래에서 현재 사용 가능한 설치와 향후 PyPI 공개 후 사용을 구분합니다. uv는 설치·환경 관리 도구이며 zar의 런타임 의존성은 아닙니다. Python 3.11 이상이 필요합니다.
+v0.2.0은 [PyPI](https://pypi.org/project/ziho-autoresearch/0.2.0/)와 GitHub Release에 공개됐습니다. PyPI에서 직접 설치한 CLI와 스킬 추출을 검증했습니다. uv는 설치·환경 관리 도구이며 zar의 런타임 의존성은 아닙니다. Python 3.11 이상이 필요합니다.
 
 ## 현재: 공개 GitHub wheel 설치
 
@@ -16,9 +16,9 @@ CLI 경로가 PATH에 없다는 안내가 나오면 `uv tool update-shell`을 �
 
 v0.2.0 wheel에는 스킬과 설치 명령이 포함됩니다. 고정 wheel URL로 설치한 도구는 `uv tool upgrade`만으로 다른 릴리스 URL이나 PyPI 설치로 바뀌지 않습니다. 새 버전의 URL을 명시하거나 아래 PyPI 설치 방식으로 전환하세요.
 
-## 향후: PyPI 공개 확인 후
+## PyPI 설치·업데이트
 
-[PyPI 배포 설정](pypi-publishing.md)을 완료하고 해당 버전의 실제 공개를 확인한 후에만 사용합니다. 패키지명은 `ziho-autoresearch`, 실행 명령은 `zar`입니다.
+유지관리자의 배포 절차는 [PyPI 배포 설정](pypi-publishing.md)을 참고하세요. 패키지명은 `ziho-autoresearch`, 실행 명령은 `zar`입니다.
 
 ```sh
 # 최초 설치 / 이후 업데이트
@@ -36,7 +36,7 @@ uvx --from 'ziho-autoresearch==0.2.0' zar --help
 
 ## 0.2.0: 스킬을 지정 폴더에 설치
 
-이 명령은 공개된 0.2.0 wheel 또는 이 변경이 포함된 소스 설치에서 사용할 수 있습니다. PyPI에 공개됐다고 가정하지 않습니다. wheel에 스킬과 references 전체가 포함되므로 소스 배포본을 별도로 풀 필요가 없습니다.
+이 명령은 공개된 0.2.0 wheel 또는 이 변경이 포함된 소스 설치에서 사용할 수 있습니다. PyPI 설치에서도 같은 명령을 사용할 수 있습니다. wheel에 스킬과 references 전체가 포함되므로 소스 배포본을 별도로 풀 필요가 없습니다.
 
 ```sh
 zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json

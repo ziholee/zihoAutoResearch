@@ -4,6 +4,16 @@ The `Publish verified release to PyPI` workflow is disabled unless the repositor
 variable `PYPI_PUBLISH_ENABLED` is exactly `true`. Merging this workflow does not
 create a PyPI project, configure a publisher, or upload any package.
 
+## Verified publication
+
+[Version 0.2.0 on PyPI](https://pypi.org/project/ziho-autoresearch/0.2.0/) was verified on 2026-10-13 KST.
+[Run 38403802017](https://github.com/ziholee/zihoAutoResearch/actions/runs/38403802017)
+passed release verification, protected environment approval and OIDC publication.
+Both PyPI distributions match the original GitHub release SHA-256 values.
+An isolated uv installation from production PyPI passed CLI help/list, complete
+skill export byte comparison against the tag, and overwrite refusal.
+The GitHub release and tag were not rebuilt or replaced.
+
 ## Maintainer setup
 
 Complete these account settings separately before enabling publication:
@@ -67,8 +77,10 @@ part of the trust boundary.
 
 Local unit tests exercise invalid release state, unsafe and duplicate checksum
 entries, missing/extra/corrupt files, tag mismatch, and source/wheel drift. The
-installed-package gate checks distribution behavior. Live GitHub event handling,
-environment approval, OIDC exchange, PyPI ownership, and successful public upload
-can only be confirmed after the maintainer completes setup and deliberately
-publishes a release. No live publication or account setting change is part of
-this automation change.
+installed-package gate checks distribution behavior. The v0.2.0 manual retry verified environment approval, OIDC exchange and real
+PyPI upload after initial registration failures. A successful run does not
+guarantee future releases: each requires its own verification and approval.
+When `invalid-publisher` occurs, inspect the saved publisher on production PyPI;
+GitHub environment setup alone does not register a PyPI publisher. If temporary
+Actions artifacts have expired, manually dispatch from dev for the existing tag
+to verify and retrieve its unchanged release files again.
