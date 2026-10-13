@@ -58,11 +58,19 @@ CLI는 LLM 호출·학습 실행·코드 되돌리기·대회 제출을 수행�
 
 ## 배포와 라이선스
 
-[v0.2.0 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. PyPI에 공개됐다고 가정하지 않으며, 아래 소스 설치 방법은 현재 사용할 수 있습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
+[v0.2.0 GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.0)를 공개했습니다. [변경 내역](CHANGELOG.md)과 [배포 파일 설치·검증 안내](docs/releasing.md)를 확인하세요. [PyPI v0.2.0](https://pypi.org/project/ziho-autoresearch/0.2.0/)도 공개됐습니다. 프로젝트 라이선스는 [MIT](LICENSE)입니다. 참고 연구·외부 코드와 데이터의 권리는 각 원본 조건을 따릅니다.
 
 ## 설치와 기본 사용
 
-Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 현재 공개 wheel과 향후 PyPI 설치 경로를 확인하세요. v0.2.0은 GitHub에 공개했으며, [PyPI 자동화](docs/pypi-publishing.md)는 별도 검증·환경 승인·업로드를 거칩니다. 저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
+Python 3.11 이상이 필요하며 실행 시 외부 라이브러리는 필요하지 않습니다. [uv 설치·업데이트 안내](docs/uv-installation.md)에서 PyPI 설치와 공개 GitHub wheel 경로를 확인하세요. v0.2.0은 GitHub에 공개했으며, [PyPI 자동화](docs/pypi-publishing.md)는 별도 검증·환경 승인·업로드를 거칩니다. 빠른 설치는 다음과 같습니다.
+
+```sh
+uv tool install ziho-autoresearch
+zar --help
+zar skill install --dest ./ziho-autoresearch-skill-0.2.0 --json
+```
+
+저장소에서 가상환경을 만든 뒤 설치할 수도 있습니다.
 
 ```sh
 python -m venv .venv
