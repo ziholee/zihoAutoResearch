@@ -7,7 +7,7 @@ description: Use zar to inspect an existing ML project, plan bounded experiments
 
 Help the existing coding agent improve an ML pipeline using the project's own code, data, commands, and environment. `zar` manages records; the agent interprets evidence and uses its existing execution tools within the user's scope. No LLM service or custom training runner is required.
 
-For persistent project guidance, link this SKILL.md from the target project’s instructions with its applicability conditions. Preserve existing instructions and user authorization boundaries; do not copy this whole procedure or changing experiment state into AGENTS.md. Keep the link current if the skill moves. Reading this skill does not itself authorize execution.
+When installed in an agent’s skill discovery directory, invoke this skill by name; a separate AGENTS.md link is optional. For persistent project-specific guidance, link this SKILL.md from the target project’s instructions with its applicability conditions. Preserve existing instructions and user authorization boundaries; do not copy this whole procedure or changing experiment state into AGENTS.md. Keep the link current if the skill moves. Reading this skill does not itself authorize execution.
 
 ## Enter the project
 

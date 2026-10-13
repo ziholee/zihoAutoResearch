@@ -270,12 +270,22 @@ def inspect_git(root):
 
 def execute(args):
     if args.command == 'skill':
-        from .skill_install import DestinationExists, install_skill, skill_guidance
+        from .skill_install import DestinationExists, install_skill, skill_guidance, install_agent_skill
         if args.action == 'guidance':
             try:
                 return skill_guidance(args.skill_dir), []
             except ValueError as exc:
                 reject('arguments', 'skill_dir', str(exc), 2)
+        if args.agent:
+            try:
+                return install_agent_skill(args.agent, args.scope or 'project', args.project,
+                                           dry_run=args.dry_run), []
+            except ValueError as exc:
+                reject('arguments', 'skill install', str(exc), 2)
+            except DestinationExists as exc:
+                reject('conflict', str(exc), 'Installation path is occupied or redirected; preserve it and export with --dest for comparison.')
+        if args.scope is not None or args.dry_run:
+            reject('arguments', 'skill install', '--scope and --dry-run require --agent.', 2)
         if not args.dest.strip():
             reject('arguments', 'dest', 'Destination must be an explicit new directory.', 2)
         try:
@@ -383,8 +393,12 @@ def parse(arguments):
         commands.add_parser(name)
     skill = commands.add_parser('skill', help='export the agent skill or render project guidance')
     skill_actions = skill.add_subparsers(dest='action', required=True, parser_class=Parser)
-    install = skill_actions.add_parser('install', help='copy into a new directory; no agent registration')
-    install.add_argument('--dest', required=True, help='exact new skill directory; parent must exist')
+    install = skill_actions.add_parser('install', help='export skill or install in an agent discovery directory')
+    target = install.add_mutually_exclusive_group(required=True)
+    target.add_argument('--dest', help='exact new export directory; parent must exist')
+    target.add_argument('--agent', choices=('codex', 'claude'), help='install into the agent skill discovery directory')
+    install.add_argument('--scope', choices=('project', 'user'), help='with --agent only; default: project')
+    install.add_argument('--dry-run', action='store_true', help='with --agent only; preview without writing')
     guidance = skill_actions.add_parser('guidance', help='print instructions for manual AGENTS.md integration; no writes')
     guidance.add_argument('--skill-dir', required=True, help='existing directory containing SKILL.md')
     lineage = commands.add_parser('lineage', help='read-only experiment relations; no evidence or Git verification')
@@ -459,7 +473,7 @@ def main(argv=None):
     code, data, diagnostics = 0, None, []
     try:
         if json_mode and ('--help' in arguments or '-h' in arguments):
-            data = {'commands': ['skill install --dest <new-directory>', 'skill guidance --skill-dir <existing-directory>', 'init', 'project set --file <json>', 'status', 'check',
+            data = {'commands': ['skill install --dest <new-directory>', 'skill install --agent <codex|claude> [--scope project|user] [--dry-run]', 'skill guidance --skill-dir <existing-directory>', 'init', 'project set --file <json>', 'status', 'check',
                                  'candidate add --file <json>', 'memory add --file <json>', 'review add --file <json>', 'submission add --file <json>',
                                  'report --output <relative.md> [--overwrite]', 'lineage [--format json|mermaid]',
                                  'experiment create --file <json> [--git-head]', 'experiment update <id> --file <json>',
@@ -485,7 +499,10 @@ def main(argv=None):
     else:
         if data is not None:
             if data.get('view') == 'skill_install':
-                emit_text('Skill exported: ' + data['destination'])
+                label = 'Skill installation preview: ' if data.get('dry_run') else 'Skill installed: ' if 'agent' in data else 'Skill exported: '
+                emit_text(label + data['destination'])
+                for step in data.get('next_steps', []):
+                    emit_text(step)
             elif data.get('view') == 'skill_guidance':
                 emit_text(data['markdown'].rstrip('\n'))
             elif data.get('view') == 'experiment_lineage':

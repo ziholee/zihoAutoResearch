@@ -2,6 +2,7 @@
 from importlib.resources import files
 from pathlib import Path
 import re
+import stat
 import unicodedata
 
 
@@ -97,3 +98,71 @@ def skill_guidance(directory):
         'interpretation and `project.json` for settings. Do not duplicate changing state here.\n'
     )
     return {'view': 'skill_guidance', 'skill_file': str(skill), 'markdown': markdown}
+
+
+AGENT_DIRECTORIES = {'codex': '.agents', 'claude': '.claude'}
+
+
+def install_agent_skill(agent, scope, project, *, dry_run=False):
+    """Install in a documented discovery directory, preserving occupied paths."""
+    try:
+        root = Path.home() if scope == 'user' else Path(project).expanduser().absolute()
+    except RuntimeError as exc:
+        raise ValueError('Cannot determine the installation root home directory.') from exc
+    if not str(root).strip() or any(
+            unicodedata.category(char).startswith('C') or
+            unicodedata.category(char) in ('Zl', 'Zp') for char in str(root)):
+        raise ValueError('Installation root must contain no control characters.')
+    if scope == 'project' and not project.strip():
+        raise ValueError('Project must be an explicit existing directory.')
+    if not root.is_dir():
+        raise FileNotFoundError(2, 'Installation root must already be a directory', str(root))
+    root = root.resolve()
+    parents = [root / AGENT_DIRECTORIES[agent], root / AGENT_DIRECTORIES[agent] / 'skills']
+    destination = parents[-1] / 'ziho-autoresearch'
+
+    def redirected(path):
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            return False
+        # Reparse attributes also catch Windows junctions on Python 3.11,
+        # which predates Path.is_junction(). Do not follow redirecting entries.
+        return (stat.S_ISLNK(info.st_mode) or
+                bool(getattr(info, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT))
+
+    def check_parent(path):
+        if redirected(path) or (path.exists() and not path.is_dir()):
+            raise DestinationExists(str(path))
+
+    for path in parents:
+        check_parent(path)
+    if destination.exists() or redirected(destination):
+        raise DestinationExists(str(destination))
+    skill_source()  # Fail before creating discovery directories if the bundle is unavailable.
+    result = {'view': 'skill_install', 'destination': str(destination), 'files': []}
+    created = []
+    try:
+        if not dry_run:
+            for path in parents:
+                try:
+                    path.mkdir()
+                    created.append(path)
+                except FileExistsError:
+                    check_parent(path)
+            result = install_skill(destination)
+    except BaseException:
+        for path in reversed(created):
+            try:
+                path.rmdir()  # Keep preexisting parents and concurrent writers' files.
+            except OSError:
+                pass
+        raise
+    invocation = ('$' if agent == 'codex' else '/') + 'ziho-autoresearch'
+    result.update(agent=agent, scope=scope, dry_run=dry_run, invocation=invocation,
+                  next_steps=[
+                      'Open the target ML project in the agent; ensure zar is available in its terminal.',
+                      'If the skill is not listed, restart the agent and check its skill settings.',
+                      f'{invocation} Inspect this project without training; propose the first experiment plan.',
+                      'Installation does not authorize training or verify agent discovery.'])
+    return result
