@@ -1,6 +1,6 @@
 # uv로 설치·업데이트하고 스킬 사용하기
 
-v0.2.1 배포를 준비하고 있습니다. 아래 고정 버전·wheel URL 예시는 해당 버전 공개 후 사용합니다. 현재 공개 여부는 [PyPI](https://pypi.org/project/ziho-autoresearch/)와 [GitHub Release](https://github.com/ziholee/zihoAutoResearch/releases)에서 확인합니다. uv는 설치·환경 관리 도구이며 zar의 런타임 의존성은 아닙니다. Python 3.11 이상이 필요합니다.
+아래 고정 버전·wheel URL 예시는 v0.2.1 기준입니다. 배포 파일과 공개 상태는 [PyPI](https://pypi.org/project/ziho-autoresearch/)와 [GitHub Release](https://github.com/ziholee/zihoAutoResearch/releases)에서 확인합니다. uv는 설치·환경 관리 도구이며 zar의 런타임 의존성은 아닙니다. Python 3.11 이상이 필요합니다.
 
 ## GitHub wheel 설치
 

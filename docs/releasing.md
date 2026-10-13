@@ -1,6 +1,6 @@
-# v0.2.1 설치와 배포 준비
+# v0.2.1 설치와 배포
 
-v0.2.1 배포를 준비하고 있습니다. 아래 설치 예시는 공개 후 사용할 새 배포 파일 기준입니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [공개 파일 점검](public-content-audit.md)을 함께 확인합니다. 내부 계획·승인 진단·교훈은 Git에서 제외한 로컬 `tasks/`에만 기록하고, 공개 검증 근거는 PR·CI와 사용자 문서에 남깁니다.
+아래 설치 예시는 v0.2.1 배포 파일 기준입니다. 실제 공개 상태와 검증 결과는 [GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases/tag/v0.2.1)에서 확인합니다. [변경 내역](../CHANGELOG.md), [자동화 계약](automation.md), [공개 파일 점검](public-content-audit.md)을 함께 확인합니다. 내부 계획·승인 진단·교훈은 Git에서 제외한 로컬 `tasks/`에만 기록하고, 공개 검증 근거는 PR·CI와 사용자 문서에 남깁니다.
 
 ## 배포 형태
 
