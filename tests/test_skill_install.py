@@ -104,3 +104,59 @@ class SkillInstallTests(CliHarness):
             self.assertEqual(main(['skill', 'install', '--dest', str(destination), '--json']), 4)
         self.assertEqual(list(destination.iterdir()), [destination / 'user.txt'])
         self.assertEqual((destination / 'user.txt').read_bytes(), b'other writer')
+
+
+class SkillGuidanceTests(CliHarness):
+    def test_guidance_preserves_project_and_skill_and_handles_markdown_path(self):
+        destination = self.root / '한글 skill ` [notes]'
+        self.cli('skill', 'install', '--dest', str(destination), '--json')
+        sentinel = self.root / 'AGENTS.md'
+        sentinel.write_bytes(b'existing instructions\n')
+        before = {p.relative_to(self.root): p.read_bytes()
+                  for p in self.root.rglob('*') if p.is_file()}
+        result = self.cli('skill', 'guidance', '--skill-dir', destination.name,
+                          '--project', 'does-not-exist', '--json')['data']
+        self.assertEqual(result['view'], 'skill_guidance')
+        self.assertTrue(Path(result['skill_file']).samefile(destination / 'SKILL.md'))
+        self.assertIn('`` ' + result['skill_file'] + ' ``', result['markdown'])
+        for phrase in ('zar context', 'zar status', 'unknown', 'zar check', 'budget'):
+            self.assertIn(phrase, result['markdown'])
+        self.assertEqual(before, {p.relative_to(self.root): p.read_bytes()
+                                 for p in self.root.rglob('*') if p.is_file()})
+        self.assertFalse((self.root / '.autoresearch').exists())
+        self.assertFalse((self.root / 'does-not-exist').exists())
+
+    def test_text_output_is_the_same_markdown(self):
+        from zar.cli import main
+        destination = self.root / 'skill'
+        self.cli('skill', 'install', '--dest', str(destination), '--json')
+        expected = self.cli('skill', 'guidance', '--skill-dir', str(destination), '--json')['data']
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = main(['skill', 'guidance', '--skill-dir', str(destination)])
+        self.assertEqual(code, 0)
+        self.assertEqual(output.getvalue(), expected['markdown'])
+
+    def test_requires_explicit_valid_skill_directory(self):
+        self.cli('skill', 'guidance', '--json', expected=2)
+        for value in ('', '   ', 'bad\npath', 'bad\tpath', 'bad\x01path', 'bad\u2028path'):
+            self.cli('skill', 'guidance', '--skill-dir', value,
+                     '--json', expected=2)
+        for destination in (self.root / 'absent', self.project):
+            result = self.cli('skill', 'guidance', '--skill-dir', str(destination),
+                              '--json', expected=4)
+            self.assertEqual(result['diagnostics'][0]['code'], 'io')
+        (self.project / 'SKILL.md').mkdir()
+        self.cli('skill', 'guidance', '--skill-dir', str(self.project), '--json', expected=4)
+
+
+    def test_unresolvable_home_returns_json_argument_error(self):
+        from zar.cli import main
+        output = io.StringIO()
+        with patch.object(Path, 'expanduser', side_effect=RuntimeError('unknown home')), \
+                contextlib.redirect_stdout(output):
+            code = main(['skill', 'guidance', '--skill-dir', '~missing/skill', '--json'])
+        self.assertEqual(code, 2)
+        result = json.loads(output.getvalue())
+        self.assertFalse(result['ok'])
+        self.assertEqual(result['diagnostics'][0]['code'], 'arguments')

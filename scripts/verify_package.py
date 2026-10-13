@@ -167,6 +167,18 @@ def verify_skill_export(wheel: Path, source: Path, checkout: Path, workspace: Pa
                          for path in destination.rglob('*') if path.is_file()},
             'Rejected skill export modified existing files')
     require(not (workspace / '.autoresearch').exists(), 'Skill export initialized a project')
+    instructions = workspace / 'AGENTS.md'
+    instructions.write_bytes(b'existing project instructions\n')
+    guidance_command = [str(cli), 'skill', 'guidance', '--skill-dir', str(destination)]
+    guidance = json.loads(run([*guidance_command, '--json'], workspace, environment))
+    require(guidance['ok'] and guidance['data']['view'] == 'skill_guidance'
+            and Path(guidance['data']['skill_file']).samefile(destination / 'SKILL.md'),
+            'Unexpected installed skill guidance result')
+    require(run(guidance_command, workspace, environment).rstrip('\n') ==
+            guidance['data']['markdown'].rstrip('\n'), 'Guidance text and JSON differ')
+    require(instructions.read_bytes() == b'existing project instructions\n'
+            and not (workspace / '.autoresearch').exists(), 'Guidance modified project files')
+    print('PASS: installed wheel guidance text/JSON and existing instructions preserved')
     print('PASS: installed wheel skill export; complete bytes, local references and overwrite refusal')
 
 

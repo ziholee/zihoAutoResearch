@@ -7,6 +7,8 @@ description: Use zar to inspect an existing ML project, plan bounded experiments
 
 Help the existing coding agent improve an ML pipeline using the project's own code, data, commands, and environment. `zar` manages records; the agent interprets evidence and uses its existing execution tools within the user's scope. No LLM service or custom training runner is required.
 
+For persistent project guidance, link this SKILL.md from the target project’s instructions with its applicability conditions. Preserve existing instructions and user authorization boundaries; do not copy this whole procedure or changing experiment state into AGENTS.md. Keep the link current if the skill moves. Reading this skill does not itself authorize execution.
+
 ## Enter the project
 
 1. Identify the target ML project separately from the tool checkout. Read its user instructions, code, evaluation protocol, and existing `.autoresearch/program.md`. Establish the requested outcome, editable paths, execution environment, run count/time limits, and whether this is inspection, real execution, or a **mock-only** exercise. Reuse existing authorization; do not ask again for each experiment. If essential information is missing, continue inspection and defer the dependent execution.
