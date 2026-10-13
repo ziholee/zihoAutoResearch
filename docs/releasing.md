@@ -10,7 +10,7 @@
 | ziho_autoresearch-0.2.0.tar.gz | CLI 소스, 스킬과 references, 문서, 예제, 템플릿, CHANGELOG, LICENSE |
 | SHA256SUMS | 위 두 배포 파일의 SHA-256; 릴리스 워크플로가 생성 |
 
-GitHub가 자동 제공하는 Source code 압축파일과 워크플로가 빌드해 첨부한 `.tar.gz`는 구분합니다. 아래 절차에는 릴리스 첨부 파일을 사용합니다. 현재 공개 배포 채널은 GitHub Release이며 PyPI 설치 가능 여부를 가정하지 않습니다. [uv 설치 안내](uv-installation.md)와 [PyPI 자동화 설정](pypi-publishing.md)을 참고하세요. v0.2.0 wheel에는 스킬과 references도 포함됩니다.
+GitHub가 자동 제공하는 Source code 압축파일과 워크플로가 빌드해 첨부한 `.tar.gz`는 구분합니다. 아래 절차에는 릴리스 첨부 파일을 사용합니다. v0.2.0은 GitHub Release와 [PyPI](https://pypi.org/project/ziho-autoresearch/0.2.0/)에서 설치할 수 있습니다. [uv 설치 안내](uv-installation.md)와 [PyPI 자동화 설정](pypi-publishing.md)을 참고하세요. v0.2.0 wheel에는 스킬과 references도 포함됩니다.
 
 Python 3.11 이상이 필요합니다. CLI 런타임 의존성은 없습니다. `git status`, `experiment create --git-head` 및 Git 계보 모의 예제에는 Git 실행 파일이 필요합니다. Mermaid 출력의 렌더링은 별도 도구가 담당합니다.
 
@@ -71,7 +71,7 @@ zar --help
 - wheel/sdist 빌드와 격리 설치 검증.
 - SHA256SUMS 생성 후 세 파일을 GitHub 초안 릴리스에 첨부.
 
-유지관리자는 생성된 초안의 변경 내역과 세 첨부 파일을 확인합니다. 자동 생성 노트에 [CHANGELOG](../CHANGELOG.md)의 기능·설치 방법·한계를 반영하고 공개합니다. Draft release 워크플로는 자동 공개나 PyPI 업로드를 하지 않습니다. 별도 PyPI 워크플로는 명시적 활성화와 신뢰 발행자 설정 이후 정식 릴리스 공개 시 검증된 첨부 파일을 올립니다. 이번 구현만으로 PyPI 공개가 완료되는 것은 아닙니다.
+유지관리자는 생성된 초안의 변경 내역과 세 첨부 파일을 확인합니다. 자동 생성 노트에 [CHANGELOG](../CHANGELOG.md)의 기능·설치 방법·한계를 반영하고 공개합니다. Draft release 워크플로는 자동 공개나 PyPI 업로드를 하지 않습니다. 별도 PyPI 워크플로는 명시적 활성화와 신뢰 발행자 설정 이후 정식 릴리스 공개 시 검증된 첨부 파일을 올립니다. v0.2.0은 실제 발행까지 확인했으며, 이후 버전도 업로드 성공과 설치 검증을 별도로 확인합니다.
 
 실패하면 실행 로그와 태그/버전/권한을 먼저 확인합니다. 태그가 이미 있거나 초안이 일부 생성된 상태에서 맹목적으로 재실행하지 말고 기존 결과를 확인합니다. 검증 전 파일을 수동 공개하거나 기존 태그를 새 코드로 덮어쓰지 않습니다.
 

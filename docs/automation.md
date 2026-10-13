@@ -38,7 +38,7 @@
 
 최초 v0.1.0의 파일 구성·설치·체크섬 확인·초안 공개 절차는 [배포 안내](releasing.md), 사용자 변경 내역은 [CHANGELOG](../CHANGELOG.md)를 따른다.
 
-[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. Draft release 자체에는 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출이 없다. 별도 [PyPI 발행 설정](pypi-publishing.md)은 공개된 정식 릴리스 첨부 파일을 검증한 후 OIDC로 발행한다. 기본 비활성 상태이며 신뢰 발행자·환경·활성화 변수 설정이 필요하다. 실제 PyPI 업로드는 아직 검증하지 않았다.
+[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. Draft release 자체에는 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출이 없다. 별도 [PyPI 발행 설정](pypi-publishing.md)은 공개된 정식 릴리스 첨부 파일을 검증한 후 OIDC로 발행한다. 기본 비활성 상태이며 신뢰 발행자·환경·활성화 변수 설정이 필요하다. 2026-10-13 KST에 v0.2.0의 실제 OIDC 발행·PyPI 파일 해시·격리 uv 설치·스킬 추출을 확인했다.
 
 태그 생성·공개는 별도 릴리스 행위다. 워크플로 설정 검증만으로 실제 릴리스 성공을 주장하지 않는다. 빌드 도구는 개발 의존성이며 제품 런타임에는 추가되지 않는다.
 
