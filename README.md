@@ -1,8 +1,18 @@
 # zihoAutoResearch
 
+[한국어](README.md) · [English](README.en.md) · [简体中文](README.zh-CN.md) · [日本語](README.ja.md)
+
+[![PyPI version](https://img.shields.io/pypi/v/ziho-autoresearch?logo=pypi&logoColor=white)](https://pypi.org/project/ziho-autoresearch/)
+[![Python 3.11 이상](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](pyproject.toml)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+[![Contract CI](https://github.com/ziholee/zihoAutoResearch/actions/workflows/ci.yml/badge.svg?branch=dev&event=push)](https://github.com/ziholee/zihoAutoResearch/actions/workflows/ci.yml?query=branch%3Adev)
+[![Agent Skills: Codex / Claude Code](https://img.shields.io/badge/Agent%20Skills-Codex%20%2F%20Claude%20Code-5865F2)](docs/agent-installation.md)
+
 **기존 ML 프로젝트의 실험 근거·결과·판단을 로컬에 기록하고, 다음 세션에서 이어가는 가벼운 CLI와 에이전트 스킬입니다.**
 
 전처리, 모델, 손실 함수, 최적화 방법을 바꿀 때 “왜 시도했는지, 어떤 조건에서 비교했는지, 무엇을 채택했는지”를 함께 남깁니다. 데이터나 학습 환경을 새 플랫폼으로 옮길 필요 없이 기존 프로젝트에서 사용합니다.
+
+배지는 최신 PyPI 버전, 지원 Python 버전, 라이선스, `dev` 브랜치의 CI 상태와 지원 에이전트를 안내합니다. 각 배지를 클릭하면 상세 정보를 확인할 수 있습니다.
 
 [PyPI](https://pypi.org/project/ziho-autoresearch/) · [GitHub 릴리스](https://github.com/ziholee/zihoAutoResearch/releases) · [변경 내역](CHANGELOG.md) · [문제 제보](https://github.com/ziholee/zihoAutoResearch/issues)
 
