@@ -1,4 +1,4 @@
-include LICENSE CHANGELOG.md
+include LICENSE CHANGELOG.md README*.md
 graft skills/ziho-autoresearch
 recursive-include examples *.py *.json *.md *.txt
 recursive-include docs *.md *.json *.txt
