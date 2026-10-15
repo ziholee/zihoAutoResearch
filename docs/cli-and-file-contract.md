@@ -8,7 +8,7 @@
 
 ## 1. 역할과 사용자 경험
 
-제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. 이 문서의 기존 기록 명령은 LLM 호출이나 ML 실행을 하지 않습니다. 미배포 `research advance --send`와 `research setup`·`research revise`의 명시적 전송 동의는 API를 호출하며, 명시적인 `research run`은 승인된 명령을 실행합니다.
+제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. 이 문서의 기존 기록 명령은 LLM 호출이나 ML 실행을 하지 않습니다. 미배포 `research advance --send`와 `research setup`·`research revise`·`research next`의 명시적 전송 동의는 API를 호출하며, 명시적인 `research run`은 승인된 명령을 실행합니다.
 
 | 단계 | 사용자/스킬의 행동 | CLI의 역할 |
 |---|---|---|
@@ -58,6 +58,8 @@
 | `zar init` | `.autoresearch`와 revision 1의 미설정 project.json, program.md 생성. 프로젝트 ID는 `project-<UUID>`로 생성. 재호출 시 기존 파일 보존·변경 없음; 부분 초기화는 진단하고 중단 |
 | `zar research setup` | 미배포. 기존 프로젝트 폴더에서 TTY 질문으로 설정·세션 생성. 저장·API 전송을 별도 확인하고 첫 계획 승인 대기에서 종료. 승인·실행 없음; [설정·취소 계약](research-api.md#질문에-답해-첫-계획-만들기) |
 | `zar research revise <id>` | 미배포. TTY에서 누락 질문·피드백 및 기존 설정 검토 후 연결된 새 계획 생성. 저장·전송 확인 분리; 이전 세션 비활성화와 새 승인 필수. 실행 이력 없는 실행 전 세션만 허용; [수정 계약](research-api.md#추가-질문과-계획-수정) |
+| `zar research start [--mode baseline 또는 candidate]` | 미배포. baseline은 모델 변경 없이 현재 원본 실행 준비, candidate는 호환되는 선택된 유효 keep 기준 필요. 모드 생략 시 선택 유무로 결정. 시작만으로 API 호출·실행 없음; [기준 계약](research-api.md#원본-실행으로-기준-확보하기) |
+| `zar research next <id>` | 미배포. complete 세션에서 TTY로 설정·연결·제한된 판단·기억 맥락을 이어 새 계획 준비. 부모 보존, 새 지표 경로·저장·전송·승인 필요; 자동 선택·복원·실행 없음; [연결 계약](research-api.md#완료된-실험에서-다음-실험으로-이어가기) |
 | `zar research status <id>` | 미배포. 세션 상태·전송 범위와 `next_actions` 안내. 명령·선행 조건을 제시하며 자동 호출·복구·실행하지 않음 |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
 | `zar status` | 준비 상태, 누락, 선택 실험, 마지막 실험, planned/running/unknown, 다음 행동 표시 |

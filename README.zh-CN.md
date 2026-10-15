@@ -28,6 +28,8 @@
 
 **仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与 API 发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。 执行前的计划受阻或需要修改时，可运行 `zar research revise SESSION_ID --project ./my-ml-project`，回答补充问题并创建关联的新计划。`research status` 提供下一步操作提示；修改后的计划需要重新批准。
 
+使用 `baseline` 模式测量当前原始代码，模型不能修改代码。候选实验需要可比较且已选中的有效 keep 实验作为基准。完成后，运行 `zar research next SESSION_ID --project ./my-ml-project`，将配置以及有限的决策和记忆上下文带入新计划；需要新的指标文件路径、发送同意和批准。不会自动恢复代码或循环运行实验。
+
 `zar` 是 **zihoAutoResearch 的简称，也是可执行命令**。安装包名为 `ziho-autoresearch`，安装后通过 `zar init`、`zar status` 等命令使用。
 
 ## 1. 安装

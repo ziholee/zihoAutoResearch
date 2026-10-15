@@ -91,6 +91,12 @@ def execution_environment(profile):
     return env
 
 def assert_fresh(root,s):
+    if s.get('next_context'):
+        require(digest(s['next_context'])==s.get('next_context_hash'),'Next context changed; start a new session.')
+        require(digest(load(root,s['next_context']['parent_id']))==s['next_context']['parent_hash'],'Parent session changed; start a new session.')
+        from .records import load_records
+        prior=s['next_context']['experiment']
+        require(load_records(root,get_project(root)).records['experiment'].get(prior['id'])==prior,'Parent experiment evidence changed; start a new session.')
     if s.get('revision_context'):
         require(digest(s['revision_context'])==s.get('revision_context_hash'),'Revision context changed; create a new revision.')
     require(digest(execution_environment(s['profile']))==s['environment_hash'],'Execution environment changed; start a new session.')
@@ -103,7 +109,7 @@ def records_identity(root):
     return digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **({'revision_context':s['revision_context']} if 'revision_context' in s else {})))
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id') if k in s}))
 
 def next_actions(s):
     """Suggestions only: never infer a stopped process or grant consent."""
@@ -125,6 +131,7 @@ def next_actions(s):
         add('reconcile','Inspect actual process/logs and update canonical terminal execution evidence first. Never rerun an unknown launch.')
     if state in ('planning','blocked','rejected','awaiting_approval','approved') and s['experiment_id'] is None and s.get('error')!='inspect_partial_changes_and_records_before_new_session':
         add('revise','Answer missing questions or change settings and create a new plan; saving invalidates the old approval.')
+    if state=='complete':add('next','Review retained working files and create a new session; each transmission and execution needs fresh consent.')
     if not actions:
         actions.append(dict(action='inspect',command=f'zar research status {identifier}',reason='Inspect source changes, records and execution evidence before any new session; no automatic retry or next experiment.'))
     return actions
@@ -133,13 +140,30 @@ def view(s):
     result=deepcopy(s);result['view']='research_session'
     result['next_actions']=next_actions(s)
     result['transmission']=dict(server=s['profile']['base_url'],model=s['profile']['model'],
-        files=list(s['sources']), includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries if present; no raw logs')
+        files=list(s['sources']), includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries, linked parent experiment and memory proposal if present; no raw logs')
     return result
 
 def status(root,identifier):
     with project_lock(root/'.autoresearch'):return view(load(root,identifier))
 
-def start(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_calls=9,session_seconds=1800,scope='full',seed=None,budget_ref='local-session'):
+def experiment_target(project,records,run_context,mode=None):
+    """Resolve an explicit immutable comparator using canonical recorded conditions."""
+    selected=project['selected_experiment_id']
+    mode=mode or ('candidate' if selected else 'baseline')
+    require(mode in ('baseline','candidate'),'Choose baseline or candidate mode.')
+    if mode=='baseline':return mode,None
+    from .experiments import superseded_ids
+    base=records['experiment'].get(selected)
+    require(base is not None,'Candidate needs a selected baseline; acquire, keep and select a baseline first.')
+    require(base['execution']['status']=='succeeded' and base.get('decision') and base['decision']['status']=='keep' and base['decision']['validity']=='valid','Selected baseline must be succeeded and validly kept.')
+    superseded=superseded_ids(records['experiment'].values())
+    require(selected not in superseded and base['baseline_id'] not in superseded,'Selected baseline or its baseline is superseded.')
+    require(base['comparison']==project['comparison'] and base['environment']==project['environment'] and all(v is not None for v in base['environment'].values()),'Selected baseline comparison/environment is incompatible.')
+    require(base.get('run_context') and all(base['run_context'][k]==run_context[k] for k in ('scope','budget_ref')),'Selected baseline run context is incompatible.')
+    return mode,selected
+
+
+def start(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_calls=9,session_seconds=1800,scope='full',seed=None,budget_ref='local-session',mode=None):
     from . import cli
     profile=validate_profile(profile)
     require(isinstance(goal,str) and 0<len(goal.strip())<=10000,'Goal must be 1..10000 characters.')
@@ -149,14 +173,15 @@ def start(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_call
     require(isinstance(budget_ref,str) and bool(budget_ref.strip()),'A budget protocol is required.')
     require(isinstance(metric_key,str) and 0<len(metric_key)<=200,'A top-level JSON metric key is required.')
     with project_lock(root/'.autoresearch'):
-        return _start_locked(root,profile=profile,goal=goal,read_paths=read_paths,command=command,metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=session_seconds,scope=scope,seed=seed,budget_ref=budget_ref)
+        return _start_locked(root,profile=profile,goal=goal,read_paths=read_paths,command=command,metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=session_seconds,scope=scope,seed=seed,budget_ref=budget_ref,mode=mode)
 
-def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_calls,session_seconds,scope,seed,budget_ref,revision_context=None):
+def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_calls,session_seconds,scope,seed,budget_ref,revision_context=None,next_context=None,mode=None):
     from . import cli
     p=get_project(root)
     require(not cli.readiness_missing(p),'Configure project settings first (zar project set).')
     snap=cli.load_records(root,p);cli.enforce(cli.inspect_project(root,p,snapshot=snap))
     require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
+    mode,baseline=experiment_target(p,snap.records,dict(scope=scope,seed=seed,budget_ref=budget_ref),mode)
     commands=[c for c in p['commands'] if c['name']==command]
     require(len(commands)==1,'Choose a unique configured command name.')
     require(safe_path(root,commands[0]['cwd']).is_dir(),'Command cwd is not a directory.')
@@ -175,6 +200,9 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
            records_hash=digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
            run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
+    s.update(experiment_mode=mode,baseline_id=baseline)
+    if next_context is not None:
+        s['next_context']=deepcopy(next_context);s['next_context_hash']=digest(next_context)
     if revision_context is not None:
         s['revision_context']=deepcopy(revision_context)
         s['revision_context_hash']=digest(revision_context)
@@ -196,7 +224,7 @@ def context(root,s,role):
         if old['state']=='complete' and 'memory' in old['outputs']:
             lessons.append(dict(session_id=old['id'],experiment_id=old['experiment_id'],proposal=old['outputs']['memory'],created_at=old['created_at']))
     lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
-    return dict(revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
+    return dict(experiment_mode=s.get('experiment_mode','legacy'),baseline_id=s.get('baseline_id'),next_context=s.get('next_context'),revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
                 project=p,records=data,sources=s['sources'],command=s['command'],
                 metric_file=s['metric_file'],metric_key=s['metric_key'],run_context=s['run_context'],
                 outputs=s['outputs'],experiment_id=s['experiment_id'],allowed_tools=[])
@@ -240,12 +268,15 @@ def advance(root,identifier,*,send=False):
             answer=call_api(profile,role_messages(role,json.loads(dumps(payload))),float(s['deadline'])-datetime.now(timezone.utc).timestamp())
             output=validate_response(role,loads(answer['content']))
             valid_refs=set(s['sources']) | set(s['outputs']) | {'project','records'} | {v['session_id'] for v in payload['prior_lessons']}
+            if s.get('next_context'):valid_refs.update(('next_context',s['next_context']['parent_id'],s['next_context']['experiment']['id']))
+            if s.get('baseline_id'):valid_refs.add(s['baseline_id'])
             if s.get('revision_context'):valid_refs.update(('revision_context',s['revision_context']['parent_id']))
             if s['experiment_id']:valid_refs.add(s['experiment_id'])
             require(set(output['evidence'])<=valid_refs,'Role referenced evidence outside the supplied context.')
             if role in ('evaluation','review') and output['verdict']=='pass':
                 require(bool(output['evidence']),'A pass needs explicit source references.')
             if role=='implementation':
+                require(s.get('experiment_mode')!='baseline' or not output['changes'],'Baseline must execute unchanged source; changes are forbidden.')
                 editable=get_project(root)['editable_paths']
                 for change in output['changes']:
                     require(change['path'] in editable,'Change must target an exact configured editable file.')
@@ -323,6 +354,7 @@ def run_session(root,identifier):
     from . import cli
     with project_lock(root/'.autoresearch'):
         s=load(root,identifier);require(s['state']=='approved','Execution needs a fresh approval; an attempted launch cannot be repeated.')
+        require(s['approval_token']==token(s),'Stored plan changed after approval; obtain a new approval.')
         assert_fresh(root,s)
         require(datetime.now(timezone.utc).timestamp()<s['deadline'],'Session deadline reached.')
         p=get_project(root);snap=cli.load_records(root,p)
@@ -331,11 +363,15 @@ def run_session(root,identifier):
         metric=safe_path(root,s['metric_file']);require(not metric.exists(),'Metric output already exists; use a fresh destination in a new session.')
         cwd=safe_path(root,s['command']['cwd']);require(cwd.is_dir(),'Execution cwd unavailable.')
         changes=s['outputs']['implementation']['changes']
+        require(s.get('experiment_mode')!='baseline' or not changes,'Baseline must execute unchanged source; changes are forbidden.')
+        if 'experiment_mode' in s:
+            _,selected=experiment_target(p,snap.records,s['run_context'],s['experiment_mode'])
+            require(selected==s['baseline_id'],'Selected baseline changed.')
         s['state']='applying';save(root,s)  # Crash here requires human inspection, never automatic reapplication.
         for c in changes:atomic_write(safe_path(root,c['path']),c['content'])
         s['sources']=snapshot(root,list(s['sources']))
         s['experiment_id']='exp-'+uuid4().hex
-        baseline=p['selected_experiment_id']
+        baseline=s['baseline_id'] if 'experiment_mode' in s else p['selected_experiment_id']
         plan=dict(id=s['experiment_id'],kind='performance' if baseline else 'baseline',
                   hypothesis=s['outputs']['planning']['hypothesis'],parent_id=baseline,baseline_id=baseline,
                   code_ref='source-sha256:'+digest(s['sources']),config_ref='project-sha256:'+s['project_hash'],
@@ -474,7 +510,8 @@ def add_arguments(parser, parser_class):
     first.add_argument('--max-calls',type=int,default=9);first.add_argument('--session-seconds',type=int,default=1800)
     first.add_argument('--scope',choices=('proxy','full'),default='full');first.add_argument('--seed',type=int)
     first.add_argument('--budget-ref',required=True)
-    for name in ('revise','status','advance','approve','reject','run','decide','reconcile','recover'):
+    first.add_argument('--mode',choices=('baseline','candidate'),help='default: baseline without selection, candidate with a valid selected result')
+    for name in ('next','revise','status','advance','approve','reject','run','decide','reconcile','recover'):
         sub=actions.add_parser(name);sub.add_argument('id')
         if name=='recover':sub.add_argument('--confirm-stopped',action='store_true')
         if name=='advance':sub.add_argument('--send',action='store_true',help='consent to transmit displayed scope to configured API')
@@ -484,7 +521,7 @@ def add_arguments(parser, parser_class):
 
 def dispatch(root,args):
     from . import cli
-    if args.action in ('setup','revise'):
+    if args.action in ('setup','revise','next'):
         import sys
         from .setup import setup
         require(root.is_dir(), 'Project root must be an existing directory.')
@@ -494,6 +531,9 @@ def dispatch(root,args):
             line=sys.stdin.readline()
             if not line:raise EOFError
             return line.rstrip('\r\n')
+        if args.action=='next':
+            from .continuation import next_session
+            return next_session(root,args.id,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
         if args.action=='revise':
             from .revision import revise
             return revise(root,args.id,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
@@ -504,7 +544,7 @@ def dispatch(root,args):
         profile=cli.read_document(Path(args.profile)) if args.profile else dict(base_url=args.base_url,model=args.model,api_key_env=args.api_key_env)
         return start(root,profile=profile,goal=args.goal,read_paths=args.read,command=args.run_command,
                      metric_file=args.metric_file,metric_key=args.metric_key,max_calls=args.max_calls,
-                     session_seconds=args.session_seconds,scope=args.scope,seed=args.seed,budget_ref=args.budget_ref)
+                     session_seconds=args.session_seconds,scope=args.scope,seed=args.seed,budget_ref=args.budget_ref,mode=args.mode)
     if args.action=='recover':return recover(root,args.id,confirm_stopped=args.confirm_stopped)
     if args.action=='advance':return advance(root,args.id,send=args.send)
     if args.action=='approve':return approve(root,args.id,args.token)

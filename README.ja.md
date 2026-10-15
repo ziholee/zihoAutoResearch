@@ -28,6 +28,8 @@
 
 **開発ソース限定：** 対話型ターミナルで `zar research setup --project ./my-ml-project` を実行し、質問に答えると、JSON を手作業で編集せずに設定から最初の実験計画まで進めます。保存と API 送信は別々に確認し、計画の承認待ちで停止します。既存の学習コードと評価手順は事前に用意してください。[対話型設定ガイド](docs/research-api.md#질문에-답해-첫-계획-만들기)を参照してください。 実行前の計画が停止した場合や修正が必要な場合は、`zar research revise SESSION_ID --project ./my-ml-project` で追加質問に回答し、関連付けられた新しい計画を作成できます。`research status` は次の操作を案内し、修正後の計画には新たな承認が必要です。
 
+`baseline` モードはモデルによるコード変更なしで現在の元コードを測定します。候補計画には、比較可能で選択済みの有効な keep 実験が必要です。完了後は `zar research next SESSION_ID --project ./my-ml-project` で設定と限定された判断・記憶の文脈を次の計画へ引き継ぎます。新しい指標ファイルのパス、送信への同意、承認が必要です。コードの自動復元や実験の自動反復は行いません。
+
 `zar` は **zihoAutoResearch の略称であり、実行コマンド名**です。インストールするパッケージ名は `ziho-autoresearch` で、インストール後は `zar init`、`zar status` のように使用します。
 
 ## 1. インストール
