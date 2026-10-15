@@ -24,7 +24,7 @@ The badges show the latest PyPI version, supported Python version, license, CI s
 - **Agent skill**: Guides your coding agent through a research workflow within the scope you authorize, using your existing project.
 - **Resuming and reporting**: Looks up unfinished experiments, failure memory, candidate rationale, and experiment lineage, and generates Markdown reports.
 
-The CLI itself does not call an LLM, run training, restore code, or submit competition entries. You or your existing agent perform those actions, then record the results you actually verified. Passing `check` does not automatically establish that there is no data leakage or that a model is good.
+The record commands in public v0.3.0 do not call an LLM or run training. **The development branch adds an unreleased `research` command.** It sends role-specific instructions to an OpenAI-compatible API and runs and records one local experiment after user approval. See the [API research session guide](docs/research-api.md) for connection, approval, recovery, and verification scope. Real cloud API connections remain unverified; automatic code restoration and competition submission are not provided. Passing `check` does not establish that there is no data leakage or that a model is good.
 
 `zar` is **the abbreviation for zihoAutoResearch and its executable command**. The package you install is named `ziho-autoresearch`; after installation, use commands such as `zar init` and `zar status`.
 
