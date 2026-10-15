@@ -77,7 +77,10 @@ def snapshot(root,paths):
             require(path.stat().st_size<=100_000,'Source file exceeds 100 KB.')
             data=path.read_bytes();total+=len(data)
             require(total<=200_000,'Source context exceeds 200 KB.')
-            out[name]=dict(sha256=digest(data),content=data.decode('utf-8'))
+            try:content=data.decode('utf-8')
+            except UnicodeDecodeError:
+                raise ResearchError('Source files must be UTF-8 text: '+name) from None
+            out[name]=dict(sha256=digest(data),content=content)
         else:out[name]=dict(sha256=None,content=None)
     return out
 
@@ -425,6 +428,7 @@ def recover(root,identifier,*,confirm_stopped=False):
 
 def add_arguments(parser, parser_class):
     actions=parser.add_subparsers(dest='action',required=True,parser_class=parser_class)
+    actions.add_parser('setup',help='interactively configure a project and prepare its first proposal')
     first=actions.add_parser('start',help='save explicit transmission scope; no API call or execution')
     first.add_argument('--profile',help='JSON connection profile; never include a key value')
     first.add_argument('--base-url');first.add_argument('--model');first.add_argument('--api-key-env')
@@ -445,6 +449,17 @@ def add_arguments(parser, parser_class):
 
 def dispatch(root,args):
     from . import cli
+    if args.action=='setup':
+        import sys
+        from .setup import setup
+        require(root.is_dir(), 'Project root must be an existing directory.')
+        require(sys.stdin.isatty(), 'Interactive setup requires a terminal; use project set and research start for automation.')
+        def ask(prompt):
+            cli.emit_text(prompt,stream=sys.stderr)
+            line=sys.stdin.readline()
+            if not line:raise EOFError
+            return line.rstrip('\r\n')
+        return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
     cli.safe_layout(root/'.autoresearch')
     if args.action=='start':
         require(not(args.profile and any((args.base_url,args.model,args.api_key_env))), 'Choose a profile file or connection flags, not both.')

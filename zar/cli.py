@@ -493,7 +493,7 @@ def main(argv=None):
                                  'evidence read --kind <kind> --id <id> --pointer <pointer> [--revision <n>] [--sha256 <hash>] [--start-line <n>] [--max-lines <n>] [--max-bytes <n>]'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
-            data['commands'].append('research <start|status|advance|approve|reject|run|decide|reconcile>')
+            data['commands'].append('research <setup|start|status|advance|approve|reject|run|decide|reconcile|recover>')
         else:
             args = parse(arguments)
             data, diagnostics = execute(args)
@@ -509,7 +509,7 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if data.get('view') == 'research_session':
+            if data.get('view') in ('research_session', 'research_setup'):
                 emit_text(dumps(data).rstrip('\n'))
             elif data.get('view') == 'skill_install':
                 label = 'Skill installation preview: ' if data.get('dry_run') else 'Skill installed: ' if 'agent' in data else 'Skill exported: '
