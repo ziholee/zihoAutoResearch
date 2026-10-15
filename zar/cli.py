@@ -1,4 +1,4 @@
-"""Local research record CLI. Stored commands are data and are never executed."""
+"""Research records and explicit, approval-gated API experiment sessions."""
 import argparse
 from datetime import datetime, timezone
 from importlib.resources import files
@@ -293,6 +293,13 @@ def execute(args):
         except DestinationExists:
             reject('conflict', args.dest, 'Destination already exists; choose a new skill directory.')
     root = Path(args.project).expanduser().resolve()
+    if args.command == 'research':
+        from . import research
+        from .llm import LLMError
+        try:
+            return research.dispatch(root,args), []
+        except (research.ResearchError, LLMError) as exc:
+            reject(getattr(exc,'code','research'), 'research', str(exc))
     if args.command == 'init':
         return initialize(root)
     if args.command == 'git':
@@ -391,6 +398,9 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
+    research = commands.add_parser('research', help='explicit API role loop with reviewed execution approvals')
+    from .research import add_arguments
+    add_arguments(research, Parser)
     skill = commands.add_parser('skill', help='export the agent skill or render project guidance')
     skill_actions = skill.add_subparsers(dest='action', required=True, parser_class=Parser)
     install = skill_actions.add_parser('install', help='export skill or install in an agent discovery directory')
@@ -483,6 +493,7 @@ def main(argv=None):
                                  'evidence read --kind <kind> --id <id> --pointer <pointer> [--revision <n>] [--sha256 <hash>] [--start-line <n>] [--max-lines <n>] [--max-bytes <n>]'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
+            data['commands'].append('research <start|status|advance|approve|reject|run|decide|reconcile>')
         else:
             args = parse(arguments)
             data, diagnostics = execute(args)
@@ -498,7 +509,9 @@ def main(argv=None):
         print(dumps(dict(ok=code == 0, data=data, diagnostics=diagnostics), ensure_ascii=True))
     else:
         if data is not None:
-            if data.get('view') == 'skill_install':
+            if data.get('view') == 'research_session':
+                emit_text(dumps(data).rstrip('\n'))
+            elif data.get('view') == 'skill_install':
                 label = 'Skill installation preview: ' if data.get('dry_run') else 'Skill installed: ' if 'agent' in data else 'Skill exported: '
                 emit_text(label + data['destination'])
                 for step in data.get('next_steps', []):

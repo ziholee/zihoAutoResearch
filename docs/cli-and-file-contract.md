@@ -1,12 +1,14 @@
 # v1 사용 흐름·CLI·파일 계약
 
-상태: 구현 기준 v1 · 2026-10-11
+상태: 기존 기록 구현 기준 v1 · 2026-10-15
 
-이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `lineage`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 이번 제품 개발에서는 실제 ML 학습·대회 제출을 하지 않으며, 샘플 파일과 모의 결과로 도구를 검증합니다. 완성 후 실제 프로젝트 적용은 사용자가 수행합니다.
+미배포 `research` 명령은 [API 연구 세션](research-api.md)에서 별도 정의합니다. canonical 기록의 v1 계약을 유지하면서 세션 제어 상태와 실행 근거를 추가합니다.
+
+이 문서는 v1 CLI의 구현 계약입니다. `init`, `project set`, `status`, `check`, `review add`, `submission add`, `memory add`, `candidate add`, `experiment create/update/correct/compare/decide`, `git status`, `experiment create --git-head`, `context`, `evidence read`, `lineage`, `report`와 JSON 저장·검증 기반을 구현했습니다. [LLM 스킬](../skills/ziho-autoresearch/SKILL.md)은 현재 지원 명령만 사용합니다. 기존 기록 기능은 샘플 파일과 모의 결과로 검증합니다. 새 research 흐름은 모의 API와 실제 결정적 로컬 프로그램으로 검증하며, 실제 클라우드 API·ML 성능 개선·대회 제출은 미검증입니다.
 
 ## 1. 역할과 사용자 경험
 
-제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. CLI는 LLM을 호출하거나 ML 코드를 실행하지 않습니다.
+제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. 이 문서의 기존 기록 명령은 LLM 호출이나 ML 실행을 하지 않습니다. 미배포 `research advance --send`는 API를 호출하며, 명시적인 `research run`은 승인된 명령을 실행합니다.
 
 | 단계 | 사용자/스킬의 행동 | CLI의 역할 |
 |---|---|---|
@@ -34,13 +36,15 @@
     memories/<memory-id>.json # 선택적 실패 기억 확장; 기존 프로젝트는 생략 가능
     candidates/<candidate-id>.json # 선택적 후보 근거 확장; 기존 프로젝트는 생략 가능
     reports/                 # 요청 시 생성하는 파생 Markdown
+    sessions/                # 선택적 research 세션 상태, canonical 기록과 별도
+    session-artifacts/       # 선택적 research 실행 근거
 ```
 
 - JSON은 설정·점수·상태·근거 참조의 원본입니다. Markdown을 읽어 JSON을 자동 수정하지 않습니다.
 - `program.md`는 프로젝트 해석·연구 절차·불확실성을 적는 편집 가능한 지침입니다. 지표·예산·선택 ID·명령·다음 행동은 `project.json`을 참조하며 값의 별도 사본을 유지하지 않습니다.
 - `reports/`는 [필드별 원본 매핑](report-field-mapping.md)에 따라 JSON에서 재생성합니다. 출처 없는 값은 “미기록”으로 표시합니다. 보고서 수정은 원본 상태에 반영되지 않습니다.
 - 코드·데이터·모델·로그는 기존 위치에 두고 경로·내용 식별자로 연결합니다. CLI가 대용량 파일을 복사하거나 모델을 로드하지 않습니다.
-- 기존 루트 `program.md`, `AGENTS.md`, 사용자 코드와 설정은 자동 수정하지 않습니다. 스킬은 기존 지침도 읽고 충돌을 드러냅니다.
+- 기존 기록 명령은 루트 `program.md`, `AGENTS.md`, 사용자 코드와 설정을 자동 수정하지 않습니다. research run은 전송·수정 허용 범위에서 사용자가 승인한 파일 변경만 적용합니다. 스킬은 기존 지침도 읽고 충돌을 드러냅니다.
 
 ## 3. 명령
 
