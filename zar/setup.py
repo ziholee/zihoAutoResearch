@@ -13,7 +13,7 @@ class Cancelled(Exception):
     pass
 
 
-def setup(root, *, ask, emit):
+def setup(root, *, ask, emit, _revision=None):
     """Collect settings without writes; save and transmission are separate consent."""
     root=root.resolve()
     research.require(root.is_dir(),'Project root must already exist.')
@@ -31,7 +31,12 @@ def setup(root, *, ask, emit):
             name=None,objective=None,comparison=None,environment=dict(os=None,runtime=None,device=None),
             commands=[],budget=dict(max_experiments=None,max_run_seconds=None),editable_paths=[],
             selected_experiment_id=None,next_action=None)
+    defaults=_revision['parent'] if _revision else {}
     result=dict(view='research_setup',cancelled=False,saved=False,session=None)
+
+    revision_save_started=False
+    revision_save_complete=False
+    if _revision:result['parent_session_id']=defaults['id']
 
     def field(key, default=None, *, choices=None, integer=None, number=False, optional=False, hint=''):
         while True:
@@ -59,7 +64,7 @@ def setup(root, *, ask, emit):
     try:
         emit('Project setup: :cancel or Ctrl-C cancels. No API key value is requested. Settings are written only after save consent.')
         p=deepcopy(original)
-        for key in ('name','objective'):p[key]=field(key,p[key],hint='Project '+key)
+        for key in ('name','objective'):p[key]=field(key,defaults.get('goal',p[key]) if key=='objective' else p[key],hint='Project '+key)
         comp=deepcopy(p['comparison'] or {})
         for key in ('id','dataset_ref','split_ref','metric','direction','evaluation_ref','min_delta'):
             comp[key]=field('comparison_id' if key=='id' else key,comp.get(key,0 if key=='min_delta' else None),
@@ -69,7 +74,7 @@ def setup(root, *, ask, emit):
             p['environment'][key]=field(key,p['environment'][key],choices=('windows','linux','macos','other') if key=='os' else None,hint='Execution environment')
         for key in ('max_experiments','max_run_seconds'):
             p['budget'][key]=field(key,p['budget'][key],integer=(1,2147483647),hint='Positive project budget')
-        name=field('command',p['commands'][0]['name'] if p['commands'] else 'train',hint='Configured command name')
+        name=field('command',defaults.get('command',{}).get('name',p['commands'][0]['name'] if p['commands'] else 'train'),hint='Configured command name')
         old=next((c for c in p['commands'] if c['name']==name),dict(argv=[],cwd='.'))
         count=field('argv_count',len(old['argv']) or None,integer=(1,100),hint='Number of argv items, including executable; no shell splitting')
         argv=[field(f'argv_{i}',old['argv'][i] if i<len(old['argv']) else None,hint='One literal executable/argument; do not add shell quoting') for i in range(count)]
@@ -77,17 +82,17 @@ def setup(root, *, ask, emit):
         p['commands']=[c for c in p['commands'] if c['name']!=name]+[command]
         count=field('editable_count',len(p['editable_paths']) or None,integer=(1,30),hint='Number of editable project paths')
         p['editable_paths']=[field(f'editable_{i}',p['editable_paths'][i] if i<len(p['editable_paths']) else None,hint='Project-relative editable path') for i in range(count)]
-        defaults=[path for path in p['editable_paths'] if research.safe_path(root,path).is_file()]
-        count=field('read_count',len(defaults) or None,integer=(1,30),hint='Number of exact source files sent to LLM')
-        reads=[field(f'read_{i}',defaults[i] if i<len(defaults) else None,hint='Exact project-relative source file') for i in range(count)]
-        profile=validate_profile({key:field(key,'ZAR_API_KEY' if key=='api_key_env' else None,hint='Environment variable NAME, never the secret value' if key=='api_key_env' else 'API '+key) for key in ('base_url','model','api_key_env')})
-        metric_file=field('metric_file','metric.json',hint='New project-relative output JSON file')
-        metric_key=field('metric_key',comp['metric'],hint='Top-level numeric JSON metric key')
-        scope=field('scope','full',choices=('full','proxy'),hint='Evaluation scope')
-        seed=field('seed',optional=True,integer=(-2147483648,2147483647),hint='Optional integer seed')
-        budget_ref=field('budget_ref','local-session',hint='Budget protocol reference')
-        max_calls=field('max_calls',9,integer=(1,100),hint='API call limit; first plan needs 5 calls')
-        seconds=field('session_seconds',1800,integer=(1,86400),hint='Session wall-clock budget seconds')
+        read_defaults=list(defaults['sources']) if defaults else [path for path in p['editable_paths'] if research.safe_path(root,path).is_file()]
+        count=field('read_count',len(read_defaults) or None,integer=(1,30),hint='Number of exact source files sent to LLM')
+        reads=[field(f'read_{i}',read_defaults[i] if i<len(read_defaults) else None,hint='Exact project-relative source file') for i in range(count)]
+        profile=validate_profile(dict(defaults.get('profile',{}),**{key:field(key,defaults.get('profile',{}).get(key,'ZAR_API_KEY' if key=='api_key_env' else None),hint='Environment variable NAME, never the secret value' if key=='api_key_env' else 'API '+key) for key in ('base_url','model','api_key_env')}))
+        metric_file=field('metric_file',defaults.get('metric_file','metric.json'),hint='New project-relative output JSON file')
+        metric_key=field('metric_key',defaults.get('metric_key',comp['metric']),hint='Top-level numeric JSON metric key')
+        scope=field('scope',defaults.get('run_context',{}).get('scope','full'),choices=('full','proxy'),hint='Evaluation scope')
+        seed=field('seed',defaults.get('run_context',{}).get('seed'),optional=True,integer=(-2147483648,2147483647),hint='Optional integer seed')
+        budget_ref=field('budget_ref',defaults.get('run_context',{}).get('budget_ref','local-session'),hint='Budget protocol reference')
+        max_calls=field('max_calls',defaults.get('max_calls',9),integer=(1,100),hint='API call limit; first plan needs 5 calls')
+        seconds=field('session_seconds',defaults.get('session_seconds',1800),integer=(1,86400),hint='Session wall-clock budget seconds')
         cli.enforce(cli.validate_document(p,'project'))
         research.require(len(p['objective'].strip())<=10000,'Goal must be 1..10000 characters.')
         research.require(len(metric_key)<=200,'Metric key must be at most 200 characters.')
@@ -121,15 +126,31 @@ def setup(root, *, ask, emit):
             original_hash=research.digest(initialized['project'])
             records_hash=research.records_identity(root)
         with project_lock(store):
+            if _revision:
+                from .revision import eligible
+                current=research.load(root,defaults['id']);eligible(current)
+                research.require(research.digest(current)==_revision['context']['parent_hash'],'Parent session changed during revision; start again.')
             research.require(research.digest(research.get_project(root))==original_hash,'Project settings changed during setup; start again.')
             research.require(research.records_identity(root)==records_hash,'Research records changed during setup; start again.')
             cli.enforce(cli.inspect_project(root,p,snapshot=cli.load_records(root,p)))
             p['revision']+=1;p['updated_at']=cli.now()
             cli.enforce(cli.validate_document(p,'project'))
+            if _revision:
+                revision_save_started=True
+                current['state']='rejected';current['approval_token']=None
+                current['error']='revision_save_started'
+                research.save(root,current)
             atomic_write(store/'project.json',dumps(p))
+            result['saved']=True
+            if _revision:
+                result['session']=research._start_locked(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
+                    metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=seconds,
+                    scope=scope,seed=seed,budget_ref=budget_ref,revision_context=_revision['context'])
+                current['superseded_by']=result['session']['id'];current['error']=None;research.save(root,current)
+                revision_save_complete=True
         result['saved']=True
         try:
-            result['session']=research.start(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
+            if not _revision:result['session']=research.start(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
                 metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=seconds,
                 scope=scope,seed=seed,budget_ref=budget_ref)
             emit(dumps(result['session']['transmission']))
@@ -141,6 +162,12 @@ def setup(root, *, ask, emit):
                 try:result['session']=research.status(root,result['session']['id'])
                 except (ValueError, OSError, cli.Failure):pass
         return result
+    except (ValueError,OSError,cli.Failure) as exc:
+        if not revision_save_started:raise
+        result['error']='Revision save incomplete; inspect parent status and project settings before retrying. '+str(exc)
+        return result
     except (Cancelled, EOFError, KeyboardInterrupt):
+        if revision_save_started and not revision_save_complete:
+            result['error']='Revision save interrupted; inspect parent status and project settings before retrying.'
         result['cancelled']=True
         return result

@@ -91,6 +91,8 @@ def execution_environment(profile):
     return env
 
 def assert_fresh(root,s):
+    if s.get('revision_context'):
+        require(digest(s['revision_context'])==s.get('revision_context_hash'),'Revision context changed; create a new revision.')
     require(digest(execution_environment(s['profile']))==s['environment_hash'],'Execution environment changed; start a new session.')
     require(digest(get_project(root))==s['project_hash'],'Project settings changed; start a new session.')
     require(snapshot(root,list(s['sources']))==s['sources'],'Source inputs changed; start a new session.')
@@ -101,12 +103,37 @@ def records_identity(root):
     return digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')})
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **({'revision_context':s['revision_context']} if 'revision_context' in s else {})))
+
+def next_actions(s):
+    """Suggestions only: never infer a stopped process or grant consent."""
+    identifier=s['id'];state=s['state'];actions=[]
+    def add(action,reason,suffix=''):
+        actions.append(dict(action=action,command=f'zar research {action} {identifier}'+suffix,reason=reason))
+    if s.get('superseded_by'):
+        return [dict(action='status',command='zar research status '+s['superseded_by'],reason='Continue the replacement session; the old approval is invalid.')]
+    if state in ('planning','observed','remembering') and s['calls']<s['max_calls'] and datetime.now(timezone.utc).timestamp()<s['deadline']:
+        add('advance','Review transmission scope and remaining call/time budget; explicitly consent to the API request.',' --send')
+    elif state=='awaiting_approval':
+        add('approve','Review the diff and use the current approval_token; approval does not execute.',' --token <approval_token>')
+        add('reject','Reject this proposal without executing.')
+    elif state=='approved':add('run','Explicitly execute the approved proposal once; inspect its diff first.')
+    elif state=='awaiting_decision':add('decide','Review measured evidence and decision; use the current approval_token.',' --token <approval_token>')
+    elif state in ('calling','applying','deciding'):
+        add('recover','Inspect the previous CLI and child processes first; only confirm after verifying they have stopped. API outcome may remain unknown.',' --confirm-stopped')
+    elif state in ('executing','unknown'):
+        add('reconcile','Inspect actual process/logs and update canonical terminal execution evidence first. Never rerun an unknown launch.')
+    if state in ('planning','blocked','rejected','awaiting_approval','approved') and s['experiment_id'] is None and s.get('error')!='inspect_partial_changes_and_records_before_new_session':
+        add('revise','Answer missing questions or change settings and create a new plan; saving invalidates the old approval.')
+    if not actions:
+        actions.append(dict(action='inspect',command=f'zar research status {identifier}',reason='Inspect source changes, records and execution evidence before any new session; no automatic retry or next experiment.'))
+    return actions
 
 def view(s):
     result=deepcopy(s);result['view']='research_session'
+    result['next_actions']=next_actions(s)
     result['transmission']=dict(server=s['profile']['base_url'],model=s['profile']['model'],
-        files=list(s['sources']), includes='goal, project settings, bounded records, role outputs; no raw logs')
+        files=list(s['sources']), includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries if present; no raw logs')
     return result
 
 def status(root,identifier):
@@ -122,29 +149,36 @@ def start(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_call
     require(isinstance(budget_ref,str) and bool(budget_ref.strip()),'A budget protocol is required.')
     require(isinstance(metric_key,str) and 0<len(metric_key)<=200,'A top-level JSON metric key is required.')
     with project_lock(root/'.autoresearch'):
-        p=get_project(root)
-        require(not cli.readiness_missing(p),'Configure project settings first (zar project set).')
-        snap=cli.load_records(root,p);cli.enforce(cli.inspect_project(root,p,snapshot=snap))
-        require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
-        commands=[c for c in p['commands'] if c['name']==command]
-        require(len(commands)==1,'Choose a unique configured command name.')
-        require(safe_path(root,commands[0]['cwd']).is_dir(),'Command cwd is not a directory.')
-        require(0<len(read_paths)<=30,'Select 1..30 source files for transmission.')
-        sources=snapshot(root,list(dict.fromkeys(read_paths)))
-        require(all(v['content'] is not None for v in sources.values()),'Read files must exist.')
-        for name in p['editable_paths']:
-            safe_path(root,name)
-        metric=safe_path(root,metric_file)
-        require(metric.parent.is_dir() and not metric.exists(),'Metric destination must be new with an existing parent.')
-        require(metric_file not in sources,'Metric output cannot be an input.')
-        directory=safe_path(root,'.autoresearch/sessions',metadata=True);directory.mkdir(exist_ok=True)
-        s=dict(schema_version=1,id='session-'+uuid4().hex,state='planning',created_at=cli.now(),
-               deadline=datetime.now(timezone.utc).timestamp()+session_seconds,goal=goal,profile=profile,
-               max_calls=max_calls,calls=0,outputs={},trace=[],sources=sources,project_hash=digest(p),
-               records_hash=digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
-               run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
-               approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
-        save(root,s);return view(s)
+        return _start_locked(root,profile=profile,goal=goal,read_paths=read_paths,command=command,metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=session_seconds,scope=scope,seed=seed,budget_ref=budget_ref)
+
+def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,max_calls,session_seconds,scope,seed,budget_ref,revision_context=None):
+    from . import cli
+    p=get_project(root)
+    require(not cli.readiness_missing(p),'Configure project settings first (zar project set).')
+    snap=cli.load_records(root,p);cli.enforce(cli.inspect_project(root,p,snapshot=snap))
+    require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
+    commands=[c for c in p['commands'] if c['name']==command]
+    require(len(commands)==1,'Choose a unique configured command name.')
+    require(safe_path(root,commands[0]['cwd']).is_dir(),'Command cwd is not a directory.')
+    require(0<len(read_paths)<=30,'Select 1..30 source files for transmission.')
+    sources=snapshot(root,list(dict.fromkeys(read_paths)))
+    require(all(v['content'] is not None for v in sources.values()),'Read files must exist.')
+    for name in p['editable_paths']:
+        safe_path(root,name)
+    metric=safe_path(root,metric_file)
+    require(metric.parent.is_dir() and not metric.exists(),'Metric destination must be new with an existing parent.')
+    require(metric_file not in sources,'Metric output cannot be an input.')
+    directory=safe_path(root,'.autoresearch/sessions',metadata=True);directory.mkdir(exist_ok=True)
+    s=dict(schema_version=1,id='session-'+uuid4().hex,state='planning',created_at=cli.now(),
+           deadline=datetime.now(timezone.utc).timestamp()+session_seconds,session_seconds=session_seconds,goal=goal,profile=profile,
+           max_calls=max_calls,calls=0,outputs={},trace=[],sources=sources,project_hash=digest(p),
+           records_hash=digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
+           run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
+           approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
+    if revision_context is not None:
+        s['revision_context']=deepcopy(revision_context)
+        s['revision_context_hash']=digest(revision_context)
+    save(root,s);return view(s)
 
 def context(root,s,role):
     from . import cli
@@ -162,7 +196,7 @@ def context(root,s,role):
         if old['state']=='complete' and 'memory' in old['outputs']:
             lessons.append(dict(session_id=old['id'],experiment_id=old['experiment_id'],proposal=old['outputs']['memory'],created_at=old['created_at']))
     lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
-    return dict(prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
+    return dict(revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
                 project=p,records=data,sources=s['sources'],command=s['command'],
                 metric_file=s['metric_file'],metric_key=s['metric_key'],run_context=s['run_context'],
                 outputs=s['outputs'],experiment_id=s['experiment_id'],allowed_tools=[])
@@ -206,6 +240,7 @@ def advance(root,identifier,*,send=False):
             answer=call_api(profile,role_messages(role,json.loads(dumps(payload))),float(s['deadline'])-datetime.now(timezone.utc).timestamp())
             output=validate_response(role,loads(answer['content']))
             valid_refs=set(s['sources']) | set(s['outputs']) | {'project','records'} | {v['session_id'] for v in payload['prior_lessons']}
+            if s.get('revision_context'):valid_refs.update(('revision_context',s['revision_context']['parent_id']))
             if s['experiment_id']:valid_refs.add(s['experiment_id'])
             require(set(output['evidence'])<=valid_refs,'Role referenced evidence outside the supplied context.')
             if role in ('evaluation','review') and output['verdict']=='pass':
@@ -439,7 +474,7 @@ def add_arguments(parser, parser_class):
     first.add_argument('--max-calls',type=int,default=9);first.add_argument('--session-seconds',type=int,default=1800)
     first.add_argument('--scope',choices=('proxy','full'),default='full');first.add_argument('--seed',type=int)
     first.add_argument('--budget-ref',required=True)
-    for name in ('status','advance','approve','reject','run','decide','reconcile','recover'):
+    for name in ('revise','status','advance','approve','reject','run','decide','reconcile','recover'):
         sub=actions.add_parser(name);sub.add_argument('id')
         if name=='recover':sub.add_argument('--confirm-stopped',action='store_true')
         if name=='advance':sub.add_argument('--send',action='store_true',help='consent to transmit displayed scope to configured API')
@@ -449,7 +484,7 @@ def add_arguments(parser, parser_class):
 
 def dispatch(root,args):
     from . import cli
-    if args.action=='setup':
+    if args.action in ('setup','revise'):
         import sys
         from .setup import setup
         require(root.is_dir(), 'Project root must be an existing directory.')
@@ -459,6 +494,9 @@ def dispatch(root,args):
             line=sys.stdin.readline()
             if not line:raise EOFError
             return line.rstrip('\r\n')
+        if args.action=='revise':
+            from .revision import revise
+            return revise(root,args.id,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
         return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
     cli.safe_layout(root/'.autoresearch')
     if args.action=='start':

@@ -24,7 +24,7 @@
 
 공개 v0.3.0의 기록 명령은 LLM 호출이나 학습을 실행하지 않습니다. **개발 브랜치에는 미배포 `research` 명령을 추가했습니다.** 원하는 OpenAI 호환 API에 역할별 지침을 전달하고, 사용자 승인 후 로컬 실험 한 번을 실행·기록합니다. [API 연구 세션 사용법](docs/research-api.md)에서 연결·승인·재개 절차와 검증 범위를 확인하세요. 실제 클라우드 API 연결은 아직 검증하지 않았으며, 자동 코드 복구·대회 제출은 제공하지 않습니다. `check` 통과도 데이터 누수나 모델 품질의 자동 판정을 뜻하지 않습니다.
 
-**개발 소스 전용:** `zar research setup --project ./my-ml-project`를 터미널에서 실행하면 질문에 답해 JSON 수동 편집 없이 설정부터 첫 실험 계획까지 진행합니다. 저장과 API 전송은 따로 확인하며 계획의 승인 대기에서 멈춥니다. 기존 학습 코드·평가 조건은 사용자가 준비합니다. [대화형 설정 안내](docs/research-api.md#질문에-답해-첫-계획-만들기)를 참고하세요.
+**개발 소스 전용:** `zar research setup --project ./my-ml-project`를 터미널에서 실행하면 질문에 답해 JSON 수동 편집 없이 설정부터 첫 실험 계획까지 진행합니다. 저장과 API 전송은 따로 확인하며 계획의 승인 대기에서 멈춥니다. 기존 학습 코드·평가 조건은 사용자가 준비합니다. [대화형 설정 안내](docs/research-api.md#질문에-답해-첫-계획-만들기)를 참고하세요. 실행 전 계획이 막혔거나 수정이 필요하면 `zar research revise SESSION_ID --project ./my-ml-project`로 추가 질문에 답하고 새 계획을 만들 수 있습니다. `research status`는 다음 행동을 안내하며, 수정된 계획에는 새 승인이 필요합니다.
 
 `zar`는 **zihoAutoResearch의 약칭이자 실행 명령어**입니다. 설치할 패키지 이름은 `ziho-autoresearch`이고, 설치 후에는 `zar init`, `zar status`처럼 사용합니다.
 
