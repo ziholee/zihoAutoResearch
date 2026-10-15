@@ -26,7 +26,7 @@
 
 公开版 v0.3.0 的记录命令不会调用 LLM 或执行训练。**开发分支新增了尚未发布的 `research` 命令。** 它向 OpenAI 兼容 API 传递各角色的指令，并在用户批准后执行和记录一次本地实验。连接、批准、恢复流程及验证范围请参阅 [API 研究会话指南](docs/research-api.md)。真实云端 API 连接尚未验证，也不提供自动代码恢复或竞赛提交。通过 `check` 并不代表已确认不存在数据泄漏或模型质量合格。
 
-**仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与 API 发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。
+**仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与 API 发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。 执行前的计划受阻或需要修改时，可运行 `zar research revise SESSION_ID --project ./my-ml-project`，回答补充问题并创建关联的新计划。`research status` 提供下一步操作提示；修改后的计划需要重新批准。
 
 `zar` 是 **zihoAutoResearch 的简称，也是可执行命令**。安装包名为 `ziho-autoresearch`，安装后通过 `zar init`、`zar status` 等命令使用。
 
