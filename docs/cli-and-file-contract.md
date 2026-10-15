@@ -8,7 +8,7 @@
 
 ## 1. 역할과 사용자 경험
 
-제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. 이 문서의 기존 기록 명령은 LLM 호출이나 ML 실행을 하지 않습니다. 미배포 `research advance --send`는 API를 호출하며, 명시적인 `research run`은 승인된 명령을 실행합니다.
+제품은 LLM용 스킬과 로컬 CLI `zar`로 구성합니다. 사용자는 기존 코딩 에이전트에 프로젝트 점검·실험 작업을 요청합니다. 스킬은 코드를 이해하고 연구 지침·점검 근거·가설을 작성하며 CLI로 기록합니다. 이 문서의 기존 기록 명령은 LLM 호출이나 ML 실행을 하지 않습니다. 미배포 `research advance --send`와 `research setup`의 명시적 전송 동의는 API를 호출하며, 명시적인 `research run`은 승인된 명령을 실행합니다.
 
 | 단계 | 사용자/스킬의 행동 | CLI의 역할 |
 |---|---|---|
@@ -48,7 +48,7 @@
 
 ## 3. 명령
 
-모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `skill install --dest`와 `skill guidance`는 프로젝트 독립 명령이며 `--project`의 기록을 읽거나 변경하지 않습니다. `skill install --agent`는 project 범위에서 `--project`를 설치 루트로 사용하지만 `.autoresearch/` 기록은 읽거나 변경하지 않습니다. user 범위에서는 홈 디렉터리를 사용하고 `--project`를 무시합니다. `init`, `git status`, `skill install`, `skill guidance` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
+모든 명령은 `--project <root>`를 받습니다. 생략하면 현재 디렉터리를 사용하며 상위 폴더를 임의 탐색하지 않습니다. `skill install --dest`와 `skill guidance`는 프로젝트 독립 명령이며 `--project`의 기록을 읽거나 변경하지 않습니다. `skill install --agent`는 project 범위에서 `--project`를 설치 루트로 사용하지만 `.autoresearch/` 기록은 읽거나 변경하지 않습니다. user 범위에서는 홈 디렉터리를 사용하고 `--project`를 무시합니다. `init`, `research setup`, `git status`, `skill install`, `skill guidance` 외 명령은 `.autoresearch/project.json`이 없으면 오류입니다.
 
 | 명령 | 정확한 동작 |
 |---|---|
@@ -56,6 +56,7 @@
 | `zar skill install --agent <codex 또는 claude> [--scope project 또는 user] [--dry-run]` | 0.3.0부터. 기본 project. 발견 경로에 스킬 전체 복사, 필요한 상위 폴더 생성, 기존/리디렉션 경로 충돌 exit 3. 잘못된 옵션/홈 해석/제어 문자 exit 2, 없는 루트/I/O exit 4. JSON skill_install에 agent, scope, dry_run, invocation, next_steps 추가; 미리보기 files=[]; [설치 계약](agent-installation.md) |
 | `zar skill install --dest <새 폴더>` | 0.2.0부터 번들 스킬 전체를 명시한 새 폴더에 설치. 상위 폴더 필요, 기존 경로 덮어쓰기 금지, 자동 등록 없음; [설치 계약](uv-installation.md) |
 | `zar init` | `.autoresearch`와 revision 1의 미설정 project.json, program.md 생성. 프로젝트 ID는 `project-<UUID>`로 생성. 재호출 시 기존 파일 보존·변경 없음; 부분 초기화는 진단하고 중단 |
+| `zar research setup` | 미배포. 기존 프로젝트 폴더에서 TTY 질문으로 설정·세션 생성. 저장·API 전송을 별도 확인하고 첫 계획 승인 대기에서 종료. 승인·실행 없음; [설정·취소 계약](research-api.md#질문에-답해-첫-계획-만들기) |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
 | `zar status` | 준비 상태, 누락, 선택 실험, 마지막 실험, planned/running/unknown, 다음 행동 표시 |
 | `zar check` | 모든 JSON의 형식·참조·상태·근거 가용성 검사. ML 타당성을 자동 판정하는 명령이 아님 |

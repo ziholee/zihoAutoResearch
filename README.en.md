@@ -26,6 +26,8 @@ The badges show the latest PyPI version, supported Python version, license, CI s
 
 The record commands in public v0.3.0 do not call an LLM or run training. **The development branch adds an unreleased `research` command.** It sends role-specific instructions to an OpenAI-compatible API and runs and records one local experiment after user approval. See the [API research session guide](docs/research-api.md) for connection, approval, recovery, and verification scope. Real cloud API connections remain unverified; automatic code restoration and competition submission are not provided. Passing `check` does not establish that there is no data leakage or that a model is good.
 
+**Development source only:** Run `zar research setup --project ./my-ml-project` in an interactive terminal to answer questions and reach a first experiment plan without editing JSON. Saving and API transmission require separate confirmation; setup stops for plan approval. Bring your existing training code and evaluation protocol. See the [interactive setup guide](docs/research-api.md#질문에-답해-첫-계획-만들기).
+
 `zar` is **the abbreviation for zihoAutoResearch and its executable command**. The package you install is named `ziho-autoresearch`; after installation, use commands such as `zar init` and `zar status`.
 
 ## 1. Install
