@@ -12,7 +12,7 @@ class SetupTests(unittest.TestCase):
         self.tmp=tempfile.TemporaryDirectory(); self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name).resolve()
         (self.root/'train.py').write_text('print("test")\n')
-        self.answers=dict(name='test',objective='test experiment',comparison_id='cmp',dataset_ref='synthetic',split_ref='fixed',metric='score',direction='minimize',evaluation_ref='v1',min_delta='0',os='other',runtime='python',device='cpu',max_experiments='3',max_run_seconds='5',command='train',argv_count='2',argv_0='python',argv_1='train.py',cwd='.',editable_count='1',editable_0='train.py',read_count='1',read_0='train.py',base_url='http://localhost:9999/v1',model='mock',api_key_env='ZAR_TEST_KEY',metric_file='metric.json',metric_key='score',scope='full',seed='',budget_ref='test',max_calls='9',session_seconds='120',save='yes',send='no')
+        self.answers=dict(experiment_mode='baseline',name='test',objective='test experiment',comparison_id='cmp',dataset_ref='synthetic',split_ref='fixed',metric='score',direction='minimize',evaluation_ref='v1',min_delta='0',os='other',runtime='python',device='cpu',max_experiments='3',max_run_seconds='5',command='train',argv_count='2',argv_0='python',argv_1='train.py',cwd='.',editable_count='1',editable_0='train.py',read_count='1',read_0='train.py',base_url='http://localhost:9999/v1',model='mock',api_key_env='ZAR_TEST_KEY',metric_file='metric.json',metric_key='score',scope='full',seed='',budget_ref='test',max_calls='9',session_seconds='120',save='yes',send='no')
     def ask(self,prompt):return self.answers[prompt.split(':',1)[0]]
     def test_cancel_does_not_initialize(self):
         self.answers['save']='no'

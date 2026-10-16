@@ -26,7 +26,7 @@ class ResearchHTTPTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         cli.initialize(self.root)
-        self.original = 'raise RuntimeError("unapproved original must never run")\n'
+        self.original = NEW_CODE
         (self.root / 'train.py').write_text(self.original)
         project = loads((self.root / '.autoresearch/project.json').read_text())
         project.update(name='loopback', objective='Synthetic approved execution',
@@ -54,7 +54,7 @@ class ResearchHTTPTests(unittest.TestCase):
                     'analysis': dict(missing=[]),
                     'evaluation': dict(verdict='hold' if owner.mode == 'hold' else 'pass'),
                     'planning': dict(hypothesis='Approved new script produces a measured score'),
-                    'implementation': dict(changes=[dict(path='train.py',
+                    'implementation': dict(changes=[] if context.get('experiment_mode')=='baseline' else [dict(path='train.py',
                         before_sha256=context['sources']['train.py']['sha256'], content=NEW_CODE)]),
                     'review': dict(verdict='pass'),
                     'interpretation': dict(decision='keep', reason='Observed score from local execution'),
@@ -103,7 +103,7 @@ class ResearchHTTPTests(unittest.TestCase):
         self.assertFalse((self.root / 'executed.txt').exists())
         self.assertEqual(list((self.root / '.autoresearch/experiments').glob('*.json')), [])
 
-    def test_public_cli_runs_changed_code_and_selects_observed_result(self):
+    def test_public_cli_runs_unchanged_baseline_and_selects_observed_result(self):
         session = self.start()
         identifier = session['id']
         self.assertEqual(session['state'], 'planning')
@@ -112,7 +112,7 @@ class ResearchHTTPTests(unittest.TestCase):
         self.assertEqual(self.requests, [])
         session = self.invoke('advance', identifier, '--send')
         self.assertEqual(session['state'], 'awaiting_approval')
-        self.assertIn('0.25', session['diff'])
+        self.assertEqual(session['diff'],'')
         self.assert_no_execution()
         self.invoke('run', identifier, expected=3)
         self.assert_no_execution()

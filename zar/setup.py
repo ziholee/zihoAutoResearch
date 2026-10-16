@@ -13,7 +13,7 @@ class Cancelled(Exception):
     pass
 
 
-def setup(root, *, ask, emit, _revision=None):
+def setup(root, *, ask, emit, _revision=None, _next=None):
     """Collect settings without writes; save and transmission are separate consent."""
     root=root.resolve()
     research.require(root.is_dir(),'Project root must already exist.')
@@ -25,18 +25,20 @@ def setup(root, *, ask, emit, _revision=None):
             original=research.get_project(root)
             original_hash=research.digest(original)
             records_hash=research.records_identity(root)
+            if _next:research.require(records_hash==_next['context']['records_hash'],'Research records changed before next setup; start again.')
     else:
         stamp=cli.now()
         original=dict(schema_version=1,id='project-'+str(uuid4()),revision=1,created_at=stamp,updated_at=stamp,
             name=None,objective=None,comparison=None,environment=dict(os=None,runtime=None,device=None),
             commands=[],budget=dict(max_experiments=None,max_run_seconds=None),editable_paths=[],
             selected_experiment_id=None,next_action=None)
-    defaults=_revision['parent'] if _revision else {}
+    defaults=(_revision or _next or {}).get('parent',{})
     result=dict(view='research_setup',cancelled=False,saved=False,session=None)
 
+    linked_save_started=False
     revision_save_started=False
     revision_save_complete=False
-    if _revision:result['parent_session_id']=defaults['id']
+    if _revision or _next:result['parent_session_id']=defaults['id']
 
     def field(key, default=None, *, choices=None, integer=None, number=False, optional=False, hint=''):
         while True:
@@ -86,11 +88,18 @@ def setup(root, *, ask, emit, _revision=None):
         count=field('read_count',len(read_defaults) or None,integer=(1,30),hint='Number of exact source files sent to LLM')
         reads=[field(f'read_{i}',read_defaults[i] if i<len(read_defaults) else None,hint='Exact project-relative source file') for i in range(count)]
         profile=validate_profile(dict(defaults.get('profile',{}),**{key:field(key,defaults.get('profile',{}).get(key,'ZAR_API_KEY' if key=='api_key_env' else None),hint='Environment variable NAME, never the secret value' if key=='api_key_env' else 'API '+key) for key in ('base_url','model','api_key_env')}))
-        metric_file=field('metric_file',defaults.get('metric_file','metric.json'),hint='New project-relative output JSON file')
+        metric_default=defaults.get('metric_file','metric.json')
+        if _next:
+            from pathlib import PurePosixPath
+            old_metric=PurePosixPath(metric_default)
+            metric_default=str(old_metric.with_name(old_metric.stem+'-'+uuid4().hex[:12]+old_metric.suffix))
+            emit('Working files are retained, including discarded changes. Review command argv and ensure it writes the new metric path; no file or argument is automatically restored or rewritten.')
+        metric_file=field('metric_file',metric_default,hint='New project-relative output JSON file')
         metric_key=field('metric_key',defaults.get('metric_key',comp['metric']),hint='Top-level numeric JSON metric key')
         scope=field('scope',defaults.get('run_context',{}).get('scope','full'),choices=('full','proxy'),hint='Evaluation scope')
         seed=field('seed',defaults.get('run_context',{}).get('seed'),optional=True,integer=(-2147483648,2147483647),hint='Optional integer seed')
         budget_ref=field('budget_ref',defaults.get('run_context',{}).get('budget_ref','local-session'),hint='Budget protocol reference')
+        mode=field('experiment_mode',defaults.get('experiment_mode') if _revision and defaults.get('experiment_mode') else ('candidate' if p['selected_experiment_id'] else 'baseline'),choices=('baseline','candidate'),hint='baseline executes original source without changes; candidate needs a selected kept baseline')
         max_calls=field('max_calls',defaults.get('max_calls',9),integer=(1,100),hint='API call limit; first plan needs 5 calls')
         seconds=field('session_seconds',defaults.get('session_seconds',1800),integer=(1,86400),hint='Session wall-clock budget seconds')
         cli.enforce(cli.validate_document(p,'project'))
@@ -111,7 +120,8 @@ def setup(root, *, ask, emit, _revision=None):
                 snap=cli.load_records(root,p)
                 cli.enforce(cli.inspect_project(root,p,snapshot=snap))
                 research.require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
-        emit(dumps(dict(project=p,profile=profile,read_paths=reads,metric_file=metric_file,metric_key=metric_key,
+        mode,baseline=research.experiment_target(p,snap.records if existing else {'experiment':{}},dict(scope=scope,seed=seed,budget_ref=budget_ref),mode)
+        emit(dumps(dict(experiment_mode=mode,baseline_id=baseline,project=p,profile=profile,read_paths=reads,metric_file=metric_file,metric_key=metric_key,
             scope=scope,seed=seed,budget_ref=budget_ref,max_calls=max_calls,session_seconds=seconds)))
         if not yes('save','Save these project settings and create a local session?'):
             result['cancelled']=True;return result
@@ -126,6 +136,9 @@ def setup(root, *, ask, emit, _revision=None):
             original_hash=research.digest(initialized['project'])
             records_hash=research.records_identity(root)
         with project_lock(store):
+            if _next:
+                current=research.load(root,defaults['id'])
+                research.require(research.digest(current)==_next['context']['parent_hash'],'Parent session changed during next setup; start again.')
             if _revision:
                 from .revision import eligible
                 current=research.load(root,defaults['id']);eligible(current)
@@ -140,19 +153,21 @@ def setup(root, *, ask, emit, _revision=None):
                 current['state']='rejected';current['approval_token']=None
                 current['error']='revision_save_started'
                 research.save(root,current)
+            linked_save_started=bool(_next)
             atomic_write(store/'project.json',dumps(p))
             result['saved']=True
-            if _revision:
+            if _revision or _next:
                 result['session']=research._start_locked(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
                     metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=seconds,
-                    scope=scope,seed=seed,budget_ref=budget_ref,revision_context=_revision['context'])
+                    scope=scope,seed=seed,budget_ref=budget_ref,mode=mode,revision_context=_revision['context'] if _revision else None,next_context=_next['context'] if _next else defaults.get('next_context') if _revision else None)
+            if _revision:
                 current['superseded_by']=result['session']['id'];current['error']=None;research.save(root,current)
                 revision_save_complete=True
         result['saved']=True
         try:
-            if not _revision:result['session']=research.start(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
+            if not (_revision or _next):result['session']=research.start(root,profile=profile,goal=p['objective'],read_paths=reads,command=name,
                 metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=seconds,
-                scope=scope,seed=seed,budget_ref=budget_ref)
+                scope=scope,seed=seed,budget_ref=budget_ref,mode=mode)
             emit(dumps(result['session']['transmission']))
             if yes('send','Send this scope to the API now? This may incur charges. Stops before execution approval.'):
                 result['session']=research.advance(root,result['session']['id'],send=True)
@@ -163,10 +178,15 @@ def setup(root, *, ask, emit, _revision=None):
                 except (ValueError, OSError, cli.Failure):pass
         return result
     except (ValueError,OSError,cli.Failure) as exc:
+        if linked_save_started:
+            result['error']='Next session save incomplete; inspect project settings and local sessions before retrying. '+str(exc)
+            return result
         if not revision_save_started:raise
         result['error']='Revision save incomplete; inspect parent status and project settings before retrying. '+str(exc)
         return result
     except (Cancelled, EOFError, KeyboardInterrupt):
+        if linked_save_started and result['session'] is None:
+            result['error']='Next session save interrupted; inspect project settings and local sessions before retrying.'
         if revision_save_started and not revision_save_complete:
             result['error']='Revision save interrupted; inspect parent status and project settings before retrying.'
         result['cancelled']=True

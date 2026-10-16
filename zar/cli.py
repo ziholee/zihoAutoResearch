@@ -493,7 +493,7 @@ def main(argv=None):
                                  'evidence read --kind <kind> --id <id> --pointer <pointer> [--revision <n>] [--sha256 <hash>] [--start-line <n>] [--max-lines <n>] [--max-bytes <n>]'],
                     'options': ['--project <root>', '--json'],
                     'description': __doc__}
-            data['commands'].append('research <setup|revise|start|status|advance|approve|reject|run|decide|reconcile|recover>')
+            data['commands'].append('research <setup|revise|next|start|status|advance|approve|reject|run|decide|reconcile|recover>')
         else:
             args = parse(arguments)
             data, diagnostics = execute(args)

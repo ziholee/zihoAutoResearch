@@ -28,6 +28,8 @@ The record commands in public v0.3.0 do not call an LLM or run training. **The d
 
 **Development source only:** Run `zar research setup --project ./my-ml-project` in an interactive terminal to answer questions and reach a first experiment plan without editing JSON. Saving and API transmission require separate confirmation; setup stops for plan approval. Bring your existing training code and evaluation protocol. See the [interactive setup guide](docs/research-api.md#질문에-답해-첫-계획-만들기). If a pre-execution plan is blocked or needs changes, use `zar research revise SESSION_ID --project ./my-ml-project` to answer follow-up questions and create a linked new plan. `research status` provides next-action guidance; the revised plan requires fresh approval.
 
+Use `baseline` mode to measure the current original code without model edits. Candidate plans require a compatible selected valid keep experiment. After completion, `zar research next SESSION_ID --project ./my-ml-project` carries settings and bounded decision/memory context into a new plan, with a fresh metric path, transmission consent and approval. It does not restore code or run experiments automatically.
+
 `zar` is **the abbreviation for zihoAutoResearch and its executable command**. The package you install is named `ziho-autoresearch`; after installation, use commands such as `zar init` and `zar status`.
 
 ## 1. Install

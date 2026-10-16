@@ -18,7 +18,7 @@ class SetupHTTPTests(unittest.TestCase):
         self.addCleanup(harness.doCleanups)
         shutil.rmtree(harness.root/'.autoresearch')
         stderr=io.StringIO();stdout=io.StringIO()
-        answers=dict(name='setup example',objective='Test one bounded experiment',
+        answers=dict(experiment_mode='baseline',name='setup example',objective='Test one bounded experiment',
             comparison_id='cmp',dataset_ref='synthetic',split_ref='fixed',metric='score',
             direction='minimize',evaluation_ref='v1',min_delta='0',os='other',runtime='python',
             device='cpu',max_experiments='3',max_run_seconds='5',command='train',argv_count='2',
@@ -44,7 +44,7 @@ class SetupHTTPTests(unittest.TestCase):
         self.assertTrue(result['data']['saved'])
         session=result['data']['session']
         self.assertEqual(session['state'],'awaiting_approval')
-        self.assertIn('0.25',session['diff'])
+        self.assertEqual(session['diff'],'')
         harness.assert_no_execution()
         self.assertEqual([json.loads(p['messages'][-1]['content'])['role']
             for _,_,p in harness.requests],['analysis','evaluation','planning','implementation','review'])

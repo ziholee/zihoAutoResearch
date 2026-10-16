@@ -165,6 +165,7 @@ class ResearchTests(unittest.TestCase):
         self.assertIsNone(p['selected_experiment_id'])
 
     def test_nondefault_metric_contract_reaches_roles_and_execution(self):
+        (self.root/'train.py').write_text('from pathlib import Path\nPath("second-run.json").write_text(\'{"loss":0.125}\')\n')
         s=research.start(self.root,profile=self.profile,goal='new metric destination',
             read_paths=['train.py'],command='train',metric_file='second-run.json',metric_key='loss',
             max_calls=9,session_seconds=120,scope='proxy',seed=17,budget_ref='proxy-protocol')
@@ -175,11 +176,6 @@ class ResearchTests(unittest.TestCase):
             self.assertEqual(payload['metric_key'],'loss')
             self.assertEqual(payload['run_context'],dict(scope='proxy',seed=17,budget_ref='proxy-protocol'))
             answer=self.respond(profile,messages)
-            if role=='implementation':
-                body=loads(answer['content'])
-                code='from pathlib import Path\nPath('+repr(payload['metric_file'])+').write_text('+repr('{"loss":0.125}')+')\n'
-                body['changes']=[dict(path='train.py',before_sha256=payload['sources']['train.py']['sha256'],content=code)]
-                answer['content']=dumps(body)
             return answer
         with patch('zar.research.chat',side_effect=provider):s=research.advance(self.root,s['id'],send=True)
         research.approve(self.root,s['id'],s['approval_token']);s=research.run_session(self.root,s['id'])

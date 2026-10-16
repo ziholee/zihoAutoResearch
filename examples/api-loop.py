@@ -5,7 +5,7 @@ Run with the Python interpreter where ziho-autoresearch is installed:
     python examples/api-loop.py --output /absolute/new-directory
 
 The loopback provider emits deterministic proposals. The script explicitly
-approves its known fixture change and command, then saves public CLI events.
+approves its unchanged baseline fixture and command, then saves public CLI events.
 """
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,11 +19,12 @@ import threading
 ROLES = ['analysis', 'evaluation', 'planning', 'implementation', 'review',
          'interpretation', 'memory']
 KEY = 'synthetic-loopback-token'
-ORIGINAL = 'raise RuntimeError("original script must not execute")\n'
 PROPOSED = ('import os\nfrom pathlib import Path\n'
             'assert "ZAR_MOCK_API_KEY" not in os.environ\n'
             'Path("metric.json").write_text(\'{"score": 0.25}\')\n'
             'print("synthetic execution completed")\n')
+
+ORIGINAL = PROPOSED
 
 
 def main():
@@ -70,8 +71,7 @@ def main():
                 'analysis': dict(missing=[]),
                 'evaluation': dict(verdict='pass'),
                 'planning': dict(hypothesis='Known approved fixture emits score 0.25'),
-                'implementation': dict(changes=[dict(path='train.py',
-                    before_sha256=context['sources']['train.py']['sha256'], content=PROPOSED)]),
+                'implementation': dict(changes=[]),
                 'review': dict(verdict='pass'),
                 'interpretation': dict(decision='keep', reason='Measured local fixture result'),
                 'memory': dict(next_action='stop', lesson='Known fixture completed', limitation='Synthetic, not ML evidence'),
