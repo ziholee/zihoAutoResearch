@@ -18,7 +18,7 @@ class SetupHTTPTests(unittest.TestCase):
         self.addCleanup(harness.doCleanups)
         shutil.rmtree(harness.root/'.autoresearch')
         stderr=io.StringIO();stdout=io.StringIO()
-        answers=dict(experiment_mode='baseline',name='setup example',objective='Test one bounded experiment',
+        answers=dict(provider='api',experiment_mode='baseline',name='setup example',objective='Test one bounded experiment',
             comparison_id='cmp',dataset_ref='synthetic',split_ref='fixed',metric='score',
             direction='minimize',evaluation_ref='v1',min_delta='0',os='other',runtime='python',
             device='cpu',max_experiments='3',max_run_seconds='5',command='train',argv_count='2',

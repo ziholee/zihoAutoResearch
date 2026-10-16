@@ -87,7 +87,7 @@ def snapshot(root,paths):
 def execution_environment(profile):
     allowed=('PATH','SYSTEMROOT','WINDIR','HOME','USERPROFILE','TMP','TEMP','TMPDIR','LANG','LC_ALL','VIRTUAL_ENV','CUDA_VISIBLE_DEVICES')
     env={key:value for key,value in os.environ.items() if key in allowed}
-    env.pop(profile['api_key_env'],None)
+    env.pop(profile.get('api_key_env'),None)
     return env
 
 def assert_fresh(root,s):
@@ -119,14 +119,14 @@ def next_actions(s):
     if s.get('superseded_by'):
         return [dict(action='status',command='zar research status '+s['superseded_by'],reason='Continue the replacement session; the old approval is invalid.')]
     if state in ('planning','observed','remembering') and s['calls']<s['max_calls'] and datetime.now(timezone.utc).timestamp()<s['deadline']:
-        add('advance','Review transmission scope and remaining call/time budget; explicitly consent to the API request.',' --send')
+        add('advance','Review transmission scope and remaining call/time budget; explicitly consent to the model request.',' --send')
     elif state=='awaiting_approval':
         add('approve','Review the diff and use the current approval_token; approval does not execute.',' --token <approval_token>')
         add('reject','Reject this proposal without executing.')
     elif state=='approved':add('run','Explicitly execute the approved proposal once; inspect its diff first.')
     elif state=='awaiting_decision':add('decide','Review measured evidence and decision; use the current approval_token.',' --token <approval_token>')
     elif state in ('calling','applying','deciding'):
-        add('recover','Inspect the previous CLI and child processes first; only confirm after verifying they have stopped. API outcome may remain unknown.',' --confirm-stopped')
+        add('recover','Inspect the previous CLI and child processes first; only confirm after verifying they have stopped. Provider outcome may remain unknown.',' --confirm-stopped')
     elif state in ('executing','unknown'):
         add('reconcile','Inspect actual process/logs and update canonical terminal execution evidence first. Never rerun an unknown launch.')
     if state in ('planning','blocked','rejected','awaiting_approval','approved') and s['experiment_id'] is None and s.get('error')!='inspect_partial_changes_and_records_before_new_session':
@@ -139,8 +139,11 @@ def next_actions(s):
 def view(s):
     result=deepcopy(s);result['view']='research_session'
     result['next_actions']=next_actions(s)
-    result['transmission']=dict(server=s['profile']['base_url'],model=s['profile']['model'],
+    result['transmission']=dict(server=s['profile'].get('base_url'),model=s['profile']['model'],
         files=list(s['sources']), includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries, linked parent experiment and memory proposal if present; no raw logs')
+    if s['profile'].get('provider') == 'codex':
+        result['transmission'].update(provider='codex', command=s['profile']['command'],
+            destination='Service authenticated by the installed Codex CLI; may incur charges')
     return result
 
 def status(root,identifier):
@@ -235,6 +238,13 @@ def call_api(profile,messages,remaining):
     A remote request may still finish or be billed; never retry automatically.
     The daemon performs transport only and cannot mutate session/experiment state.
     """
+    if profile.get('provider') == 'codex':
+        # Own the subprocess in this thread so cancellation waits for cleanup.
+        if remaining <= 0:
+            raise LLMError('deadline_exceeded','Session deadline reached before agent launch.')
+        bounded=deepcopy(profile)
+        bounded['timeout_seconds']=min(float(profile.get('timeout_seconds',60)),remaining)
+        return chat(bounded,messages)
     result=queue.Queue(maxsize=1)
     def worker():
         try:result.put((True,chat(profile,messages)))
@@ -247,13 +257,13 @@ def call_api(profile,messages,remaining):
     return value
 
 def advance(root,identifier,*,send=False):
-    require(send,'Use --send after reviewing session transmission scope; no API request sent.')
+    require(send,'Use --send after reviewing session transmission scope; no model request sent.')
     from . import cli
     while True:
         with project_lock(root/'.autoresearch'):
             s=load(root,identifier)
             require(s['state'] in ('planning','observed','remembering'),'Session cannot advance in this state.')
-            require(s['calls']<s['max_calls'],'API call budget exhausted.')
+            require(s['calls']<s['max_calls'],'Model call budget exhausted.')
             require(datetime.now(timezone.utc).timestamp()<s['deadline'],'Session deadline reached.')
             assert_fresh(root,s)
             sequence=PRE if s['state']=='planning' else ('memory',) if s['state']=='remembering' else POST
@@ -293,14 +303,16 @@ def advance(root,identifier,*,send=False):
         except (ValueError,LLMError,OSError,KeyboardInterrupt) as exc:
             with project_lock(root/'.autoresearch'):
                 current=load(root,identifier)
-                require(current['state']=='calling','Session changed during API call.')
-                current['state']=prior;current['error']=getattr(exc,'code','invalid_role_response')
+                require(current['state']=='calling','Session changed during model call.')
+                current['error']=getattr(exc,'code','invalid_role_response')
+                # An unconfirmed agent process must not become retryable.
+                if current['error']!='agent_cleanup_unconfirmed':current['state']=prior
                 current['trace'].append(dict(role=role,version=ROLE_VERSION,result=current['error']))
                 save(root,current)
-            raise ResearchError('API/role call failed; inspect session error; retry consumes another call.') from None
+            raise ResearchError('Model/role call failed; inspect session error; retry consumes another call.') from None
         with project_lock(root/'.autoresearch'):
             current=load(root,identifier)
-            require(current['state']=='calling','Session changed during API call.')
+            require(current['state']=='calling','Session changed during model call.')
             try:assert_fresh(root,s)
             except ResearchError:
                 current['state']='blocked';current['error']='inputs_changed';save(root,current);raise
@@ -500,9 +512,11 @@ def recover(root,identifier,*,confirm_stopped=False):
 def add_arguments(parser, parser_class):
     actions=parser.add_subparsers(dest='action',required=True,parser_class=parser_class)
     actions.add_parser('setup',help='interactively configure a project and prepare its first proposal')
-    first=actions.add_parser('start',help='save explicit transmission scope; no API call or execution')
+    first=actions.add_parser('start',help='save explicit transmission scope; no model call or execution')
     first.add_argument('--profile',help='JSON connection profile; never include a key value')
     first.add_argument('--base-url');first.add_argument('--model');first.add_argument('--api-key-env')
+    first.add_argument('--provider',choices=('api','codex'),help='default: api; codex uses a trusted installed CLI')
+    first.add_argument('--codex-command',help='single trusted Codex executable name or path; default: codex')
     first.add_argument('--goal',required=True);first.add_argument('--read',action='append',required=True)
     first.add_argument('--command',dest='run_command',required=True,help='configured project command name')
     first.add_argument('--metric-file',required=True,help='new project-relative JSON output path')
@@ -514,7 +528,7 @@ def add_arguments(parser, parser_class):
     for name in ('next','revise','status','advance','approve','reject','run','decide','reconcile','recover'):
         sub=actions.add_parser(name);sub.add_argument('id')
         if name=='recover':sub.add_argument('--confirm-stopped',action='store_true')
-        if name=='advance':sub.add_argument('--send',action='store_true',help='consent to transmit displayed scope to configured API')
+        if name=='advance':sub.add_argument('--send',action='store_true',help='consent to transmit displayed scope to configured model provider')
         if name in ('approve','decide'):sub.add_argument('--token',required=True)
         if name=='decide':sub.add_argument('--select',action='store_true',help='also select a kept result; never checks out code')
 
@@ -540,8 +554,15 @@ def dispatch(root,args):
         return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
     cli.safe_layout(root/'.autoresearch')
     if args.action=='start':
-        require(not(args.profile and any((args.base_url,args.model,args.api_key_env))), 'Choose a profile file or connection flags, not both.')
-        profile=cli.read_document(Path(args.profile)) if args.profile else dict(base_url=args.base_url,model=args.model,api_key_env=args.api_key_env)
+        require(not(args.profile and any((args.base_url,args.model,args.api_key_env,args.provider,args.codex_command))), 'Choose a profile file or connection flags, not both.')
+        if args.profile:
+            profile=cli.read_document(Path(args.profile))
+        elif args.provider=='codex':
+            require(not(args.base_url or args.api_key_env),'Codex uses its own authentication; omit API connection flags.')
+            profile=dict(provider='codex',command=args.codex_command or 'codex',model=args.model)
+        else:
+            require(not args.codex_command,'--codex-command requires --provider codex.')
+            profile=dict(base_url=args.base_url,model=args.model,api_key_env=args.api_key_env)
         return start(root,profile=profile,goal=args.goal,read_paths=args.read,command=args.run_command,
                      metric_file=args.metric_file,metric_key=args.metric_key,max_calls=args.max_calls,
                      session_seconds=args.session_seconds,scope=args.scope,seed=args.seed,budget_ref=args.budget_ref,mode=args.mode)
