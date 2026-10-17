@@ -1,4 +1,4 @@
-"""Bounded, non-streaming OpenAI-compatible Chat Completions transport.
+"""Connection dispatch and bounded OpenAI-compatible Chat Completions transport.
 
 No retries, tool calls, provider body logging, or credential-bearing redirects.
 A caller must explicitly choose an endpoint and authorize sending its messages.
@@ -26,6 +26,9 @@ def validate_profile(profile):
     """Validate configuration without reading credentials or making requests."""
     if not isinstance(profile, dict):
         raise LLMError('invalid_profile', 'LLM profile must be an object.')
+    if profile.get('provider') == 'codex':
+        from .codex_agent import validate_codex_profile
+        return validate_codex_profile(profile)
     if set(profile) - {'base_url', 'model', 'api_key_env', 'timeout_seconds', 'max_output_tokens', 'max_response_bytes'}:
         raise LLMError('invalid_profile', 'LLM profile contains unsupported fields; credentials must use the named environment variable.')
     for field in ('base_url', 'model', 'api_key_env'):
@@ -77,6 +80,9 @@ def chat(profile, messages):
     The orchestrator must separately enforce its call/token budget.
     """
     profile = validate_profile(profile)
+    if profile.get('provider') == 'codex':
+        from .codex_agent import chat_codex
+        return chat_codex(profile, messages)
     if not isinstance(messages, list) or not messages or any(
         not isinstance(m, dict) or set(m) != {'role', 'content'}
         or m['role'] not in ('system', 'user', 'assistant') or not isinstance(m['content'], str)

@@ -56,9 +56,10 @@
 | `zar skill install --agent <codex 또는 claude> [--scope project 또는 user] [--dry-run]` | 0.3.0부터. 기본 project. 발견 경로에 스킬 전체 복사, 필요한 상위 폴더 생성, 기존/리디렉션 경로 충돌 exit 3. 잘못된 옵션/홈 해석/제어 문자 exit 2, 없는 루트/I/O exit 4. JSON skill_install에 agent, scope, dry_run, invocation, next_steps 추가; 미리보기 files=[]; [설치 계약](agent-installation.md) |
 | `zar skill install --dest <새 폴더>` | 0.2.0부터 번들 스킬 전체를 명시한 새 폴더에 설치. 상위 폴더 필요, 기존 경로 덮어쓰기 금지, 자동 등록 없음; [설치 계약](uv-installation.md) |
 | `zar init` | `.autoresearch`와 revision 1의 미설정 project.json, program.md 생성. 프로젝트 ID는 `project-<UUID>`로 생성. 재호출 시 기존 파일 보존·변경 없음; 부분 초기화는 진단하고 중단 |
-| `zar research setup` | 미배포. 기존 프로젝트 폴더에서 TTY 질문으로 설정·세션 생성. 저장·API 전송을 별도 확인하고 첫 계획 승인 대기에서 종료. 승인·실행 없음; [설정·취소 계약](research-api.md#질문에-답해-첫-계획-만들기) |
+| `zar research setup` | 미배포. 기존 프로젝트 폴더에서 TTY 질문으로 설정·세션 생성. 저장·모델 전송을 별도 확인하고 첫 계획 승인 대기에서 종료. 승인·실행 없음; [설정·취소 계약](research-api.md#질문에-답해-첫-계획-만들기) |
 | `zar research revise <id>` | 미배포. TTY에서 누락 질문·피드백 및 기존 설정 검토 후 연결된 새 계획 생성. 저장·전송 확인 분리; 이전 세션 비활성화와 새 승인 필수. 실행 이력 없는 실행 전 세션만 허용; [수정 계약](research-api.md#추가-질문과-계획-수정) |
 | `zar research start [--mode baseline 또는 candidate]` | 미배포. baseline은 모델 변경 없이 현재 원본 실행 준비, candidate는 호환되는 선택된 유효 keep 기준 필요. 모드 생략 시 선택 유무로 결정. 시작만으로 API 호출·실행 없음; [기준 계약](research-api.md#원본-실행으로-기준-확보하기) |
+| `zar research start --provider codex --codex-command <실행 파일> --model <모델>` | 미배포. 신뢰하는 Codex CLI 0.162.1 이상, macOS/Linux에서 역할별 제안 연결. API 연결 필드와 혼용 불가. 시작은 저장만 하며 기존 전송·승인·실행·판단 절차 유지; [Codex 계약](research-api.md#설치된-codex로-연결하기) |
 | `zar research next <id>` | 미배포. complete 세션에서 TTY로 설정·연결·제한된 판단·기억 맥락을 이어 새 계획 준비. 부모 보존, 새 지표 경로·저장·전송·승인 필요; 자동 선택·복원·실행 없음; [연결 계약](research-api.md#완료된-실험에서-다음-실험으로-이어가기) |
 | `zar research status <id>` | 미배포. 세션 상태·전송 범위와 `next_actions` 안내. 명령·선행 조건을 제시하며 자동 호출·복구·실행하지 않음 |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |

@@ -1,8 +1,8 @@
-# API 연결 연구 세션 사용법
+# API·Codex 연결 연구 세션 사용법
 
 상태: 개발 브랜치 구현 · 미배포 · 공개 v0.3.0에는 `research` 명령이 없습니다.
 
-이 흐름은 기존 로컬 프로젝트의 설정부터 API 모델의 제안, 사용자 승인, 실제 명령 실행과 결과 기록을 연결합니다. 기존 기록 명령은 계속 LLM 없이 사용할 수 있습니다. 이번 검증은 모의 공급자와 결정적 로컬 프로그램 기준이며 실제 클라우드 API, Windows 실행, 실제 ML 개선 효과는 미검증입니다.
+이 흐름은 기존 로컬 프로젝트의 설정부터 API 모델의 제안, 사용자 승인, 실제 명령 실행과 결과 기록을 연결합니다. 기존 기록 명령은 계속 LLM 없이 사용할 수 있습니다. 이번 검증은 모의 HTTP 공급자·모의 Codex 실행 파일과 결정적 로컬 프로그램 기준입니다. 실제 클라우드 API·Codex 추론·인증, Windows 실행, 실제 ML 개선 효과는 미검증입니다.
 
 ## 준비
 
@@ -25,11 +25,12 @@ zar research setup --project ./my-ml-project
 - 프로젝트 이름·목표, 실험 모드(`baseline` 또는 `candidate`), 데이터·분할·평가 방식의 식별자, 지표·방향·최소 개선량
 - 실행 환경, 실험 횟수·시간 한도, 실행 명령 이름·작업 폴더
 - 명령의 인자 개수와 각 인자, 수정 허용 파일과 API로 보낼 파일
-- 서버 주소·모델·키를 읽을 환경변수 이름, 새 지표 파일·키, 비교 범위·seed·예산 식별자와 세션 호출·시간 한도
+- 연결 방식(`api` 또는 `codex`): API는 서버 주소·모델·키 환경변수 이름, Codex는 신뢰할 수 있는 설치 명령·모델
+- 새 지표 파일·키, 비교 범위·seed·예산 식별자와 세션 호출·시간 한도
 
 예를 들어 `python train.py --output metrics/run-001.json`은 인자 4개로 입력합니다: `python`, `train.py`, `--output`, `metrics/run-001.json`. 각 질문에 인자 하나를 그대로 입력하며 셸용 따옴표를 추가하지 않습니다. 평가 식별자와 실행 명령은 사용자가 지정한 실제 조건이어야 합니다. CLI가 적절한 평가 방법이나 학습 코드를 자동으로 만들어 주지는 않습니다.
 
-API 키 값은 질문하지 않습니다. 실제 호출 전에 지정한 환경변수를 설정하세요. 서버·모델 설정만으로 호환성이 확인되는 것은 아닙니다.
+API 키 값은 질문하지 않습니다. API 방식은 실제 호출 전에 지정한 환경변수를 설정하고, Codex 방식은 기존 Codex 인증을 사용합니다. 설정이나 버전 확인만으로 인증·모델 호환성이 확인되는 것은 아닙니다. `revise`와 `next`는 선택한 연결 프로필을 기본값으로 이어 받습니다.
 
 설정 요약을 확인한 뒤 **저장에 동의**하면 설정과 세션을 저장합니다. 이어서 전송 대상과 파일 범위를 확인하고 **전송에 별도로 동의**하면 분석 → 평가 검토 → 설계 → 구현 제안 → 변경 검토를 호출합니다. 두 확인 모두 기본값은 거절입니다. 정상 계획은 `awaiting_approval`에서 멈추며, 설정 명령은 변경 적용·실험 실행·승인을 수행하지 않습니다. 모델의 누락 설정·hold/invalid 판단이나 API 실패가 있으면 출력 상태를 확인하세요.
 
@@ -75,6 +76,42 @@ zar research start --project ./my-ml-project \
 
 연결 플래그 대신 `--profile profile.json`을 사용할 수 있습니다. 프로필 필드는 `base_url`, `model`, `api_key_env`, 선택적 `timeout_seconds`, `max_output_tokens`, `max_response_bytes`입니다. HTTPS 또는 로컬 루프백 HTTP만 허용합니다. 모델은 JSON 응답 형식과 해당 API 필드를 지원해야 합니다. 자동 공급자 대체나 자동 재시도는 없습니다.
 
+## 설치된 Codex로 연결하기
+
+개발 소스에서만 지원합니다. 신뢰하는 **Codex CLI 0.162.1 이상**이 설치된 macOS/Linux가 첫 지원 범위입니다. Windows에서는 Codex 어댑터 실행을 거부하므로 API 방식을 사용하세요. `codex --version`으로 버전을 확인하고 기존 Codex 인증을 준비합니다. 도움말·버전 검사는 로그인이나 실제 모델 호출 성공을 검증하지 않습니다.
+
+설정된 프로젝트에서 API 연결 플래그 대신 다음처럼 지정합니다. 실행 명령·평가 조건·파일 범위는 위 API 예시와 같은 계약입니다.
+
+```sh
+zar research start --project ./my-ml-project \
+  --provider codex --codex-command codex --model your-codex-model \
+  --mode baseline --goal '원본 실행으로 현재 평가 조건의 기준을 확보한다' \
+  --read train.py --command train \
+  --metric-file metrics/run-001.json --metric-key score \
+  --scope full --seed 42 --budget-ref fixed-protocol-v1 \
+  --max-calls 9 --session-seconds 1800 --json
+```
+
+또는 `--profile profile.json`으로 아래 프로필을 전달합니다. Codex 프로필에는 `base_url`, `api_key_env`, `max_output_tokens`를 넣지 않습니다. `command`는 실행 파일 이름 또는 경로 하나이며 셸 문자열이나 추가 옵션을 받지 않습니다. 기존 API 프로필은 변경 없이 사용할 수 있으며 연결 방식 생략 시 API가 기본입니다.
+
+```json
+{
+  "provider": "codex",
+  "command": "codex",
+  "model": "your-codex-model",
+  "timeout_seconds": 60,
+  "max_response_bytes": 1048576
+}
+```
+
+Codex는 실험을 실행하는 주체가 아니라 **역할별 JSON 제안 공급자**입니다. 역할 지침과 허용한 맥락을 stdin으로 전달하고, 프로젝트 밖 임시 작업 폴더에서 고정 옵션으로 실행합니다. 읽기 전용 샌드박스·승인 요청 금지·ephemeral 모드와 사용자 설정/규칙 무시를 적용하며 셸·훅·다중 에이전트·웹 검색·앱 기능을 끕니다. 임의 옵션이나 승인을 우회하는 실행 모드는 제공하지 않습니다. JSONL 이벤트의 도구 사용·잘못된 형식·실패를 거부하고 출력 크기·호출 시간을 제한하며 중단 시 소유한 프로세스 그룹을 종료하고 최대 1초 동안 정리를 확인합니다. 종료 확인이 안 되면 `agent_cleanup_unconfirmed`와 `calling` 상태로 남아 재호출을 막습니다. 실제 프로세스가 중지했는지 확인한 뒤 `recover --confirm-stopped`로 복구해야 합니다. 프로세스 그룹을 벗어나 분리된 자식까지 강제로 격리하는 OS 보장은 없습니다. 자동 재시도는 없습니다.
+
+이 제한은 신뢰하는 설치 실행 파일과 Codex가 준수하는 설정에 의존합니다. 관리 설정의 영향을 포함해 임의 바이너리의 모든 OS 접근을 차단한다고 보장하지 않습니다. 도구 이벤트 거부는 응답 검증이며 이미 발생한 외부 동작을 되돌리는 기능이 아닙니다. 기존 Codex 인증을 사용하며 로컬 명령 호출이라도 모델 서비스에 맥락을 전송하고 요금이 발생할 수 있습니다. 키 값이나 원시 오류 출력을 연구 기록에 복사하지 않습니다. 사용량이 제공되지 않으면 미확인으로 남기며 출력 토큰·금액 한도를 보장하지 않습니다.
+
+`start`만으로 Codex를 호출하지 않습니다. 아래와 동일하게 `advance --send`로 전송에 동의하고, 제안을 검토하여 `approve --token` 후 명시적 `run`으로 실험을 실행합니다. 관측 이후 해석·`decide --token`·기억 순서도 유지합니다. Codex의 자체 승인 설정은 이 zar 승인 절차를 대체하지 않습니다. **실제 Codex 모델 호출과 실제 API 검증은 후속으로 남겨 두었으며, 현재 근거는 모의 실행 파일 검증입니다.**
+
+호출·설정 기준은 Codex 공식 [비대화형 실행](https://learn.chatgpt.com/docs/non-interactive-mode), [CLI 옵션](https://learn.chatgpt.com/docs/developer-commands?surface=cli), [설정 참조](https://learn.chatgpt.com/docs/config-file/config-reference)를 따릅니다.
+
 ## 원본 실행으로 기준 확보하기
 
 선택된 실험이 없는 프로젝트에서는 `start`의 기본 모드가 `baseline`입니다. `--mode baseline`으로 명시할 수도 있습니다. 대화형 `setup`에서는 `experiment_mode` 질문을 확인합니다. 이 모드는 현재 작업 파일을 원본으로 실행하여 기준을 측정하며 모델이 제안한 코드 변경을 허용하지 않습니다. Git의 과거 원본을 복원하거나 데이터·평가 타당성을 자동 인증하는 기능은 아닙니다. 설정한 명령 자체는 파일을 쓸 수 있으므로 명령과 입력을 먼저 확인하세요.
@@ -85,14 +122,14 @@ zar research start --project ./my-ml-project \
 
 ## 제안부터 실행까지
 
-`start`는 세션을 저장할 뿐 API나 실험을 실행하지 않습니다. 출력의 세션 ID, 전송 대상·파일·프로젝트 설정·제한된 기록 범위를 확인합니다. 아래 `SESSION_ID`, `TOKEN`은 실제 출력 값으로 바꿉니다.
+`start`는 세션을 저장할 뿐 API·Codex 호출이나 실험을 실행하지 않습니다. 출력의 세션 ID, 전송 대상·파일·프로젝트 설정·제한된 기록 범위를 확인합니다. 아래 `SESSION_ID`, `TOKEN`은 실제 출력 값으로 바꿉니다.
 
 ```sh
 zar research status SESSION_ID --project ./my-ml-project --json
 zar research advance SESSION_ID --send --project ./my-ml-project --json
 ```
 
-`--send`가 API 전송 동의입니다. 분석 → 평가 검토 → 설계 → 구현 제안 → 변경 검토를 각각 별도 호출합니다. 누락 설정이나 hold/invalid 판정은 차단합니다. 정상적으로 끝나면 `awaiting_approval`과 실제 diff, 명령, 승인 토큰을 반환합니다. 같은 모델의 재검토는 독립적인 코드 검증이 아닙니다.
+`--send`가 선택한 API 또는 Codex 모델 서비스로의 전송 동의입니다. 분석 → 평가 검토 → 설계 → 구현 제안 → 변경 검토를 각각 별도 호출합니다. 누락 설정이나 hold/invalid 판정은 차단합니다. 정상적으로 끝나면 `awaiting_approval`과 실제 diff, 명령, 승인 토큰을 반환합니다. 같은 모델의 재검토는 독립적인 코드 검증이 아닙니다.
 
 ```sh
 zar research approve SESSION_ID --token TOKEN --project ./my-ml-project --json
@@ -123,7 +160,7 @@ zar research advance SESSION_ID --send --project ./my-ml-project --json
 zar research next COMPLETED_SESSION_ID --project ./my-ml-project
 ```
 
-`next`는 대화형 터미널에서 `complete` 세션의 연결 프로필·파일 범위·실행 조건을 기본값으로 설정 질문을 다시 엽니다. 다음 목표와 실험 모드를 검토하고 **아직 존재하지 않는 새 지표 경로**를 지정합니다. 프로그램이 그 경로에 실제로 출력하도록 명령 인자도 확인하세요. CLI가 임의 명령의 인자를 자동 변경하지 않습니다. baseline은 모델 코드 변경을 허용하지 않으므로 원본 프로그램의 출력 경로 옵션을 사용하세요. 저장과 API 전송은 각각 확인하고 새 계획에서 새 승인을 받습니다. 자동 반복·실행은 하지 않습니다.
+`next`는 대화형 터미널에서 `complete` 세션의 연결 프로필·파일 범위·실행 조건을 기본값으로 설정 질문을 다시 엽니다. 다음 목표와 실험 모드를 검토하고 **아직 존재하지 않는 새 지표 경로**를 지정합니다. 프로그램이 그 경로에 실제로 출력하도록 명령 인자도 확인하세요. CLI가 임의 명령의 인자를 자동 변경하지 않습니다. baseline은 모델 코드 변경을 허용하지 않으므로 원본 프로그램의 출력 경로 옵션을 사용하세요. 저장과 모델 전송은 각각 확인하고 새 계획에서 새 승인을 받습니다. 자동 반복·실행은 하지 않습니다.
 
 이전 완료 세션과 실제 실험의 관측·확정 판단·기억 제안을 제한된 맥락으로 전달합니다. 부모 세션과 비교 기준은 서로 다릅니다. 직전 후보를 discard/hold했다면 그 후보가 자동 기준이 되지 않으며 현재 선택된 유효한 keep 실험이 비교 기준입니다. 연결은 이전 완료 기록을 수정하거나 승인을 재사용하지 않습니다. 기억 제안은 canonical 실패 기억으로 자동 등록하지 않습니다.
 
@@ -156,7 +193,7 @@ zar research reconcile SESSION_ID --project ./my-ml-project --json
 
 `.autoresearch/sessions/`는 별도 연구 세션 상태, `.autoresearch/session-artifacts/`는 실행 근거와 입력 자료입니다. canonical v1 experiment/decision이 관측·판단의 원본입니다. 세션 기록에는 허용한 코드와 모델 제안이 포함될 수 있으므로 공개 커밋 전에 내용을 확인하세요. API 키 값과 인증 헤더는 저장하지 않습니다.
 
-`setup`은 정해진 질문으로 설정을 수집합니다. 자유로운 자연어 대화로 평가 방식·학습 코드를 자동 구성하는 기능, 설치된 Codex·Claude Code를 직접 실행하는 어댑터, 무인 연속 실험은 후속 범위입니다. 역할별 API 주입은 구현되어 있지만 실제 공급자 연결 검증과 실사용 효용 비교가 끝난 것으로 표시하지 않습니다. [설계와 검증 범위](llm-experiment-cli.md)를 참고하세요.
+`setup`은 정해진 질문으로 설정을 수집합니다. 자유로운 자연어 대화로 평가 방식·학습 코드를 자동 구성하는 기능, Claude Code 실행 어댑터와 무인 연속 실험은 후속 범위입니다. Codex 연결은 위 제한으로 구현했으며 모의 에이전트로 검증합니다. 역할별 API 주입은 구현되어 있지만 실제 공급자 연결 검증과 실사용 효용 비교가 끝난 것으로 표시하지 않습니다. [설계와 검증 범위](llm-experiment-cli.md)를 참고하세요.
 
 ## 비용 없이 전체 흐름 확인하기
 

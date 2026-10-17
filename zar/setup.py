@@ -1,4 +1,4 @@
-"""Consent-gated questionnaire for one configured API research session."""
+"""Consent-gated questionnaire for one configured LLM research session."""
 from copy import deepcopy
 from decimal import Decimal, InvalidOperation
 from uuid import uuid4
@@ -87,7 +87,18 @@ def setup(root, *, ask, emit, _revision=None, _next=None):
         read_defaults=list(defaults['sources']) if defaults else [path for path in p['editable_paths'] if research.safe_path(root,path).is_file()]
         count=field('read_count',len(read_defaults) or None,integer=(1,30),hint='Number of exact source files sent to LLM')
         reads=[field(f'read_{i}',read_defaults[i] if i<len(read_defaults) else None,hint='Exact project-relative source file') for i in range(count)]
-        profile=validate_profile(dict(defaults.get('profile',{}),**{key:field(key,defaults.get('profile',{}).get(key,'ZAR_API_KEY' if key=='api_key_env' else None),hint='Environment variable NAME, never the secret value' if key=='api_key_env' else 'API '+key) for key in ('base_url','model','api_key_env')}))
+        previous_profile=defaults.get('profile',{})
+        provider=field('provider',previous_profile.get('provider','api'),choices=('api','codex'),hint='api connects directly; codex uses the installed Codex authenticated service')
+        # Backend-specific keys must not cross over when changing providers.
+        profile={key:previous_profile[key] for key in ('timeout_seconds','max_response_bytes') if key in previous_profile}
+        if provider=='codex':
+            profile.update(provider='codex',command=field('codex_command',previous_profile.get('command','codex'),hint='Trusted installed executable name or path, without arguments'),
+                model=field('model',previous_profile.get('model'),hint='Codex model'))
+        else:
+            if previous_profile.get('provider','api')=='api' and 'max_output_tokens' in previous_profile:
+                profile['max_output_tokens']=previous_profile['max_output_tokens']
+            profile.update({key:field(key,previous_profile.get(key,'ZAR_API_KEY' if key=='api_key_env' else None),hint='Environment variable NAME, never the secret value' if key=='api_key_env' else 'API '+key) for key in ('base_url','model','api_key_env')})
+        profile=validate_profile(profile)
         metric_default=defaults.get('metric_file','metric.json')
         if _next:
             from pathlib import PurePosixPath
@@ -100,7 +111,7 @@ def setup(root, *, ask, emit, _revision=None, _next=None):
         seed=field('seed',defaults.get('run_context',{}).get('seed'),optional=True,integer=(-2147483648,2147483647),hint='Optional integer seed')
         budget_ref=field('budget_ref',defaults.get('run_context',{}).get('budget_ref','local-session'),hint='Budget protocol reference')
         mode=field('experiment_mode',defaults.get('experiment_mode') if _revision and defaults.get('experiment_mode') else ('candidate' if p['selected_experiment_id'] else 'baseline'),choices=('baseline','candidate'),hint='baseline executes original source without changes; candidate needs a selected kept baseline')
-        max_calls=field('max_calls',defaults.get('max_calls',9),integer=(1,100),hint='API call limit; first plan needs 5 calls')
+        max_calls=field('max_calls',defaults.get('max_calls',9),integer=(1,100),hint='LLM call limit; first plan needs 5 calls')
         seconds=field('session_seconds',defaults.get('session_seconds',1800),integer=(1,86400),hint='Session wall-clock budget seconds')
         cli.enforce(cli.validate_document(p,'project'))
         research.require(len(p['objective'].strip())<=10000,'Goal must be 1..10000 characters.')
@@ -169,7 +180,8 @@ def setup(root, *, ask, emit, _revision=None, _next=None):
                 metric_file=metric_file,metric_key=metric_key,max_calls=max_calls,session_seconds=seconds,
                 scope=scope,seed=seed,budget_ref=budget_ref,mode=mode)
             emit(dumps(result['session']['transmission']))
-            if yes('send','Send this scope to the API now? This may incur charges. Stops before execution approval.'):
+            destination='the installed Codex authenticated service' if provider=='codex' else 'the API'
+            if yes('send',f'Send this scope to {destination} now? This may incur charges. Stops before execution approval.'):
                 result['session']=research.advance(root,result['session']['id'],send=True)
         except (ValueError, OSError, cli.Failure) as exc:
             result['error']=str(exc)

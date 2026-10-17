@@ -398,7 +398,7 @@ def parse(arguments):
     commands = parser.add_subparsers(dest='command', required=True, parser_class=Parser)
     for name in ('init', 'status', 'check'):
         commands.add_parser(name)
-    research = commands.add_parser('research', help='explicit API role loop with reviewed execution approvals')
+    research = commands.add_parser('research', help='explicit model role loop with reviewed execution approvals')
     from .research import add_arguments
     add_arguments(research, Parser)
     skill = commands.add_parser('skill', help='export the agent skill or render project guidance')

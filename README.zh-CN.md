@@ -24,11 +24,13 @@
 - **智能体技能**：指导你使用的编程智能体读取项目，并在授权范围内遵循研究流程。
 - **恢复与报告**：查看未完成实验、失败记录、候选方案依据及实验谱系，生成 Markdown 报告。
 
-公开版 v0.3.0 的记录命令不会调用 LLM 或执行训练。**开发分支新增了尚未发布的 `research` 命令。** 它向 OpenAI 兼容 API 传递各角色的指令，并在用户批准后执行和记录一次本地实验。连接、批准、恢复流程及验证范围请参阅 [API 研究会话指南](docs/research-api.md)。真实云端 API 连接尚未验证，也不提供自动代码恢复或竞赛提交。通过 `check` 并不代表已确认不存在数据泄漏或模型质量合格。
+公开版 v0.3.0 的记录命令不会调用 LLM 或执行训练。**开发分支新增了尚未发布的 `research` 命令。** 它向 OpenAI 兼容 API 或已安装的 Codex 传递各角色的指令，并在用户批准后执行和记录一次本地实验。连接、批准、恢复流程及验证范围请参阅 [API 研究会话指南](docs/research-api.md)。真实云端 API 连接尚未验证，也不提供自动代码恢复或竞赛提交。通过 `check` 并不代表已确认不存在数据泄漏或模型质量合格。
 
-**仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与 API 发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。 执行前的计划受阻或需要修改时，可运行 `zar research revise SESSION_ID --project ./my-ml-project`，回答补充问题并创建关联的新计划。`research status` 提供下一步操作提示；修改后的计划需要重新批准。
+**仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与模型发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。 执行前的计划受阻或需要修改时，可运行 `zar research revise SESSION_ID --project ./my-ml-project`，回答补充问题并创建关联的新计划。`research status` 提供下一步操作提示；修改后的计划需要重新批准。
 
 使用 `baseline` 模式测量当前原始代码，模型不能修改代码。候选实验需要可比较且已选中的有效 keep 实验作为基准。完成后，运行 `zar research next SESSION_ID --project ./my-ml-project`，将配置以及有限的决策和记忆上下文带入新计划；需要新的指标文件路径、发送同意和批准。不会自动恢复代码或循环运行实验。
+
+在开发源码中，可使用 `research start --provider codex --codex-command codex --model <模型>`，或在 `research setup` 中选择 Codex。需要 macOS/Linux 上可信的 Codex CLI 0.162.1 或更高版本。它使用现有 Codex 认证，可能向模型服务发送上下文并产生费用。Codex 返回提案，zar 保留发送、执行和决策的批准流程。当前使用模拟智能体验证；真实 Codex 认证和推理尚未验证。请参阅[连接范围与限制](docs/research-api.md#설치된-codex로-연결하기)。
 
 `zar` 是 **zihoAutoResearch 的简称，也是可执行命令**。安装包名为 `ziho-autoresearch`，安装后通过 `zar init`、`zar status` 等命令使用。
 
