@@ -150,6 +150,11 @@ print(json.dumps(dict(type='turn.completed',usage=dict(input_tokens=10,output_to
         self.assertEqual(s['state'],'complete')
         self.assertEqual(s['calls'],7)
         self.assertTrue(all(t['usage'] for t in s['trace']))
+        report=invoke('metrics',identifier)
+        self.assertEqual(report['total']['tokens']['input_tokens'],{'value':70,'observations':7})
+        self.assertEqual(report['total']['tokens']['output_tokens'],{'value':35,'observations':7})
+        self.assertEqual(report['total']['tokens']['total_tokens'],{'value':None,'observations':0})
+        self.assertEqual(report['total']['call_seconds']['observations'],7)
         from zar.codec import loads
         record=loads((self.root/'.autoresearch/experiments'/(s['experiment_id']+'.json')).read_text())
         self.assertEqual(record['execution']['score'],.5)

@@ -33,3 +33,5 @@ python3.11 scripts/benchmark_research_loop.py --source . --label after --output 
 ```
 
 실제 공급자 검증은 후속입니다. 공급자별로 같은 계획의 호출 수·사용량·지연과 결과 타당성을 비교한 뒤 역할 통합이나 맥락 요약의 효용을 판단해야 합니다.
+
+현재 개발 소스에서는 `zar research metrics SESSION_ID --project <root> --json`으로 세션에 기록된 역할별 호출 관측을 확인할 수 있습니다. 위 벤치마크의 로컬 계획 전체 시간과 새 명령의 호출 함수 경과 시간은 측정 구간이 다릅니다. 필드별 범위·부분 집계·누락 처리 규칙은 [역할별 호출 측정 안내](research-api.md#역할별-호출-측정-조회)를 참고하세요.

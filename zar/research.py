@@ -10,10 +10,12 @@ from pathlib import Path, PureWindowsPath
 import re
 import queue
 import threading
+import time
 import stat
 from types import SimpleNamespace
 from uuid import uuid4
 
+from .call_metrics import new_measurement, measure_messages, record_answer, summarize
 from .codec import dumps, loads
 from .llm import chat, validate_profile, LLMError
 from .roles import role_messages, validate_response, RoleError, ROLE_VERSION
@@ -153,6 +155,11 @@ def view(s):
 def status(root,identifier):
     with project_lock(root/'.autoresearch'):return view(load(root,identifier))
 
+def metrics(root,identifier):
+    with project_lock(root/'.autoresearch'):
+        s=load(root,identifier)
+        return dict(view='research_metrics',session_id=s['id'],state=s['state'],**summarize(s))
+
 def experiment_target(project,records,run_context,mode=None):
     """Resolve an explicit immutable comparator using canonical recorded conditions."""
     selected=project['selected_experiment_id']
@@ -279,10 +286,18 @@ def advance(root,identifier,*,send=False):
             prior=s['state'];s['state']='calling';s['active_role']=role;s['return_state']=prior
             s['calls']+=1;s['error']=None
             payload=context(root,s,role,checked=checked);save(root,s)
+        measurement=new_measurement()
         try:
             profile=deepcopy(s['profile'])
             profile['timeout_seconds']=min(float(profile.get('timeout_seconds',60)),max(0.1,float(s['deadline'])-datetime.now(timezone.utc).timestamp()))
-            answer=call_api(profile,role_messages(role,json.loads(dumps(payload))),float(s['deadline'])-datetime.now(timezone.utc).timestamp())
+            messages=role_messages(role,json.loads(dumps(payload)))
+            measurement['input_message_bytes']=measure_messages(messages)
+            started=time.perf_counter()
+            try:
+                answer=call_api(profile,messages,float(s['deadline'])-datetime.now(timezone.utc).timestamp())
+            finally:
+                measurement['call_seconds']=max(0.0,time.perf_counter()-started)
+            record_answer(measurement,answer,profile.get('provider','api'))
             output=validate_response(role,loads(answer['content']))
             valid_refs=set(s['sources']) | set(s['outputs']) | {'project','records'} | {v['session_id'] for v in payload['prior_lessons']}
             if s.get('next_context'):valid_refs.update(('next_context',s['next_context']['parent_id'],s['next_context']['experiment']['id']))
@@ -314,7 +329,7 @@ def advance(root,identifier,*,send=False):
                 current['error']=getattr(exc,'code','invalid_role_response')
                 # An unconfirmed agent process must not become retryable.
                 if current['error']!='agent_cleanup_unconfirmed':current['state']=prior
-                current['trace'].append(dict(role=role,version=ROLE_VERSION,result=current['error']))
+                current['trace'].append(dict(role=role,version=ROLE_VERSION,result=current['error'],measurement=measurement))
                 save(root,current)
             raise ResearchError('Model/role call failed; inspect session error; retry consumes another call.') from None
         with project_lock(root/'.autoresearch'):
@@ -322,10 +337,12 @@ def advance(root,identifier,*,send=False):
             require(current['state']=='calling','Session changed during model call.')
             try:assert_fresh(root,s)
             except ResearchError:
-                current['state']='blocked';current['error']='inputs_changed';save(root,current);raise
+                current['state']='blocked';current['error']='inputs_changed'
+                current['trace'].append(dict(role=role,version=ROLE_VERSION,result='inputs_changed',measurement=measurement))
+                save(root,current);raise
             s=current;s['state']=prior
             s['outputs'][role]=output
-            s['trace'].append(dict(role=role,version=ROLE_VERSION,input_hash=digest(payload),result='validated',usage=answer['usage']))
+            s['trace'].append(dict(role=role,version=ROLE_VERSION,input_hash=digest(payload),result='validated',usage=answer['usage'],measurement=measurement))
             if role=='analysis' and output['missing']:s['state']='blocked'
             if role in ('evaluation','review') and output['verdict']!='pass':s['state']='blocked'
             if role=='review':
@@ -532,7 +549,7 @@ def add_arguments(parser, parser_class):
     first.add_argument('--scope',choices=('proxy','full'),default='full');first.add_argument('--seed',type=int)
     first.add_argument('--budget-ref',required=True)
     first.add_argument('--mode',choices=('baseline','candidate'),help='default: baseline without selection, candidate with a valid selected result')
-    for name in ('next','revise','status','advance','approve','reject','run','decide','reconcile','recover'):
+    for name in ('next','revise','status','metrics','advance','approve','reject','run','decide','reconcile','recover'):
         sub=actions.add_parser(name);sub.add_argument('id')
         if name=='recover':sub.add_argument('--confirm-stopped',action='store_true')
         if name=='advance':sub.add_argument('--send',action='store_true',help='consent to transmit displayed scope to configured model provider')
@@ -577,4 +594,4 @@ def dispatch(root,args):
     if args.action=='advance':return advance(root,args.id,send=args.send)
     if args.action=='approve':return approve(root,args.id,args.token)
     if args.action=='decide':return decide(root,args.id,args.token,select=args.select)
-    return {'status':status,'reject':reject,'run':run_session,'reconcile':reconcile}[args.action](root,args.id)
+    return {'status':status,'metrics':metrics,'reject':reject,'run':run_session,'reconcile':reconcile}[args.action](root,args.id)

@@ -62,6 +62,7 @@
 | `zar research start --provider codex --codex-command <실행 파일> --model <모델>` | 미배포. 신뢰하는 Codex CLI 0.162.1 이상, macOS/Linux에서 역할별 제안 연결. API 연결 필드와 혼용 불가. 시작은 저장만 하며 기존 전송·승인·실행·판단 절차 유지; [Codex 계약](research-api.md#설치된-codex로-연결하기) |
 | `zar research next <id>` | 미배포. complete 세션에서 TTY로 설정·연결·제한된 판단·기억 맥락을 이어 새 계획 준비. 부모 보존, 새 지표 경로·저장·전송·승인 필요; 자동 선택·복원·실행 없음; [연결 계약](research-api.md#완료된-실험에서-다음-실험으로-이어가기) |
 | `zar research status <id>` | 미배포. 세션 상태·전송 범위와 `next_actions` 안내. 명령·선행 조건을 제시하며 자동 호출·복구·실행하지 않음 |
+| `zar research metrics <id>` | 미배포. 기록된 호출 측정의 세션·역할별 부분 합계와 관측 수 조회. `research_metrics` view에 session_id/state/version/total/roles 제공; 공급자 호출·세션 변경 없음. 누락은 null이며 비용 추정 없음; [측정 계약](research-api.md#역할별-호출-측정-조회) |
 | `zar project set --file <json>` | 현재 project.json의 수정본을 검증해 교체. 입력 revision이 현재와 같아야 함 |
 | `zar status` | 준비 상태, 누락, 선택 실험, 마지막 실험, planned/running/unknown, 다음 행동 표시 |
 | `zar check` | 모든 JSON의 형식·참조·상태·근거 가용성 검사. ML 타당성을 자동 판정하는 명령이 아님 |

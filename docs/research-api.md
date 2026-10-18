@@ -208,3 +208,27 @@ python examples/api-loop.py --output ./api-loop-demo
 ## 호출 효율과 측정 범위
 
 역할별 JSON 맥락은 내용 손실 없이 공백을 줄여 전송하고, 호출 전 검사에서 읽은 기록을 같은 잠금 구간의 맥락 생성에 재사용합니다. 모델 응답 후에는 신선도를 다시 확인합니다. 7개 역할 호출과 승인 경계는 유지하며 실제 공급자 지연·토큰 비용은 아직 측정하지 않았습니다. [모의 루프 측정 결과와 재현 방법](research-loop-performance.md)을 참고하세요.
+
+
+### 역할별 호출 측정 조회
+
+개발 소스에서는 새 호출 시도마다 로컬 소요 시간·메시지 바이트·공급자가 보고한 토큰 수를 기록합니다. 조회는 기록만 읽으며 모델 호출이나 세션 변경을 하지 않습니다.
+
+```sh
+zar research metrics SESSION_ID --project ./my-ml-project --json
+```
+
+JSON 결과의 `data`는 `view: "research_metrics"`, `session_id`, `state`, `version: 1`, 세션 전체 `total`과 역할별 `roles`를 포함합니다. 각 집계에는 `attempts`, `measured_attempts`, `unmeasured_attempts`와 다음 측정값이 있습니다.
+
+| 필드 | 단위와 범위 |
+|---|---|
+| `call_seconds` | 로컬 호출 함수의 경과 초. 공급자 대기와 Codex 사전 확인·종료 정리를 포함하며 맥락 준비·역할 응답 검증은 제외 |
+| `input_message_bytes` | 호출을 위해 준비한 system/user 메시지 본문의 UTF-8 바이트 합. HTTP/프로세스 포장·헤더를 제외하며 실제 전송 완료를 입증하지 않음 |
+| `output_text_bytes` | 어댑터가 반환한 assistant 본문의 UTF-8 바이트. 원시 공급자 응답·헤더·Codex 이벤트 전체 크기가 아님 |
+| `tokens.input_tokens` / `output_tokens` / `total_tokens` / `cached_input_tokens` | 공급자가 보고한 해당 토큰 수. HTTP의 prompt/completion 및 Codex의 input/output 항목을 공통 이름으로 정규화 |
+
+각 측정값은 `{ "value": 합계 또는 null, "observations": 관측 수 }`입니다. 예를 들어 시도 3회 중 입력 토큰이 2회만 보고되면 그 두 값만 합산하고 `observations: 2`로 표시합니다. 관측이 전혀 없으면 `value: null`, `observations: 0`이며 실제 보고된 0은 `value: 0`입니다. `measured_attempts`는 측정 레코드가 있는 시도 수로, 모든 항목을 관측했다는 뜻이 아닙니다. 합계를 비교할 때는 반드시 항목별 관측 수를 함께 확인하세요.
+
+토큰은 유효한 비음수 정수만 집계합니다. 현재 HTTP 어댑터는 중첩된 캐시 사용량을 전달하지 않으므로 `cached_input_tokens`는 미확인으로 남으며, Codex가 보고한 캐시 입력 토큰은 집계합니다. 공급자가 `total_tokens`를 생략해도 입력·출력의 합으로 채우지 않으며 캐시 토큰을 입력에서 빼지 않습니다. 토큰 없는 응답, 실패·타임아웃, 역할 형식이 잘못된 응답도 확보한 측정만 남깁니다. 재시도는 별도 시도로 집계합니다. 과거 기록은 소급 측정하지 않고, 호출 시도 수는 저장했으나 trace를 남기기 전에 중단된 경우 세션 전체의 `unmeasured_attempts`에 차이가 남습니다. 역할을 알 수 없는 누락은 역할별 합계에 배분하지 않습니다.
+
+개별 측정은 기존 세션 trace의 `measurement`에 버전 1과 함께 저장되고 `research status`에서도 확인할 수 있습니다. 측정을 위해 인증 헤더·원시 오류 본문·새 비밀정보를 저장하지 않습니다. 이 수치는 청구 금액이나 순수 모델 생성 시간, 실제 전체 실험 시간의 측정이 아닙니다. 기존 7개 역할·승인·호출 및 시간 예산은 유지합니다. 모의 공급자로 검증하며 실제 API·Codex 추론의 사용량·지연 검증은 후속입니다.
