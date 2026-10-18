@@ -91,18 +91,22 @@ def execution_environment(profile):
     return env
 
 def assert_fresh(root,s):
+    # One snapshot per check; callers may reuse it only within this lock phase.
+    from .records import load_records
+    project=get_project(root)
+    snap=load_records(root,project)
     if s.get('next_context'):
         require(digest(s['next_context'])==s.get('next_context_hash'),'Next context changed; start a new session.')
         require(digest(load(root,s['next_context']['parent_id']))==s['next_context']['parent_hash'],'Parent session changed; start a new session.')
-        from .records import load_records
         prior=s['next_context']['experiment']
-        require(load_records(root,get_project(root)).records['experiment'].get(prior['id'])==prior,'Parent experiment evidence changed; start a new session.')
+        require(snap.records['experiment'].get(prior['id'])==prior,'Parent experiment evidence changed; start a new session.')
     if s.get('revision_context'):
         require(digest(s['revision_context'])==s.get('revision_context_hash'),'Revision context changed; create a new revision.')
     require(digest(execution_environment(s['profile']))==s['environment_hash'],'Execution environment changed; start a new session.')
-    require(digest(get_project(root))==s['project_hash'],'Project settings changed; start a new session.')
+    require(digest(project)==s['project_hash'],'Project settings changed; start a new session.')
     require(snapshot(root,list(s['sources']))==s['sources'],'Source inputs changed; start a new session.')
-    require(records_identity(root)==s['records_hash'],'Research records changed; start a new session.')
+    require(digest(snap.records)==s['records_hash'],'Research records changed; start a new session.')
+    return project,snap
 
 def records_identity(root):
     from .records import load_records
@@ -211,9 +215,12 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
         s['revision_context_hash']=digest(revision_context)
     save(root,s);return view(s)
 
-def context(root,s,role):
+def context(root,s,role,*,checked=None):
     from . import cli
-    p=get_project(root);snap=cli.load_records(root,p)
+    if checked is None:
+        p=get_project(root);snap=cli.load_records(root,p)
+    else:
+        p,snap=checked
     data,_=cli.build_context(p,snap.records,[],max_bytes=16384)
     observation=snap.records['experiment'].get(s['experiment_id'])
     comparison=None
@@ -265,13 +272,13 @@ def advance(root,identifier,*,send=False):
             require(s['state'] in ('planning','observed','remembering'),'Session cannot advance in this state.')
             require(s['calls']<s['max_calls'],'Model call budget exhausted.')
             require(datetime.now(timezone.utc).timestamp()<s['deadline'],'Session deadline reached.')
-            assert_fresh(root,s)
+            checked=assert_fresh(root,s)
             sequence=PRE if s['state']=='planning' else ('memory',) if s['state']=='remembering' else POST
             role=next((r for r in sequence if r not in s['outputs']),None)
             require(role is not None,'No pending role.')
             prior=s['state'];s['state']='calling';s['active_role']=role;s['return_state']=prior
             s['calls']+=1;s['error']=None
-            payload=context(root,s,role);save(root,s)
+            payload=context(root,s,role,checked=checked);save(root,s)
         try:
             profile=deepcopy(s['profile'])
             profile['timeout_seconds']=min(float(profile.get('timeout_seconds',60)),max(0.1,float(s['deadline'])-datetime.now(timezone.utc).timestamp()))

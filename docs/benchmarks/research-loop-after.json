@@ -1,0 +1,222 @@
+{
+  "measurement_version": 1,
+  "label": "codex/research-loop-efficiency",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "runtime_sha256": "25874f4b5af8751218c442f23a696be033725e887b6d595907ca4f20a93d12f9",
+  "methodology": "Measure local five-role planning overhead with deterministic mocked model responses.\n\nEach scale uses one warmup and three fresh worker processes/projects. Fixture\ncreation and imports are excluded; start and advance are timed separately. The\nmodel returns immediately, so measurements do not predict API latency or model\nquality. Call count, total UTF-8 message-content bytes (system + user), and record\nsnapshot load counts accompany timings. No experiment command is executed.\nCompare frozen source trees with the same interpreter on an otherwise idle host.\n",
+  "warmups": 1,
+  "measured_trials": 3,
+  "cases": [
+    {
+      "count": 100,
+      "trials": [
+        {
+          "start_seconds": 0.01461225000093691,
+          "advance_seconds": 0.1372295420151204,
+          "total_seconds": 0.1518417920160573,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37397,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7163
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7399
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7401
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7674
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7760
+            }
+          ]
+        },
+        {
+          "start_seconds": 0.014056875021196902,
+          "advance_seconds": 0.13569045800250024,
+          "total_seconds": 0.14974733302369714,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37397,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7163
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7399
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7401
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7674
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7760
+            }
+          ]
+        },
+        {
+          "start_seconds": 0.013565250003011897,
+          "advance_seconds": 0.1378899999835994,
+          "total_seconds": 0.1514552499866113,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37397,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7163
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7399
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7401
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7674
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7760
+            }
+          ]
+        }
+      ],
+      "median_start_seconds": 0.014056875021196902,
+      "median_advance_seconds": 0.1372295420151204,
+      "median_total_seconds": 0.1514552499866113,
+      "model_calls": 5,
+      "prompt_bytes": 37397,
+      "start_record_loads": 1,
+      "advance_record_loads": 10
+    },
+    {
+      "count": 1000,
+      "trials": [
+        {
+          "start_seconds": 0.12473587499698624,
+          "advance_seconds": 1.2609667500073556,
+          "total_seconds": 1.3857026250043418,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37437,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7171
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7407
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7409
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7682
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7768
+            }
+          ]
+        },
+        {
+          "start_seconds": 0.12641266599530354,
+          "advance_seconds": 1.262774000002537,
+          "total_seconds": 1.3891866659978405,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37437,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7171
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7407
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7409
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7682
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7768
+            }
+          ]
+        },
+        {
+          "start_seconds": 0.12873358398792334,
+          "advance_seconds": 1.2579705420066603,
+          "total_seconds": 1.3867041259945836,
+          "start_record_loads": 1,
+          "advance_record_loads": 10,
+          "model_calls": 5,
+          "prompt_bytes": 37437,
+          "roles": [
+            {
+              "role": "analysis",
+              "prompt_bytes": 7171
+            },
+            {
+              "role": "evaluation",
+              "prompt_bytes": 7407
+            },
+            {
+              "role": "planning",
+              "prompt_bytes": 7409
+            },
+            {
+              "role": "implementation",
+              "prompt_bytes": 7682
+            },
+            {
+              "role": "review",
+              "prompt_bytes": 7768
+            }
+          ]
+        }
+      ],
+      "median_start_seconds": 0.12641266599530354,
+      "median_advance_seconds": 1.2609667500073556,
+      "median_total_seconds": 1.3867041259945836,
+      "model_calls": 5,
+      "prompt_bytes": 37437,
+      "start_record_loads": 1,
+      "advance_record_loads": 10
+    }
+  ]
+}
