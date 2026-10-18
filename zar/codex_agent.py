@@ -177,7 +177,7 @@ def chat_codex(profile, messages):
         raise _error('invalid_messages', 'Messages must contain only role and text content.')
     try:
         payload = ('Return only the requested JSON proposal. Do not use tools or execute commands.\n'
-                   + json.dumps(messages, ensure_ascii=False, allow_nan=False)).encode('utf-8')
+                   + json.dumps(messages, ensure_ascii=False, allow_nan=False, separators=(',', ':'))).encode('utf-8')
     except (ValueError, UnicodeError, RecursionError):
         raise _error('invalid_messages', 'Messages cannot be encoded as JSON.') from None
     if len(payload) > 1048576:

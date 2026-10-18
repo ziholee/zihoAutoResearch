@@ -30,9 +30,10 @@ def _role(role):
         raise RoleError('Unknown role')
 
 
-def _json(value, limit):
+def _json(value, limit, *, compact=False):
     try:
-        text = json.dumps(value, ensure_ascii=False, allow_nan=False)
+        text = json.dumps(value, ensure_ascii=False, allow_nan=False,
+                          separators=(',', ':') if compact else None)
         size = len(text.encode('utf-8'))
     except (TypeError, ValueError, RecursionError, UnicodeError) as exc:
         raise RoleError('Expected finite JSON data') from exc
@@ -46,7 +47,7 @@ def role_messages(role, context):
     _role(role)
     if not isinstance(context, dict):
         raise RoleError('Context must be an object')
-    content = _json(context, MAX_CONTEXT_BYTES)
+    content = _json(context, MAX_CONTEXT_BYTES, compact=True)
     instructions = skill_source().joinpath('references', 'roles', role + '.md').read_text(encoding='utf-8')
     contract = {**_COMMON, **_EXTRA[role]}
     system = (

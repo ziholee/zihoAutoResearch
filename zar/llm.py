@@ -98,7 +98,7 @@ def chat(profile, messages):
                'max_completion_tokens': profile.get('max_output_tokens', 2048),
                'response_format': {'type': 'json_object'}}
     try:
-        body = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode('utf-8')
+        body = json.dumps(payload, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')
     except (ValueError, UnicodeError):
         raise LLMError('invalid_messages', 'Messages cannot be encoded as JSON.') from None
     if len(body) > 1048576:
