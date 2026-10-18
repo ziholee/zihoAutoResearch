@@ -32,6 +32,8 @@
 
 開発ソースでは `research start --provider codex --codex-command codex --model <モデル>`、または `research setup` の接続方式の質問で Codex を選べます。macOS/Linux 上の信頼できる Codex CLI 0.162.1 以上が必要です。既存の Codex 認証を使用し、モデルサービスへの送信や課金が発生する場合があります。Codex は提案を返し、zar の送信・実行・判断の承認手順は維持されます。模擬エージェントで検証しており、実際の Codex 認証・推論は未検証です。[接続の範囲と制限](docs/research-api.md#설치된-codex로-연결하기)を確認してください。
 
+開発ソースでは `zar research metrics SESSION_ID --project ./my-ml-project --json` で役割別の呼び出し時間・メッセージのバイト数・報告されたトークン使用量を確認できます。欠損値と部分的な観測を明示し、実際の通信量や料金は推定しません。[測定範囲](docs/research-api.md#역할별-호출-측정-조회)を参照してください。
+
 `zar` は **zihoAutoResearch の略称であり、実行コマンド名**です。インストールするパッケージ名は `ziho-autoresearch` で、インストール後は `zar init`、`zar status` のように使用します。
 
 ## 1. インストール
