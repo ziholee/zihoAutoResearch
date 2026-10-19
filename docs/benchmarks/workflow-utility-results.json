@@ -1,0 +1,229 @@
+{
+  "measurement": {
+    "date": "2026-10-19",
+    "source_base_commit": "e38e3fef7e22722f0e913dd5bd19a57fc33928be",
+    "benchmark_sha256": "9948430975e1313c4b6a8d80922a84fab08b77e8a8d9b5a6cad9519cd1ee48b3",
+    "fixture_sha256": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d",
+    "machine_architecture": "arm64",
+    "other_repository_checks_running": false,
+    "note": "Single local machine; system background load uncontrolled; no human or real provider measurements."
+  },
+  "result": {
+    "version": 1,
+    "python": "3.11.17",
+    "platform": "Darwin",
+    "repeats": 3,
+    "trials": [
+      {
+        "repeat": 1,
+        "order": [
+          "direct",
+          "zar"
+        ],
+        "arms": {
+          "direct": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.015085457998793572,
+              "baseline": 0.10766175002208911,
+              "candidate": 0.05920812499243766,
+              "pause": 0.0001786659995559603,
+              "resume": 0.05687745800241828,
+              "total": 1.3411701250006445
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 0,
+              "git": 13
+            },
+            "input_message_bytes": 3045,
+            "output_text_bytes": 2593
+          },
+          "zar": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.13297674999921583,
+              "baseline": 0.5895993750018533,
+              "candidate": 0.3764247079961933,
+              "pause": 0.00020679199951700866,
+              "resume": 0.4702077919791918,
+              "total": 2.3637331659847405
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 20,
+              "git": 13
+            },
+            "input_message_bytes": 120730,
+            "output_text_bytes": 2593
+          }
+        }
+      },
+      {
+        "repeat": 2,
+        "order": [
+          "zar",
+          "direct"
+        ],
+        "arms": {
+          "zar": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.128723625006387,
+              "baseline": 0.5482867090031505,
+              "candidate": 0.36408749999827705,
+              "pause": 0.00032066702260635793,
+              "resume": 0.49157708301208913,
+              "total": 2.3058302919962443
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 20,
+              "git": 13
+            },
+            "input_message_bytes": 120730,
+            "output_text_bytes": 2593
+          },
+          "direct": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.016709166986402124,
+              "baseline": 0.11162970800069161,
+              "candidate": 0.06051762501010671,
+              "pause": 0.0001952500024344772,
+              "resume": 0.05040079102036543,
+              "total": 1.3376321659889072
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 0,
+              "git": 13
+            },
+            "input_message_bytes": 3045,
+            "output_text_bytes": 2593
+          }
+        }
+      },
+      {
+        "repeat": 3,
+        "order": [
+          "direct",
+          "zar"
+        ],
+        "arms": {
+          "direct": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.01585041600628756,
+              "baseline": 0.10939845797838643,
+              "candidate": 0.0591734999907203,
+              "pause": 0.0001925419783219695,
+              "resume": 0.04844845799379982,
+              "total": 1.3528272499970626
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 0,
+              "git": 13
+            },
+            "input_message_bytes": 3045,
+            "output_text_bytes": 2593
+          },
+          "zar": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true,
+            "seconds": {
+              "setup": 0.1255372500163503,
+              "baseline": 0.5319449169910513,
+              "candidate": 0.3168399579881225,
+              "pause": 0.00016566697740927339,
+              "resume": 0.4490404579846654,
+              "total": 2.225758999993559
+            },
+            "counts": {
+              "provider_requests": 14,
+              "training": 2,
+              "git_commits": 4,
+              "scripted_approvals": 4,
+              "zar_cli": 20,
+              "git": 13
+            },
+            "input_message_bytes": 120730,
+            "output_text_bytes": 2593
+          }
+        }
+      }
+    ],
+    "median": {
+      "direct": {
+        "setup": 0.01585041600628756,
+        "baseline": 0.10939845797838643,
+        "candidate": 0.05920812499243766,
+        "pause": 0.0001925419783219695,
+        "resume": 0.05040079102036543,
+        "total": 1.3411701250006445
+      },
+      "zar": {
+        "setup": 0.128723625006387,
+        "baseline": 0.5482867090031505,
+        "candidate": 0.36408749999827705,
+        "pause": 0.00020679199951700866,
+        "resume": 0.4702077919791918,
+        "total": 2.3058302919962443
+      }
+    },
+    "limitations": [
+      "Scripted local fixture, not measured human time or real LLM performance.",
+      "Direct JSON ledger is bespoke benchmark code; engineering/maintenance effort is excluded.",
+      "Identical role outputs, but direct lean prompts and zar managed contexts differ; no token or quality claim.",
+      "Safe observed-boundary resume in a new process; not crash recovery.",
+      "Total includes worker startup, persistence and provider teardown; phase times exclude interprocess gaps and final teardown.",
+      "Independent artifact verification runs after measured total; no timing superiority gate.",
+      "No actual API, paid provider, or model authentication was used."
+    ]
+  }
+}

@@ -79,3 +79,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## 실제 CLI 장애 복구 통합 검증
 
 `tests/test_crash_recovery.py`와 패키지 검증은 [장애 복구 예제](crash-recovery-validation.md)를 통해 실제 CLI 종료·새 CLI 조회·중복 실행 거부·새 근거 기반 복구를 확인한다. Linux/macOS의 프로세스 종료 확인 수단을 사용하며 Windows에서는 해당 통합 검사를 명시적으로 건너뛴다. 기존 플랫폼 공통 상태 전이·실행기 검사는 유지한다. 실제 API 호출이나 사용자의 학습 작업은 실행하지 않는다.
+
+## 동일 조건의 작업 흐름 비교
+
+`tests/test_workflow_utility.py`와 설치본 검증은 [도구 효용 비교](workflow-utility-comparison.md)의 두 경로에 동일한 산출물 조건을 적용합니다. 입력·평가·기록·Git·중단 재개를 대조하되 시간 우위를 합격 조건으로 삼지 않습니다. 사람의 작업 시간·실제 모델 비용은 이 검사에서 측정하지 않습니다.

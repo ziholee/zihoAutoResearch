@@ -361,6 +361,18 @@ def verify(dist: Path, checkout: Path | None = None) -> None:
             print('PASS: installed wheel + sdist real CLI termination, unknown preservation and evidence-based recovery')
         else:
             print('SKIP: CLI crash example needs Linux waitpid or macOS kqueue exit witness')
+        utility = source / 'scripts/benchmark_workflow_utility.py'
+        require(utility.is_file(), 'Source distribution is missing workflow utility benchmark')
+        output = workspace / 'workflow-utility'
+        summary = json.loads(run([str(python), '-I', str(utility), '--output', str(output), '--repeats', '1'],
+                                 workspace, environment, timeout=180))
+        require(summary == json.loads((output / 'summary.json').read_text(encoding='utf-8')),
+                'Utility benchmark stdout and summary differ')
+        for arm in ('direct', 'zar'):
+            result = summary['trials'][0]['arms'][arm]
+            require(result['verified'] and result['execution_count'] == 2
+                    and result['resumed_without_execution'], 'Paired workflow requirements failed')
+        print('PASS: installed wheel + sdist paired direct/Git and zar workflow; no timing superiority gate')
     print('Package verification passed; local synthetic examples only, no cloud model calls.')
 
 

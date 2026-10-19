@@ -185,6 +185,8 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-validation.md)로 호출·실행 중 강제 종료 후 unknown 보존, 중복 실행 거부와 근거 기반 복구도 확인할 수 있습니다. 모의 공급자만 사용하며 Windows 프로세스 복구는 검증 범위 밖입니다.
 
+[도구 효용 비교](docs/workflow-utility-comparison.md)는 같은 합성 작업을 직접 실행+Git과 zar로 수행해 기록·복구 결과와 실행 부가 비용을 대조합니다. 자동화된 시나리오이며 실제 사용자 시간·LLM 비용 절감을 입증하지 않습니다.
+
 ## 기록을 공유하기 전에
 
 `.autoresearch/`와 보고서에는 직접 기록한 명령, 파일 경로, 로그 발췌, 근거가 포함될 수 있습니다. 커밋·업로드 전에 비밀 키, 개인 데이터, 비공개 데이터셋·로그를 확인하세요. CLI의 JSON 검사는 비밀정보 탐지나 자동 익명화를 제공하지 않습니다. 원본 증거를 수정하면 저장된 해시와 달라질 수 있으므로 공개용 사본을 따로 만드세요.
