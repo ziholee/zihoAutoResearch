@@ -38,7 +38,7 @@
 
 최초 v0.1.0의 파일 구성·설치·체크섬 확인·초안 공개 절차는 [배포 안내](releasing.md), 사용자 변경 내역은 [CHANGELOG](../CHANGELOG.md)를 따른다.
 
-[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. Draft release 자체에는 PyPI 업로드, 서비스 배포, 모델 학습 또는 외부 대회 제출이 없다. 별도 [PyPI 발행 설정](pypi-publishing.md)은 공개된 정식 릴리스 첨부 파일을 검증한 후 OIDC로 발행한다. 기본 비활성 상태이며 신뢰 발행자·환경·활성화 변수 설정이 필요하다. 2026-10-13 KST에 v0.2.0의 실제 OIDC 발행·PyPI 파일 해시·격리 uv 설치·스킬 추출을 확인했다.
+[Draft release](../.github/workflows/release.yml)는 `v*` 태그에서 같은 CI를 통과한 뒤 태그가 `pyproject.toml` 버전과 일치하고 해당 커밋이 dev 이력에 포함되는지 확인한다. 최종 wheel/sdist를 다시 빌드·격리 검증하고 SHA256SUMS와 함께 GitHub **초안 릴리스**를 만든다. 유지관리자가 내용을 검토해 공개한다. Draft release 자체에는 PyPI 업로드, 서비스 배포 또는 외부 대회 제출이 없다. 검증 단계의 작은 합성 회귀 학습 예제를 제외한 사용자 모델 학습은 실행하지 않는다. 별도 [PyPI 발행 설정](pypi-publishing.md)은 공개된 정식 릴리스 첨부 파일을 검증한 후 OIDC로 발행한다. 기본 비활성 상태이며 신뢰 발행자·환경·활성화 변수 설정이 필요하다. 2026-10-13 KST에 v0.2.0의 실제 OIDC 발행·PyPI 파일 해시·격리 uv 설치·스킬 추출을 확인했다.
 
 태그 생성·공개는 별도 릴리스 행위다. 워크플로 설정 검증만으로 실제 릴리스 성공을 주장하지 않는다. 빌드 도구는 개발 의존성이며 제품 런타임에는 추가되지 않는다.
 
@@ -71,3 +71,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## 공개 배포본 사용 경로 검증
 
 [독립 검증 기록](public-onboarding-validation.md)과 [처음 사용·재개 안내](first-run-and-resume.md)를 따른다. `scripts/verify_package.py`는 설치된 CLI와 소스 배포본의 `examples/mock-resume.py`를 prepare/resume 별도 프로세스로 호출한다. 기존 5개에 full/proxy 재개 2개를 추가해 unknown 새 근거 요구, 변조 근거 진단, hold, 예산·선택·원본 보존을 확인한다. 실제 프로세스를 강제 종료하거나 학습하지 않는다.
+
+## 합성 데이터의 실제 학습 예제
+
+`tests/test_ml_loop.py`와 패키지 검증은 [ML 예제](ml-loop-example.md)의 기준 학습·후보 평가·안전한 경계에서의 중단과 별도 프로세스 재개를 확인한다. LLM만 모의이며 학습과 지표 계산은 실제로 실행한다. 기존 기록 전용 모의 예제와 구분하고, 실제 공급자 호환성·실데이터 일반화·사용자 효용 비교의 증거로 확대하지 않는다.

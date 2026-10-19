@@ -181,6 +181,10 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle` 必须是尚不存在的新路径。示例使用模拟分数和日志，展示记录 → 比较 → 决策 → 报告的流程，不会执行训练。uv tool 的 Python 环境与其他 Python 环境不共享包，因此也需在上述示例用虚拟环境中安装此包。跨两个会话的恢复练习请参阅[恢复示例](docs/first-run-and-resume.md#학습-없는-두-세션-연습)。
 
+## 体验真实训练与评估循环（开发源码）
+
+[合成回归示例](docs/ml-loop-example.md)使用模拟 LLM 和真实本地训练，验证基准实验 → 候选比较 → 安全中断与恢复。获取当前开发源码，在上述虚拟环境中执行 `python -m pip install .`，然后运行 `python examples/ml-loop.py --output ./demo-ml`。输出路径必须尚不存在。已发布的 v0.3.0 不包含所需的 `research` 命令。此示例不会调用云端 API 或付费模型。
+
 ## 分享记录之前
 
 `.autoresearch/` 和报告可能包含你记录的命令、文件路径、日志摘录及证据。提交或上传前，请检查是否包含密钥、个人数据、私有数据集或日志。CLI 的 JSON 检查不提供秘密信息检测或自动匿名化功能。修改原始证据可能使其与已保存的哈希不一致，因此请单独制作公开用副本。

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify built distributions outside the checkout with synthetic observations only."""
+"""Verify built distributions outside the checkout using local synthetic examples."""
 from __future__ import annotations
 
 import argparse
@@ -341,7 +341,16 @@ def verify(dist: Path, checkout: Path | None = None) -> None:
                         for item in result['changed_evidence_comparison']['diagnostics']),
                     'Changed evidence warning was lost')
             print(f'PASS: installed wheel + sdist {scope} resume; fresh process, unknown evidence, hold and preservation')
-    print('Package verification passed; observations were synthetic and no training was requested.')
+        ml_example = source / 'examples/ml-loop.py'
+        require(ml_example.is_file(), 'Source distribution is missing examples/ml-loop.py')
+        output = workspace / 'ml-cycle'
+        summary = json.loads(run([str(python), '-I', str(ml_example), '--output', str(output)],
+                                 workspace, environment, timeout=120))
+        require(summary == json.loads((output / 'summary.json').read_text(encoding='utf-8')),
+                'ML example stdout and summary differ')
+        require(summary['execution_count'] == 2, 'ML resume must not rerun training')
+        print('PASS: installed wheel + sdist actual synthetic ML; baseline, candidate and fresh-process resume')
+    print('Package verification passed; local synthetic examples only, no cloud model calls.')
 
 
 def main() -> int:
