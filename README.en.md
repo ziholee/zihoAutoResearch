@@ -181,6 +181,10 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle` must be a new path that does not exist yet. The example uses mock scores and logs to demonstrate recording → comparison → decision → reporting, without training. The Python environment used by uv tool and a separate Python environment do not share packages, so install the package in the example's virtual environment as shown above. See the [resume example](docs/first-run-and-resume.md#학습-없는-두-세션-연습) for a two-session exercise.
 
+## Try a real training and evaluation loop (development source)
+
+The [synthetic regression example](docs/ml-loop-example.md) uses a mock LLM and actual local training to exercise baseline → candidate comparison → safe stopping and resumption. Download the current development source, run `python -m pip install .` in the virtual environment above, then `python examples/ml-loop.py --output ./demo-ml`. The output path must not exist yet. Released v0.3.0 lacks the required `research` commands. No cloud API or paid model is called.
+
 ## Before sharing records
 
 `.autoresearch/` and reports may contain commands, file paths, log excerpts, and evidence you recorded. Check for secret keys, personal data, private datasets, and private logs before committing or uploading them. The CLI's JSON validation does not detect secrets or anonymize data automatically. Modifying original evidence may invalidate its stored hash, so create a separate copy for public sharing.
