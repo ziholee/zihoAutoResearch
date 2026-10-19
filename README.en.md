@@ -187,6 +187,8 @@ The [synthetic regression example](docs/ml-loop-example.md) uses a mock LLM and 
 
 On Linux/macOS, the [CLI crash recovery example](docs/crash-recovery-validation.md) checks unknown-state preservation, duplicate-run rejection and evidence-based recovery after terminating a live CLI. It uses a mock provider; Windows process recovery is outside its scope.
 
+The [workflow utility comparison](docs/workflow-utility-comparison.md) runs the same synthetic task with direct execution + Git and zar, comparing records, recovery outcomes and execution overhead. This scripted scenario does not establish human time savings or real LLM cost reductions.
+
 ## Before sharing records
 
 `.autoresearch/` and reports may contain commands, file paths, log excerpts, and evidence you recorded. Check for secret keys, personal data, private datasets, and private logs before committing or uploading them. The CLI's JSON validation does not detect secrets or anonymize data automatically. Modifying original evidence may invalidate its stored hash, so create a separate copy for public sharing.
