@@ -25,10 +25,12 @@ def sha(path):
 
 class WorkflowUtilityTests(unittest.TestCase):
     def invoke(self, output, *, repeats=2, success=True):
+        # Budget each pair separately on slow runners; this is a safety bound,
+        # not a performance assertion. Worker/command deadlines stay unchanged.
         result = subprocess.run(
             [sys.executable, str(SCRIPT), '--output', str(output), '--repeats', str(repeats)],
             cwd=output.parent, env=dict(os.environ, PYTHONPATH=str(ROOT)),
-            capture_output=True, text=True, timeout=180)
+            capture_output=True, text=True, timeout=180 * repeats)
         if success:
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         else:
