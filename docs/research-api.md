@@ -189,6 +189,8 @@ zar research reconcile SESSION_ID --project ./my-ml-project --json
 
 `--confirm-stopped`는 프로세스를 종료하는 명령이 아니라 사용자의 확인입니다. 실행 중인 CLI에 사용하지 마세요. `reconcile`도 상태를 추측하거나 실행을 재시도하지 않습니다. 실제 확인 없이 unknown을 성공으로 변경하지 않습니다. 입력 동일성 검사는 명시적으로 전달한 소스와 프로젝트 설정·기록·허용된 환경변수에 한정합니다. 외부 데이터나 실행 바이너리 전체를 추적하는 기능은 아닙니다. 프로젝트·소스·기록 변경이나 예산 소진은 재개를 차단할 수 있으며 한도를 자동 늘리지 않습니다.
 
+Linux/macOS에서 실제 CLI 프로세스를 종료하고 재시작하는 개발 소스용 [장애 복구 검증 예제](crash-recovery-validation.md)를 제공합니다. 안전한 경계의 재개, 호출 중단, 실행 중단을 구분하고 실제 공급자 검증과 혼동하지 않습니다.
+
 ## 저장과 한계
 
 `.autoresearch/sessions/`는 별도 연구 세션 상태, `.autoresearch/session-artifacts/`는 실행 근거와 입력 자료입니다. canonical v1 experiment/decision이 관측·판단의 원본입니다. 세션 기록에는 허용한 코드와 모델 제안이 포함될 수 있으므로 공개 커밋 전에 내용을 확인하세요. API 키 값과 인증 헤더는 저장하지 않습니다.

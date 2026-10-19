@@ -185,6 +185,8 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 [合成回归示例](docs/ml-loop-example.md)使用模拟 LLM 和真实本地训练，验证基准实验 → 候选比较 → 安全中断与恢复。获取当前开发源码，在上述虚拟环境中执行 `python -m pip install .`，然后运行 `python examples/ml-loop.py --output ./demo-ml`。输出路径必须尚不存在。已发布的 v0.3.0 不包含所需的 `research` 命令。此示例不会调用云端 API 或付费模型。
 
+在 Linux/macOS 上，[CLI 故障恢复示例](docs/crash-recovery-validation.md)验证运行中的 CLI 终止后保留 unknown 状态、拒绝重复执行以及基于证据的恢复。仅使用模拟提供者，不验证 Windows 进程恢复。
+
 ## 分享记录之前
 
 `.autoresearch/` 和报告可能包含你记录的命令、文件路径、日志摘录及证据。提交或上传前，请检查是否包含密钥、个人数据、私有数据集或日志。CLI 的 JSON 检查不提供秘密信息检测或自动匿名化功能。修改原始证据可能使其与已保存的哈希不一致，因此请单独制作公开用副本。

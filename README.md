@@ -183,6 +183,8 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 [합성 회귀 학습 예제](docs/ml-loop-example.md)는 모의 LLM과 실제 로컬 학습으로 기준 실험 → 후보 비교 → 안전한 중단·재개를 확인합니다. 현재 개발 소스를 내려받아 위 가상환경에서 `python -m pip install .` 후 `python examples/ml-loop.py --output ./demo-ml`을 실행하세요. 출력 경로는 새 경로여야 합니다. 공개 v0.3.0에는 필요한 `research` 명령이 없으며, 클라우드 API나 유료 모델은 호출하지 않습니다.
 
+Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-validation.md)로 호출·실행 중 강제 종료 후 unknown 보존, 중복 실행 거부와 근거 기반 복구도 확인할 수 있습니다. 모의 공급자만 사용하며 Windows 프로세스 복구는 검증 범위 밖입니다.
+
 ## 기록을 공유하기 전에
 
 `.autoresearch/`와 보고서에는 직접 기록한 명령, 파일 경로, 로그 발췌, 근거가 포함될 수 있습니다. 커밋·업로드 전에 비밀 키, 개인 데이터, 비공개 데이터셋·로그를 확인하세요. CLI의 JSON 검사는 비밀정보 탐지나 자동 익명화를 제공하지 않습니다. 원본 증거를 수정하면 저장된 해시와 달라질 수 있으므로 공개용 사본을 따로 만드세요.

@@ -75,3 +75,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## 합성 데이터의 실제 학습 예제
 
 `tests/test_ml_loop.py`와 패키지 검증은 [ML 예제](ml-loop-example.md)의 기준 학습·후보 평가·안전한 경계에서의 중단과 별도 프로세스 재개를 확인한다. LLM만 모의이며 학습과 지표 계산은 실제로 실행한다. 기존 기록 전용 모의 예제와 구분하고, 실제 공급자 호환성·실데이터 일반화·사용자 효용 비교의 증거로 확대하지 않는다.
+
+## 실제 CLI 장애 복구 통합 검증
+
+`tests/test_crash_recovery.py`와 패키지 검증은 [장애 복구 예제](crash-recovery-validation.md)를 통해 실제 CLI 종료·새 CLI 조회·중복 실행 거부·새 근거 기반 복구를 확인한다. Linux/macOS의 프로세스 종료 확인 수단을 사용하며 Windows에서는 해당 통합 검사를 명시적으로 건너뛴다. 기존 플랫폼 공통 상태 전이·실행기 검사는 유지한다. 실제 API 호출이나 사용자의 학습 작업은 실행하지 않는다.
