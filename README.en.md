@@ -185,6 +185,8 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 The [synthetic regression example](docs/ml-loop-example.md) uses a mock LLM and actual local training to exercise baseline → candidate comparison → safe stopping and resumption. Download the current development source, run `python -m pip install .` in the virtual environment above, then `python examples/ml-loop.py --output ./demo-ml`. The output path must not exist yet. Released v0.3.0 lacks the required `research` commands. No cloud API or paid model is called.
 
+On Linux/macOS, the [CLI crash recovery example](docs/crash-recovery-validation.md) checks unknown-state preservation, duplicate-run rejection and evidence-based recovery after terminating a live CLI. It uses a mock provider; Windows process recovery is outside its scope.
+
 ## Before sharing records
 
 `.autoresearch/` and reports may contain commands, file paths, log excerpts, and evidence you recorded. Check for secret keys, personal data, private datasets, and private logs before committing or uploading them. The CLI's JSON validation does not detect secrets or anonymize data automatically. Modifying original evidence may invalidate its stored hash, so create a separate copy for public sharing.

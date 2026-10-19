@@ -350,6 +350,17 @@ def verify(dist: Path, checkout: Path | None = None) -> None:
                 'ML example stdout and summary differ')
         require(summary['execution_count'] == 2, 'ML resume must not rerun training')
         print('PASS: installed wheel + sdist actual synthetic ML; baseline, candidate and fresh-process resume')
+        crash_example = source / 'examples/crash-recovery.py'
+        require(crash_example.is_file(), 'Source distribution is missing examples/crash-recovery.py')
+        if sys.platform.startswith('linux') or sys.platform == 'darwin':
+            output = workspace / 'crash-cycle'
+            summary = json.loads(run([str(python), '-I', str(crash_example), '--output', str(output)],
+                                     workspace, environment, timeout=120))
+            require(summary == json.loads((output / 'summary.json').read_text(encoding='utf-8')),
+                    'Crash example stdout and summary differ')
+            print('PASS: installed wheel + sdist real CLI termination, unknown preservation and evidence-based recovery')
+        else:
+            print('SKIP: CLI crash example needs Linux waitpid or macOS kqueue exit witness')
     print('Package verification passed; local synthetic examples only, no cloud model calls.')
 
 
