@@ -88,6 +88,10 @@ class ContextApprovalTests(unittest.TestCase):
     respond = fixture.ResearchTests.respond
 
     def test_wire_reference_leaves_proposal_tokens_and_execution_boundaries_intact(self):
+        # Exercise Windows-style source bytes on every platform. read_text()
+        # normalizes CRLF, whereas the review snapshot must preserve it exactly.
+        (self.root/'train.py').write_bytes(self.code.replace('\n', '\r\n').encode('utf-8'))
+        original_source = (self.root/'train.py').read_bytes()
         with patch('zar.research.chat', side_effect=self.respond):
             baseline = research.advance(self.root, self.start()['id'], send=True)
             research.approve(self.root, baseline['id'], baseline['approval_token'])
@@ -113,9 +117,9 @@ class ContextApprovalTests(unittest.TestCase):
         with patch('zar.research.chat', side_effect=answer):
             s = research.advance(self.root, s['id'], send=True)
             self.assertEqual(s['state'], 'awaiting_approval')
-            self.assertEqual(captured['review']['sources']['train.py']['content'], self.code)
+            self.assertEqual(captured['review']['sources']['train.py']['content'].encode('utf-8'), original_source)
             self.assertEqual(captured['review']['outputs']['implementation']['changes'][0]['content'], proposed)
-            self.assertEqual((self.root/'train.py').read_text(), self.code)
+            self.assertEqual((self.root/'train.py').read_bytes(), original_source)
             with self.assertRaises(research.ResearchError):
                 research.run_session(self.root, s['id'])
             research.approve(self.root, s['id'], s['approval_token'])
