@@ -3,11 +3,15 @@
 Message bytes count UTF-8 message content prepared for a call, not network
 traffic. Token counts are independently reported counters; missing is not zero.
 """
+import json
 import math
 from decimal import Decimal
 
 
 TOKEN_FIELDS = ('input_tokens', 'output_tokens', 'total_tokens', 'cached_input_tokens')
+INPUT_COMPONENTS = ('instructions', 'sources', 'records', 'outputs', 'other', 'framing')
+_RECORD_KEYS = frozenset(('records', 'observation', 'comparison', 'prior_lessons',
+                          'next_context', 'revision_context'))
 COUNT_LIMIT = 2**63 - 1
 
 
@@ -34,12 +38,47 @@ def _seconds(value):
 
 def new_measurement():
     return {'version': 1, 'call_seconds': None, 'input_message_bytes': None,
-            'output_text_bytes': None, 'tokens': dict.fromkeys(TOKEN_FIELDS)}
+            'input_components_bytes': None, 'output_text_bytes': None,
+            'tokens': dict.fromkeys(TOKEN_FIELDS)}
 
 
 def measure_messages(messages):
     """Count message content only; the caller supplies validated text messages."""
     return sum(len(message['content'].encode('utf-8')) for message in messages)
+
+
+def measure_input_components(messages):
+    """Partition canonical role message content, including JSON keys/separators.
+
+    Return only byte counts. Noncanonical/unsupported messages have no known
+    breakdown; do not report a reserialization as the bytes actually prepared.
+    """
+    try:
+        if (len(messages) != 2 or messages[0]['role'] != 'system'
+                or messages[1]['role'] != 'user'):
+            return None
+        instructions, content = (message['content'] for message in messages)
+        if not isinstance(instructions, str) or not isinstance(content, str):
+            return None
+        context = json.loads(content)
+        if not isinstance(context, dict):
+            return None
+
+        def encode(value):
+            return json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+
+        if encode(context) != content:
+            return None
+        counts = dict.fromkeys(INPUT_COMPONENTS, 0)
+        counts['instructions'] = len(instructions.encode('utf-8'))
+        counts['framing'] = 2 + max(0, len(context) - 1)
+        for key, value in context.items():
+            category = ('sources' if key == 'sources' else 'records' if key in _RECORD_KEYS
+                        else 'outputs' if key == 'outputs' else 'other')
+            counts[category] += len((encode(key) + ':' + encode(value)).encode('utf-8'))
+        return counts
+    except (KeyError, TypeError, ValueError, RecursionError, UnicodeError, OverflowError):
+        return None
 
 
 def record_answer(measurement, answer, provider):
@@ -69,7 +108,8 @@ def _counter():
 def _bucket():
     return {'attempts': 0, 'measured_attempts': 0, 'unmeasured_attempts': 0,
             'call_seconds': _counter(), 'input_message_bytes': _counter(),
-            'output_text_bytes': _counter(), 'tokens': {name: _counter() for name in TOKEN_FIELDS}}
+            'output_text_bytes': _counter(), 'tokens': {name: _counter() for name in TOKEN_FIELDS},
+            'input_components_bytes': {name: _counter() for name in INPUT_COMPONENTS}}
 
 
 def _add(counter, value):
@@ -83,6 +123,13 @@ def _observe(bucket, measurement):
     _add(bucket['call_seconds'], _seconds(measurement.get('call_seconds')))
     for name in ('input_message_bytes', 'output_text_bytes'):
         _add(bucket[name], _count(measurement.get(name)))
+    parts = measurement.get('input_components_bytes')
+    if isinstance(parts, dict) and set(parts) == set(INPUT_COMPONENTS):
+        values = {name: _count(parts[name]) for name in INPUT_COMPONENTS}
+        if (all(value is not None for value in values.values())
+                and sum(values.values()) == _count(measurement.get('input_message_bytes'))):
+            for name, value in values.items():
+                _add(bucket['input_components_bytes'][name], value)
     tokens = measurement.get('tokens')
     if isinstance(tokens, dict):
         for name in TOKEN_FIELDS:

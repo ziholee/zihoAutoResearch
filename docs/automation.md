@@ -83,3 +83,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## 동일 조건의 작업 흐름 비교
 
 `tests/test_workflow_utility.py`와 설치본 검증은 [도구 효용 비교](workflow-utility-comparison.md)의 두 경로에 동일한 산출물 조건을 적용합니다. 입력·평가·기록·Git·중단 재개를 대조하되 시간 우위를 합격 조건으로 삼지 않습니다. 사람의 작업 시간·실제 모델 비용은 이 검사에서 측정하지 않습니다.
+
+## 역할별 요청 맥락의 크기와 근거 보존
+
+`tests/test_call_metrics.py`는 입력 분해의 UTF-8 바이트 합계·JSON 이스케이프·과거 미관측값·잘못된 분해 거부를 확인합니다. `tests/test_request_context.py`와 `tests/test_request_context_benchmark.py`는 [요청 맥락 효율화](request-context-efficiency.md)의 지침 범위와 같은 요청 내부의 원문 참조를 검증합니다. 실행 전 검토에 원본·제안 전문이 남고, 실행 후에도 원문을 복원할 수 있으며, 저장된 제안·승인 입력은 변경되지 않아야 합니다. 참조 표시·해석 지침을 포함한 메시지 크기가 줄어들지 않으면 원문을 유지합니다. 기존 승인·실행·재개 회귀 검사도 유지하며, 모의 응답의 통과를 실제 공급자의 해석 품질 검증으로 표시하지 않습니다.

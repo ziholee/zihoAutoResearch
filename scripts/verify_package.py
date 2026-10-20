@@ -373,6 +373,18 @@ def verify(dist: Path, checkout: Path | None = None) -> None:
             require(result['verified'] and result['execution_count'] == 2
                     and result['resumed_without_execution'], 'Paired workflow requirements failed')
         print('PASS: installed wheel + sdist paired direct/Git and zar workflow; no timing superiority gate')
+        context_benchmark = source / 'scripts/benchmark_request_context.py'
+        require(context_benchmark.is_file(), 'Source distribution is missing request context benchmark')
+        output = workspace / 'request-context'
+        summary = json.loads(run([str(python), '-I', str(context_benchmark), '--output', str(output)],
+                                 workspace, environment, timeout=300))
+        require(summary == json.loads((output / 'summary.json').read_text(encoding='utf-8')),
+                'Request context stdout and summary differ')
+        require(summary['requests'] == 14 and summary['execution_count'] == 2
+                and summary['resumed_without_execution'], 'Request context workflow failed')
+        require(sum(summary['total_input_components_bytes'].values())
+                == summary['total_input_message_bytes'], 'Request components do not partition input')
+        print('PASS: installed wheel + sdist request context measurement; fourteen mock calls and safe resume')
     print('Package verification passed; local synthetic examples only, no cloud model calls.')
 
 

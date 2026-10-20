@@ -32,7 +32,7 @@
 
 在开发源码中，可使用 `research start --provider codex --codex-command codex --model <模型>`，或在 `research setup` 中选择 Codex。需要 macOS/Linux 上可信的 Codex CLI 0.162.1 或更高版本。它使用现有 Codex 认证，可能向模型服务发送上下文并产生费用。Codex 返回提案，zar 保留发送、执行和决策的批准流程。当前使用模拟智能体验证；真实 Codex 认证和推理尚未验证。请参阅[连接范围与限制](docs/research-api.md#설치된-codex로-연결하기)。
 
-开发源码中，`zar research metrics SESSION_ID --project ./my-ml-project --json` 可查看各角色的调用时间、消息字节数和供应方报告的 token 用量。缺失值和部分观测会明确标注，不推算实际网络传输量或费用。参阅[测量范围](docs/research-api.md#역할별-호출-측정-조회)。
+开发源码中，`zar research metrics SESSION_ID --project ./my-ml-project --json` 可查看各角色的调用时间、消息字节数和供应方报告的 token 用量。缺失值和部分观测会明确标注，不推算实际网络传输量或费用。参阅[测量范围](docs/research-api.md#역할별-호출-측정-조회)。 关于指令、源码、记录及累积响应的输入字节数，以及保留必要证据的去重范围，请参阅[请求上下文优化](docs/request-context-efficiency.md)。真实 API 的质量和费用仍未验证。
 
 `zar` 是 **zihoAutoResearch 的简称，也是可执行命令**。安装包名为 `ziho-autoresearch`，安装后通过 `zar init`、`zar status` 等命令使用。
 
