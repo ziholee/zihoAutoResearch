@@ -1,0 +1,48 @@
+{
+  "base_commit": "2757cc833260436bc8e3ebd962f9cd8539a325d7",
+  "records": 1000,
+  "completed_sessions": 0,
+  "diagnostic": "cProfile of old planning worker, including imports and fixture setup. Cumulative durations overlap; not an unprofiled benchmark or speed comparison.",
+  "functions": [
+    {
+      "module": "research.py",
+      "function": "digest",
+      "primitive_calls": 50,
+      "total_calls": 50,
+      "self_seconds": 0.00011291300000000001,
+      "cumulative_seconds": 1.595020874
+    },
+    {
+      "module": "codec.py",
+      "function": "dumps",
+      "primitive_calls": 5067,
+      "total_calls": 5067,
+      "self_seconds": 0.001701859,
+      "cumulative_seconds": 2.313346009
+    },
+    {
+      "module": "research.py",
+      "function": "assert_fresh",
+      "primitive_calls": 10,
+      "total_calls": 10,
+      "self_seconds": 0.000148579,
+      "cumulative_seconds": 2.740663751
+    },
+    {
+      "module": "research.py",
+      "function": "advance",
+      "primitive_calls": 1,
+      "total_calls": 1,
+      "self_seconds": 0.0069715390000000006,
+      "cumulative_seconds": 3.5184564160000003
+    },
+    {
+      "module": "records.py",
+      "function": "load_records",
+      "primitive_calls": 11,
+      "total_calls": 11,
+      "self_seconds": 0.026287977,
+      "cumulative_seconds": 1.411205872
+    }
+  ]
+}
