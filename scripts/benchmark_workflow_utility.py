@@ -157,7 +157,7 @@ def isolated_git_env(output):
     return env
 
 
-def worker(output, arm, resume):
+def worker(output, arm, resume, *, profile_cli=False, poll_interval=0.01):
     output = output.resolve()
     project = output / 'project'
     if not resume:
@@ -176,8 +176,17 @@ def worker(output, arm, resume):
 
     def run(argv, kind='command', command_env=None, cwd=None):
         started = time.perf_counter()
-        proc = subprocess.run(argv, cwd=cwd or project, env=command_env or env, capture_output=True, text=True, timeout=60)
+        process_env = command_env or env
+        profile_path = None
+        if kind == 'zar_cli' and profile_cli:
+            profile_path = output / ('cli-profile-' + str(len(events)) + '.json')
+            launcher = str(Path(__file__).with_name('profile_local_cli.py'))
+            argv = [sys.executable, '-c', 'import runpy; runpy.run_path(' + repr(launcher) + ', run_name="__main__")', *argv[3:]]
+            process_env = dict(process_env, ZAR_BENCH_PROFILE=str(profile_path), ZAR_BENCH_LAUNCH=str(started))
+        proc = subprocess.run(argv, cwd=cwd or project, env=process_env, capture_output=True, text=True, timeout=60)
         event(kind, started, argv=argv, returncode=proc.returncode)
+        if profile_path is not None and profile_path.exists():
+            events[-1]['profile'] = load(profile_path)
         require(proc.returncode == 0, f'{argv} failed: {proc.stdout} {proc.stderr}')
         return proc.stdout
 
@@ -222,7 +231,7 @@ def worker(output, arm, resume):
         allow_reuse_address = True
 
     server = Server(('127.0.0.1', checkpoint['port'] if resume else 0), Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': poll_interval}, daemon=True)
     thread.start()
     url = f'http://127.0.0.1:{server.server_port}/v1'
 
@@ -366,9 +375,12 @@ def worker(output, arm, resume):
             checkpoint['state'] = 'complete'
             seconds['resume'] = time.perf_counter()-phase_start
     finally:
+        shutdown_started = time.perf_counter()
         server.shutdown()
         server.server_close()
         thread.join(timeout=2)
+        require(not thread.is_alive(), 'Mock server did not stop')
+        event('server_shutdown', shutdown_started)
     save(output / 'events.json', events)
     save(output / 'checkpoint.json', checkpoint)
     save(output / 'evidence.json', evidence)
@@ -431,9 +443,12 @@ def main():
     parser.add_argument('--repeats', type=int, default=3)
     parser.add_argument('--worker', choices=('direct', 'zar'), help=argparse.SUPPRESS)
     parser.add_argument('--resume', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--profile-cli', action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument('--poll-interval', type=float, default=0.01, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker:
-        worker(args.output, args.worker, args.resume)
+        require(args.poll_interval > 0, 'Poll interval must be positive')
+        worker(args.output, args.worker, args.resume, profile_cli=args.profile_cli, poll_interval=args.poll_interval)
     else:
         require(not args.resume, '--resume is internal worker-only')
         benchmark(args.output, args.repeats)
