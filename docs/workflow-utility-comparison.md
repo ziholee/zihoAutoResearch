@@ -52,6 +52,8 @@ python scripts/benchmark_workflow_utility.py --output ./utility-results --repeat
 
 ## 로컬 측정 결과 — 2026-10-19
 
+아래 수치는 당시 모의 서버의 종료 확인 간격 0.5초로 측정한 이력입니다. 현재 비교 하네스는 [로컬 비용 분해](local-loop-costs.md)에서 확인된 종료 대기를 줄이기 위해 0.01초를 사용합니다. 아래 원자료를 덮어쓰거나 제품 성능 향상으로 환산하지 않습니다.
+
 macOS arm64, Python 3.11.17의 단일 로컬 환경에서 3쌍을 측정했습니다. 각 반복의 순서는 direct→zar, zar→direct, direct→zar입니다. 저장소의 회귀·빌드·설치 검사를 끝낸 뒤 별도로 실행했으며, 다른 시스템 부하는 통제하지 않았습니다. [반복별 원자료와 코드 해시](benchmarks/workflow-utility-results.json)를 제공합니다. 전체 명령·원본 기록·Git 저장소는 재현 명령의 출력 폴더에서 확인할 수 있습니다.
 
 | 관측 항목 | 직접 실행+Git | zar+Git |

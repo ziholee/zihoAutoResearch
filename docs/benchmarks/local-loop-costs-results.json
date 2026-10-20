@@ -1,0 +1,444 @@
+{
+  "version": 1,
+  "python": "3.11.17",
+  "platform": "Darwin",
+  "repeats": 3,
+  "source_sha256": {
+    "zar/__init__.py": "ac8b72031bbdfd0e7ea4e64aeb96e13708cf0eb728f997009460e6aba829afe3",
+    "zar/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+    "zar/call_metrics.py": "ccf91125218a140103694d1191bf1bb99e4ee018f5abeb2ad322ab61b2f244c7",
+    "zar/candidates.py": "fb470be010b20895d876acdaaee9063006597e3d307b54e62d0aac1cb22f98c5",
+    "zar/cli.py": "7caea8d8f0736530906f86eedcfdaf3ca4cc9365df31fce860f5f822bda466e5",
+    "zar/codec.py": "94bb1e1b31514a1efc0e939a4db736ef164bbaa732063dec1e38aaa44ac4e255",
+    "zar/codex_agent.py": "a02e3d4345a37241a807dfc17fa50fd7ce98100b4c346b7cc9cb845ee55653f9",
+    "zar/comparisons.py": "6449fa517325771a0eeaf8715929acbbe691ff9462b3932af4d3a913c805a52f",
+    "zar/context.py": "d8ea44a11d11a226e39cef9c43dea6334e2262c787c70985b5777ed92658339d",
+    "zar/continuation.py": "e78b8db7c20b1ce9559d43c792b35b2a5260f6c2dc937bcd5ae69806214976f8",
+    "zar/evidence.py": "f24012799370766864056e68a2f1c0cd89b9565b59158ec9714f3cc0844f8ff1",
+    "zar/experiments.py": "152fff7db29be6ccdfd97f306f4fc08a1e499a80f09692418fc62fc7c6e431a0",
+    "zar/git_tracking.py": "1575e68244cf065cfd26f80ef8ffa4726e460d4568ab37e85d46b336920b11a5",
+    "zar/lineage.py": "80ae94a7bb6baf38a0c4aa0fb6e4eb07bfdce46eae4ffa9c2d838a3dd0202f60",
+    "zar/llm.py": "5a3f3729b99ec05df91783c09c0dfbcca4678d623cc43bbe480ce8b9411e1a23",
+    "zar/memories.py": "8db95b8a0e9038cc083ed549470a519a5bf759ef42623687e74d0bb1dfd9c04e",
+    "zar/records.py": "cf745b6d07d079a7016f9b1914695ad0c58a6c75122af51dc8dfb11f453f66aa",
+    "zar/reporting.py": "8a818004ecf8916e4af0cd795187069faf9f431f8421bc7f52e393c1d68cb960",
+    "zar/research.py": "f7b54998e948b4221102a2a4cad4ae2015e017299b1a0fb32d5dc80e9311a0b1",
+    "zar/reviews.py": "7307be4ce3873b22535b0fa5118d31ee944e7e00132e31d1be2c6eb637a1acf0",
+    "zar/revision.py": "f383c7164fa761769b1220bd6ea0ce9f17d673d9c8ee8f134337591515175481",
+    "zar/roles.py": "6503373f6f0c26624bec0a1104c0573fbc67cfeb76a11084eb9e65e811b3edd0",
+    "zar/runner.py": "e351a7934ca8d0805fffa00f6db5a4d549b39b204c601250b9f029660293d46a",
+    "zar/setup.py": "d8dfcca4b7fb3e21dfd89e3966f7a8e6fb8de2b8ac6eb178310bc3ebc6e9fc77",
+    "zar/skill_install.py": "fde9b5665100da85627ab82bfe8179b25948eba028107577cfd441d38f2ade13",
+    "zar/storage.py": "62affe8fedda7328751aad5d986167ddbd853416315ab0df8b26ef59c09f814b",
+    "zar/submissions.py": "fe7956af96fa990c2d6ac238c46556ed3547f9a662a835325fb51fd892df75e9",
+    "zar/validation.py": "69d4e05cde740380b5e0425210e9ae600cc7ef52f05a463dafacec99113df763",
+    "scripts/benchmark_workflow_utility.py": "5bb7a6705ae413525d9b8de91e3b462d8edbc6b77ec99d74c93362908d474e03",
+    "scripts/benchmark_local_loop_costs.py": "b475f4ed4d6eab66b4e7a8170bb364bf083e5aaa2d27836344712c8ca3cfca50",
+    "scripts/profile_local_cli.py": "18dbb528fe58ba7a7ad74ffad5b1a79e0a9857a713fa6307729f7383ecb5bf7c",
+    "examples/ml-loop.py": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d"
+  },
+  "configurations": {
+    "baseline": {
+      "profile_cli": false,
+      "poll_interval": 0.5
+    },
+    "profiled": {
+      "profile_cli": true,
+      "poll_interval": 0.5
+    },
+    "short_poll": {
+      "profile_cli": false,
+      "poll_interval": 0.01
+    }
+  },
+  "trials": [
+    {
+      "repeat": 1,
+      "order": [
+        "baseline",
+        "profiled",
+        "short_poll"
+      ],
+      "results": {
+        "baseline": {
+          "total_seconds": 2.2252037919997747,
+          "partition_seconds": {
+            "cli": 1.293151083002158,
+            "external_git": 0.19510433499726787,
+            "server_shutdown": 0.5785482930004946,
+            "worker_other": 0.15840008099985425
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "profiled": {
+          "total_seconds": 2.403270916999645,
+          "partition_seconds": {
+            "cli": 1.5022122090003904,
+            "external_git": 0.2148818339992431,
+            "server_shutdown": 0.5235777909992976,
+            "worker_other": 0.16259908300071402
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "cli_partition_seconds": {
+            "records": 0.015761841998937598,
+            "validation": 0.01771586600352748,
+            "storage": 0.018368038001426612,
+            "git": 0.0,
+            "other": 0.26763383799607254,
+            "startup": 1.0479705010002363,
+            "launcher_exit_residual": 0.13476212400018994
+          },
+          "cli_calls": {
+            "records": 64,
+            "validation": 288,
+            "storage": 74,
+            "git": 0,
+            "other": 20
+          },
+          "startup_diagnostics_seconds": {
+            "parent_launch_to_entry": 0.3833341270019446,
+            "launcher_setup_and_imports": 0.5526431670023157
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "short_poll": {
+          "total_seconds": 1.5751002079996397,
+          "partition_seconds": {
+            "cli": 1.267223874996489,
+            "external_git": 0.1791875839999193,
+            "server_shutdown": 0.012785625000105938,
+            "worker_other": 0.11590312400312541
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "order": [
+        "profiled",
+        "short_poll",
+        "baseline"
+      ],
+      "results": {
+        "profiled": {
+          "total_seconds": 2.163092749999123,
+          "partition_seconds": {
+            "cli": 1.2876530819976324,
+            "external_git": 0.17508324900154548,
+            "server_shutdown": 0.5685685409998769,
+            "worker_other": 0.1317878780000683
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "cli_partition_seconds": {
+            "records": 0.01411541800825944,
+            "validation": 0.016337295989615086,
+            "storage": 0.015555457000118622,
+            "git": 0.0,
+            "other": 0.24440516400318302,
+            "startup": 0.8821473739981229,
+            "launcher_exit_residual": 0.1150923729983333
+          },
+          "cli_calls": {
+            "records": 64,
+            "validation": 288,
+            "storage": 74,
+            "git": 0,
+            "other": 20
+          },
+          "startup_diagnostics_seconds": {
+            "parent_launch_to_entry": 0.32532645699939167,
+            "launcher_setup_and_imports": 0.4655987489995823
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "short_poll": {
+          "total_seconds": 1.6652424579997387,
+          "partition_seconds": {
+            "cli": 1.3523363719987174,
+            "external_git": 0.17926975199952722,
+            "server_shutdown": 0.008721125000192842,
+            "worker_other": 0.12491520900130126
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "baseline": {
+          "total_seconds": 2.238951124999403,
+          "partition_seconds": {
+            "cli": 1.32166645900179,
+            "external_git": 0.1773445000017091,
+            "server_shutdown": 0.5853967079992799,
+            "worker_other": 0.15454345799662406
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "order": [
+        "short_poll",
+        "baseline",
+        "profiled"
+      ],
+      "results": {
+        "short_poll": {
+          "total_seconds": 1.6316992500005654,
+          "partition_seconds": {
+            "cli": 1.3150109620000876,
+            "external_git": 0.1815158750032424,
+            "server_shutdown": 0.01634108400048717,
+            "worker_other": 0.1188313289967482
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "baseline": {
+          "total_seconds": 2.263252707999527,
+          "partition_seconds": {
+            "cli": 1.3445062070004496,
+            "external_git": 0.1833695400000579,
+            "server_shutdown": 0.5690706659997886,
+            "worker_other": 0.16630629499923089
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        },
+        "profiled": {
+          "total_seconds": 2.283815999999206,
+          "partition_seconds": {
+            "cli": 1.3733415410015368,
+            "external_git": 0.18285179099984816,
+            "server_shutdown": 0.5563790000005611,
+            "worker_other": 0.17124366799725976
+          },
+          "counts": {
+            "zar_cli": 20,
+            "git": 13,
+            "git_commit": 4,
+            "approval": 4,
+            "provider": 14,
+            "server_shutdown": 2
+          },
+          "cli_partition_seconds": {
+            "records": 0.014422254002965929,
+            "validation": 0.01655386399852432,
+            "storage": 0.016787793999355927,
+            "git": 0.0,
+            "other": 0.25437967099878733,
+            "startup": 0.9430801250036893,
+            "launcher_exit_residual": 0.128117832998214
+          },
+          "cli_calls": {
+            "records": 64,
+            "validation": 288,
+            "storage": 74,
+            "git": 0,
+            "other": 20
+          },
+          "startup_diagnostics_seconds": {
+            "parent_launch_to_entry": 0.3535020409999561,
+            "launcher_setup_and_imports": 0.4926672099991265
+          },
+          "verified": {
+            "verified": true,
+            "baseline_score": 4.940894744681347,
+            "candidate_score": 0.022256767659429855,
+            "improvement": 4.918637977021917,
+            "execution_count": 2,
+            "resumed_without_execution": true
+          }
+        }
+      }
+    }
+  ],
+  "median": {
+    "baseline": {
+      "total_seconds": 2.238951124999403,
+      "partition_seconds": {
+        "cli": 1.32166645900179,
+        "external_git": 0.1833695400000579,
+        "server_shutdown": 0.5785482930004946,
+        "worker_other": 0.15840008099985425
+      }
+    },
+    "profiled": {
+      "total_seconds": 2.283815999999206,
+      "partition_seconds": {
+        "cli": 1.3733415410015368,
+        "external_git": 0.18285179099984816,
+        "server_shutdown": 0.5563790000005611,
+        "worker_other": 0.16259908300071402
+      },
+      "cli_partition_seconds": {
+        "records": 0.014422254002965929,
+        "validation": 0.01655386399852432,
+        "storage": 0.016787793999355927,
+        "git": 0.0,
+        "other": 0.25437967099878733,
+        "startup": 0.9430801250036893,
+        "launcher_exit_residual": 0.128117832998214
+      },
+      "startup_diagnostics_seconds": {
+        "parent_launch_to_entry": 0.3535020409999561,
+        "launcher_setup_and_imports": 0.4926672099991265
+      }
+    },
+    "short_poll": {
+      "total_seconds": 1.6316992500005654,
+      "partition_seconds": {
+        "cli": 1.3150109620000876,
+        "external_git": 0.17926975199952722,
+        "server_shutdown": 0.012785625000105938,
+        "worker_other": 0.1188313289967482
+      }
+    }
+  },
+  "paired_deltas_seconds": [
+    {
+      "repeat": 1,
+      "profiling": 0.17806712499987043,
+      "short_poll": -0.650103584000135
+    },
+    {
+      "repeat": 2,
+      "profiling": -0.07585837500027992,
+      "short_poll": -0.5737086669996643
+    },
+    {
+      "repeat": 3,
+      "profiling": 0.020563291999678768,
+      "short_poll": -0.6315534579989617
+    }
+  ],
+  "limitations": [
+    "Local scripted fixture; no real LLM/API, token, quality or human-time claim.",
+    "CLI startup includes launcher imports/setup; eager instrumentation imports differ from python -m zar.",
+    "Profiled-minus-baseline includes instrumentation, launch differences and ordinary timing noise.",
+    "Record, validation, storage and internal Git times are exclusive; nested validation is removed from record loading.",
+    "Validation instruments validate_document, inspect_project, validate_response and validate_profile only; other checks remain other.",
+    "Only launcher/main-thread calls are timed; background work is included in other through waiting.",
+    "Storage measures atomic_write including fsync; locks, session reads and other work remain other.",
+    "CLI partition is nested inside workflow cli; startup diagnostics are nested inside startup. Do not add them again.",
+    "Per-sample partitions sum to total; independently computed medians need not sum.",
+    "Short poll changes mock server waiting only, not product or API latency; more wakeups may cost CPU.",
+    "Three configurations rotate order; no warmup, cache control or statistical significance claim.",
+    "Observed-boundary process restart is verified; abrupt-crash behavior is covered separately by recovery tests."
+  ]
+}

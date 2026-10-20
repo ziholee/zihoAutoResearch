@@ -385,6 +385,20 @@ def verify(dist: Path, checkout: Path | None = None) -> None:
         require(sum(summary['total_input_components_bytes'].values())
                 == summary['total_input_message_bytes'], 'Request components do not partition input')
         print('PASS: installed wheel + sdist request context measurement; fourteen mock calls and safe resume')
+        costs = source / 'scripts/benchmark_local_loop_costs.py'
+        require(costs.is_file(), 'Source distribution is missing local loop cost benchmark')
+        output = workspace / 'local-loop-costs'
+        summary = json.loads(run([str(python), '-I', str(costs), '--output', str(output),
+                                  '--repeats', '1'], workspace, environment, timeout=540))
+        require(summary == json.loads((output / 'summary.json').read_text(encoding='utf-8')),
+                'Local loop cost stdout and summary differ')
+        for row in summary['trials'][0]['results'].values():
+            require(row['verified']['verified'] and row['verified']['execution_count'] == 2
+                    and row['verified']['resumed_without_execution'],
+                    'Local loop profiling changed workflow evidence')
+            require(row['counts']['zar_cli'] == 20 and row['counts']['approval'] == 4
+                    and row['counts']['provider'] == 14, 'Local loop workflow changed')
+        print('PASS: installed wheel + sdist local cost attribution; no timing superiority gate')
     print('Package verification passed; local synthetic examples only, no cloud model calls.')
 
 
