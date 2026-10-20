@@ -1,0 +1,428 @@
+{
+  "measurement": {
+    "date": "2026-10-20",
+    "source_base_commit": "25edfaee2fce8dbf4096bd09e8f2d86895267928",
+    "baseline": "Base request construction plus component measurement instrumentation; no context optimization.",
+    "limitations": "Two separate deterministic mock runs; not real model quality, token, cost or speed evidence."
+  },
+  "before": {
+    "version": 1,
+    "requests": 14,
+    "execution_count": 2,
+    "resumed_without_execution": true,
+    "scores": {
+      "baseline": 4.940894744681347,
+      "candidate": 0.022256767659429855
+    },
+    "sessions": {
+      "baseline": [
+        {
+          "role": "analysis",
+          "input_message_bytes": 5222,
+          "input_components_bytes": {
+            "instructions": 1896,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 12,
+            "other": 1273,
+            "framing": 22
+          }
+        },
+        {
+          "role": "evaluation",
+          "input_message_bytes": 5466,
+          "input_components_bytes": {
+            "instructions": 2023,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 127,
+            "other": 1275,
+            "framing": 22
+          }
+        },
+        {
+          "role": "planning",
+          "input_message_bytes": 5476,
+          "input_components_bytes": {
+            "instructions": 1913,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 249,
+            "other": 1273,
+            "framing": 22
+          }
+        },
+        {
+          "role": "implementation",
+          "input_message_bytes": 5813,
+          "input_components_bytes": {
+            "instructions": 2040,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 453,
+            "other": 1279,
+            "framing": 22
+          }
+        },
+        {
+          "role": "review",
+          "input_message_bytes": 5907,
+          "input_components_bytes": {
+            "instructions": 2020,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 575,
+            "other": 1271,
+            "framing": 22
+          }
+        },
+        {
+          "role": "interpretation",
+          "input_message_bytes": 9909,
+          "input_components_bytes": {
+            "instructions": 2033,
+            "sources": 895,
+            "records": 4953,
+            "outputs": 693,
+            "other": 1313,
+            "framing": 22
+          }
+        },
+        {
+          "role": "memory",
+          "input_message_bytes": 12352,
+          "input_components_bytes": {
+            "instructions": 2019,
+            "sources": 895,
+            "records": 7199,
+            "outputs": 878,
+            "other": 1339,
+            "framing": 22
+          }
+        }
+      ],
+      "candidate": [
+        {
+          "role": "analysis",
+          "input_message_bytes": 7686,
+          "input_components_bytes": {
+            "instructions": 1896,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 12,
+            "other": 1343,
+            "framing": 22
+          }
+        },
+        {
+          "role": "evaluation",
+          "input_message_bytes": 7930,
+          "input_components_bytes": {
+            "instructions": 2023,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 127,
+            "other": 1345,
+            "framing": 22
+          }
+        },
+        {
+          "role": "planning",
+          "input_message_bytes": 7940,
+          "input_components_bytes": {
+            "instructions": 1913,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 249,
+            "other": 1343,
+            "framing": 22
+          }
+        },
+        {
+          "role": "implementation",
+          "input_message_bytes": 8277,
+          "input_components_bytes": {
+            "instructions": 2040,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 453,
+            "other": 1349,
+            "framing": 22
+          }
+        },
+        {
+          "role": "review",
+          "input_message_bytes": 8786,
+          "input_components_bytes": {
+            "instructions": 2020,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 990,
+            "other": 1341,
+            "framing": 22
+          }
+        },
+        {
+          "role": "interpretation",
+          "input_message_bytes": 14014,
+          "input_components_bytes": {
+            "instructions": 2033,
+            "sources": 1073,
+            "records": 8395,
+            "outputs": 1108,
+            "other": 1383,
+            "framing": 22
+          }
+        },
+        {
+          "role": "memory",
+          "input_message_bytes": 16400,
+          "input_components_bytes": {
+            "instructions": 2019,
+            "sources": 1073,
+            "records": 10607,
+            "outputs": 1304,
+            "other": 1375,
+            "framing": 22
+          }
+        }
+      ]
+    },
+    "total_input_message_bytes": 121178,
+    "total_input_components_bytes": {
+      "instructions": 27888,
+      "sources": 12886,
+      "records": 54364,
+      "outputs": 7230,
+      "other": 18502,
+      "framing": 308
+    },
+    "environment": {
+      "python": "3.11.17",
+      "platform": "Darwin"
+    },
+    "source_sha256": {
+      "examples/ml-loop.py": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d",
+      "zar/research.py": "ed6208aa820ac705336b181fa072850f37e3596f788a9317ee8c6c4bddc84889",
+      "zar/roles.py": "e3d7f90c78d454ec2991011d7d01c3056df3373f8b693ea0f87946824ebdef61",
+      "zar/call_metrics.py": "ccf91125218a140103694d1191bf1bb99e4ee018f5abeb2ad322ab61b2f244c7",
+      "scripts/benchmark_request_context.py": "243a60ae42bcb819cf1b9a007bf9d083133244e8e481810b29a209f222c62db1"
+    },
+    "limitations": [
+      "Prepared UTF-8 message content, not network bytes, tokens or monetary cost.",
+      "Deterministic mock responses do not validate real-model judgment quality.",
+      "Synthetic fixed workflow; no human effort or performance superiority claim.",
+      "Local workflow files retain evidence; this report contains no prompts or local paths."
+    ]
+  },
+  "after": {
+    "version": 1,
+    "requests": 14,
+    "execution_count": 2,
+    "resumed_without_execution": true,
+    "scores": {
+      "baseline": 4.940894744681347,
+      "candidate": 0.022256767659429855
+    },
+    "sessions": {
+      "baseline": [
+        {
+          "role": "analysis",
+          "input_message_bytes": 4936,
+          "input_components_bytes": {
+            "instructions": 1610,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 12,
+            "other": 1273,
+            "framing": 22
+          }
+        },
+        {
+          "role": "evaluation",
+          "input_message_bytes": 5180,
+          "input_components_bytes": {
+            "instructions": 1737,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 127,
+            "other": 1275,
+            "framing": 22
+          }
+        },
+        {
+          "role": "planning",
+          "input_message_bytes": 5190,
+          "input_components_bytes": {
+            "instructions": 1627,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 249,
+            "other": 1273,
+            "framing": 22
+          }
+        },
+        {
+          "role": "implementation",
+          "input_message_bytes": 5813,
+          "input_components_bytes": {
+            "instructions": 2040,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 453,
+            "other": 1279,
+            "framing": 22
+          }
+        },
+        {
+          "role": "review",
+          "input_message_bytes": 5907,
+          "input_components_bytes": {
+            "instructions": 2020,
+            "sources": 895,
+            "records": 1124,
+            "outputs": 575,
+            "other": 1271,
+            "framing": 22
+          }
+        },
+        {
+          "role": "interpretation",
+          "input_message_bytes": 9623,
+          "input_components_bytes": {
+            "instructions": 1747,
+            "sources": 895,
+            "records": 4953,
+            "outputs": 693,
+            "other": 1313,
+            "framing": 22
+          }
+        },
+        {
+          "role": "memory",
+          "input_message_bytes": 12066,
+          "input_components_bytes": {
+            "instructions": 1733,
+            "sources": 895,
+            "records": 7199,
+            "outputs": 878,
+            "other": 1339,
+            "framing": 22
+          }
+        }
+      ],
+      "candidate": [
+        {
+          "role": "analysis",
+          "input_message_bytes": 7400,
+          "input_components_bytes": {
+            "instructions": 1610,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 12,
+            "other": 1343,
+            "framing": 22
+          }
+        },
+        {
+          "role": "evaluation",
+          "input_message_bytes": 7644,
+          "input_components_bytes": {
+            "instructions": 1737,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 127,
+            "other": 1345,
+            "framing": 22
+          }
+        },
+        {
+          "role": "planning",
+          "input_message_bytes": 7654,
+          "input_components_bytes": {
+            "instructions": 1627,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 249,
+            "other": 1343,
+            "framing": 22
+          }
+        },
+        {
+          "role": "implementation",
+          "input_message_bytes": 8277,
+          "input_components_bytes": {
+            "instructions": 2040,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 453,
+            "other": 1349,
+            "framing": 22
+          }
+        },
+        {
+          "role": "review",
+          "input_message_bytes": 8786,
+          "input_components_bytes": {
+            "instructions": 2020,
+            "sources": 895,
+            "records": 3518,
+            "outputs": 990,
+            "other": 1341,
+            "framing": 22
+          }
+        },
+        {
+          "role": "interpretation",
+          "input_message_bytes": 13710,
+          "input_components_bytes": {
+            "instructions": 1896,
+            "sources": 1073,
+            "records": 8395,
+            "outputs": 905,
+            "other": 1418,
+            "framing": 23
+          }
+        },
+        {
+          "role": "memory",
+          "input_message_bytes": 16096,
+          "input_components_bytes": {
+            "instructions": 1882,
+            "sources": 1073,
+            "records": 10607,
+            "outputs": 1101,
+            "other": 1410,
+            "framing": 23
+          }
+        }
+      ]
+    },
+    "total_input_message_bytes": 118282,
+    "total_input_components_bytes": {
+      "instructions": 25326,
+      "sources": 12886,
+      "records": 54364,
+      "outputs": 6824,
+      "other": 18572,
+      "framing": 310
+    },
+    "environment": {
+      "python": "3.11.17",
+      "platform": "Darwin"
+    },
+    "source_sha256": {
+      "examples/ml-loop.py": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d",
+      "zar/research.py": "f7b54998e948b4221102a2a4cad4ae2015e017299b1a0fb32d5dc80e9311a0b1",
+      "zar/roles.py": "6503373f6f0c26624bec0a1104c0573fbc67cfeb76a11084eb9e65e811b3edd0",
+      "zar/call_metrics.py": "ccf91125218a140103694d1191bf1bb99e4ee018f5abeb2ad322ab61b2f244c7",
+      "scripts/benchmark_request_context.py": "d07db00c42d61cda74fe8b9635753f892a242987609fd6c5fa9fbc2d248b06a1"
+    },
+    "limitations": [
+      "Prepared UTF-8 message content, not network bytes, tokens or monetary cost.",
+      "Deterministic mock responses do not validate real-model judgment quality.",
+      "Synthetic fixed workflow; no human effort or performance superiority claim.",
+      "Local workflow files retain evidence; this report contains no prompts or local paths."
+    ]
+  }
+}

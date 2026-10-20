@@ -211,6 +211,10 @@ python examples/api-loop.py --output ./api-loop-demo
 
 역할별 JSON 맥락은 내용 손실 없이 공백을 줄여 전송하고, 호출 전 검사에서 읽은 기록을 같은 잠금 구간의 맥락 생성에 재사용합니다. 모델 응답 후에는 신선도를 다시 확인합니다. 7개 역할 호출과 승인 경계는 유지하며 실제 공급자 지연·토큰 비용은 아직 측정하지 않았습니다. [모의 루프 측정 결과와 재현 방법](research-loop-performance.md)을 참고하세요.
 
+개발 소스의 역할 지침 버전은 `2`입니다. 변경 제안 `changes`의 상세 문법은 이를 출력하는 구현 역할과 제안을 검토하는 변경 검토 역할에 유지하고, 나머지 5개 역할에서는 생략합니다. 역할별 출력 스키마·응답 검증·승인 절차는 바꾸지 않습니다.
+
+실행 후 결과 해석·기억 역할의 전송 사본에서는 구현 제안의 `content`가 같은 요청의 `sources[path].content`와 정확히 같고 SHA-256도 일치할 때만 `content_ref: { "path": "...", "sha256": "..." }`로 참조할 수 있습니다. `context_encoding: "source_refs_v1"` 표시와 참조 해석 지침을 포함해 전체 메시지가 실제로 작아질 때만 적용합니다. 참조는 같은 메시지 안의 원문을 가리키며 별도 파일 조회나 도구 호출을 요구하지 않습니다. 저장된 제안·승인 입력과 실행 전 검토의 원본 소스·제안 전문은 그대로 보존합니다. 측정·보존 조건과 한계는 [요청 맥락 효율화](request-context-efficiency.md)를 참고하세요. 모의 공급자 검증으로 실제 모델의 해석 품질이나 비용 절감을 입증하지 않습니다.
+
 
 ### 역할별 호출 측정 조회
 
@@ -226,10 +230,24 @@ JSON 결과의 `data`는 `view: "research_metrics"`, `session_id`, `state`, `ver
 |---|---|
 | `call_seconds` | 로컬 호출 함수의 경과 초. 공급자 대기와 Codex 사전 확인·종료 정리를 포함하며 맥락 준비·역할 응답 검증은 제외 |
 | `input_message_bytes` | 호출을 위해 준비한 system/user 메시지 본문의 UTF-8 바이트 합. HTTP/프로세스 포장·헤더를 제외하며 실제 전송 완료를 입증하지 않음 |
+| `input_components_bytes.*` | 준비한 입력 메시지를 지침·소스·기록·누적 응답·기타·JSON 구분자로 나눈 UTF-8 바이트 |
 | `output_text_bytes` | 어댑터가 반환한 assistant 본문의 UTF-8 바이트. 원시 공급자 응답·헤더·Codex 이벤트 전체 크기가 아님 |
 | `tokens.input_tokens` / `output_tokens` / `total_tokens` / `cached_input_tokens` | 공급자가 보고한 해당 토큰 수. HTTP의 prompt/completion 및 Codex의 input/output 항목을 공통 이름으로 정규화 |
 
 각 측정값은 `{ "value": 합계 또는 null, "observations": 관측 수 }`입니다. 예를 들어 시도 3회 중 입력 토큰이 2회만 보고되면 그 두 값만 합산하고 `observations: 2`로 표시합니다. 관측이 전혀 없으면 `value: null`, `observations: 0`이며 실제 보고된 0은 `value: 0`입니다. `measured_attempts`는 측정 레코드가 있는 시도 수로, 모든 항목을 관측했다는 뜻이 아닙니다. 합계를 비교할 때는 반드시 항목별 관측 수를 함께 확인하세요.
+
+`input_components_bytes`는 기존 측정 버전 `1`에 추가된 선택 항목이며 새 CLI 명령은 없습니다. trace에는 아래 항목별 정수 또는 분해 전체의 `null`을 기록하고, `research metrics`는 각 항목을 위의 합계·관측 수 형태로 반환합니다.
+
+| 분해 항목 | 포함 내용 |
+|---|---|
+| `instructions` | system 메시지 전문 |
+| `sources` | user JSON의 `sources` 필드 |
+| `records` | `records`, `observation`, `comparison`, `prior_lessons`, `next_context`, `revision_context` 필드 |
+| `outputs` | 누적 역할 응답인 `outputs` 필드 |
+| `other` | 위 항목 외의 user JSON 필드 |
+| `framing` | user JSON 최상위 중괄호와 필드 사이 쉼표 |
+
+각 JSON 필드의 크기는 필드 이름·콜론·값을 함께 세며, 문자열 이스케이프와 중첩 JSON 구분자도 포함합니다. 따라서 한 시도의 유효한 6개 분해값 합은 해당 `input_message_bytes`와 정확히 같습니다. 합계가 맞지 않거나 일부 항목이 없거나 잘못된 분해는 집계하지 않습니다. 분해 측정 이전 기록이나 지원하지 않는 메시지 형식은 소급 계산하거나 0으로 채우지 않습니다. 전체 입력 크기와 분해 크기의 관측 수가 다르면 누적 합끼리도 같지 않을 수 있습니다. 분해 측정을 위해 메시지 원문을 추가 저장하지 않습니다.
 
 토큰은 유효한 비음수 정수만 집계합니다. 현재 HTTP 어댑터는 중첩된 캐시 사용량을 전달하지 않으므로 `cached_input_tokens`는 미확인으로 남으며, Codex가 보고한 캐시 입력 토큰은 집계합니다. 공급자가 `total_tokens`를 생략해도 입력·출력의 합으로 채우지 않으며 캐시 토큰을 입력에서 빼지 않습니다. 토큰 없는 응답, 실패·타임아웃, 역할 형식이 잘못된 응답도 확보한 측정만 남깁니다. 재시도는 별도 시도로 집계합니다. 과거 기록은 소급 측정하지 않고, 호출 시도 수는 저장했으나 trace를 남기기 전에 중단된 경우 세션 전체의 `unmeasured_attempts`에 차이가 남습니다. 역할을 알 수 없는 누락은 역할별 합계에 배분하지 않습니다.
 

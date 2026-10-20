@@ -32,7 +32,7 @@ Use `baseline` mode to measure the current original code without model edits. Ca
 
 In development source, select installed Codex with `research start --provider codex --codex-command codex --model <model>` or choose the backend in `research setup`. This requires a trusted Codex CLI 0.162.1 or later on macOS/Linux. It uses existing Codex authentication and may send context to a billable model service. Codex returns proposals; zar retains its transmission, execution and decision approval steps. Validation uses a fake agent; actual Codex authentication/inference remain unverified. See [connection scope and limits](docs/research-api.md#설치된-codex로-연결하기).
 
-In development source, `zar research metrics SESSION_ID --project ./my-ml-project --json` reports role-call time, message bytes and reported token usage. Missing values and partial observations remain explicit; it does not estimate delivered network traffic or cost. See [measurement scope](docs/research-api.md#역할별-호출-측정-조회).
+In development source, `zar research metrics SESSION_ID --project ./my-ml-project --json` reports role-call time, message bytes and reported token usage. Missing values and partial observations remain explicit; it does not estimate delivered network traffic or cost. See [measurement scope](docs/research-api.md#역할별-호출-측정-조회). See [request context efficiency](docs/request-context-efficiency.md) for input bytes by instructions, sources, records and accumulated responses, and deduplication that preserves required evidence. Actual API quality and cost remain unverified.
 
 `zar` is **the abbreviation for zihoAutoResearch and its executable command**. The package you install is named `ziho-autoresearch`; after installation, use commands such as `zar init` and `zar status`.
 

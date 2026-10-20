@@ -15,10 +15,10 @@ import stat
 from types import SimpleNamespace
 from uuid import uuid4
 
-from .call_metrics import new_measurement, measure_messages, record_answer, summarize
+from .call_metrics import new_measurement, measure_messages, measure_input_components, record_answer, summarize
 from .codec import dumps, loads
 from .llm import chat, validate_profile, LLMError
-from .roles import role_messages, validate_response, RoleError, ROLE_VERSION
+from .roles import compact_context, role_messages, validate_response, RoleError, ROLE_VERSION
 from .runner import run
 from .storage import atomic_write, project_lock
 
@@ -290,8 +290,10 @@ def advance(root,identifier,*,send=False):
         try:
             profile=deepcopy(s['profile'])
             profile['timeout_seconds']=min(float(profile.get('timeout_seconds',60)),max(0.1,float(s['deadline'])-datetime.now(timezone.utc).timestamp()))
-            messages=role_messages(role,json.loads(dumps(payload)))
+            payload=compact_context(role,json.loads(dumps(payload)))
+            messages=role_messages(role,payload)
             measurement['input_message_bytes']=measure_messages(messages)
+            measurement['input_components_bytes']=measure_input_components(messages)
             started=time.perf_counter()
             try:
                 answer=call_api(profile,messages,float(s['deadline'])-datetime.now(timezone.utc).timestamp())
