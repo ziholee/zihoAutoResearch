@@ -249,7 +249,11 @@ def _prior_lessons(root,s,cache=None):
             if old['state']=='complete' and 'memory' in old['outputs']:
                 lesson=dict(session_id=old['id'],experiment_id=old['experiment_id'],
                             proposal=old['outputs']['memory'],created_at=old['created_at'])
-        if lesson is not None:lessons.append(lesson)
+        if lesson is not None:
+            # Retain only selected memories outside the bounded parsing cache.
+            # Stable sorting preserves filename order for equal timestamps.
+            lessons.append(lesson)
+            lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
         if cache is not None and len(updated)<HISTORY_CACHE_MAX_ENTRIES and retained_bytes+len(raw)<=HISTORY_CACHE_MAX_BYTES:
             updated[path.stem]=(identity,lesson,len(raw));retained_bytes+=len(raw)
     if cache is not None:
