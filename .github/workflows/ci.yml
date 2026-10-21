@@ -32,6 +32,12 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Measure local CI environment
         run: python scripts/profile_ci_environment.py --output "${{ runner.temp }}/zar-ci-costs/environment.json"
+      - name: Preserve environment probe before integration tests
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-environment-${{ matrix.os }}-${{ matrix.python }}
+          path: ${{ runner.temp }}/zar-ci-costs/environment.json
+          retention-days: 7
       - run: python -m unittest discover -s tests -v
         env:
           ZAR_CI_COST_DIR: ${{ runner.temp }}/zar-ci-costs
