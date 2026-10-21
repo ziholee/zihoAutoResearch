@@ -43,6 +43,8 @@ def loads(text):
 
 def dumps(value, *, ensure_ascii=False):
     """Serialize JSON without rounding Decimal values through binary floats."""
+    # Reuse scalar quoting configuration within this call, never cached documents.
+    scalar_encoder = json.JSONEncoder(ensure_ascii=ensure_ascii, allow_nan=False).encode
     def encode(item):
         if item is None:
             return "null"
@@ -59,9 +61,9 @@ def dumps(value, *, ensure_ascii=False):
         if isinstance(item, float):
             if not math.isfinite(item):
                 raise ValueError("Non-finite float")
-            return json.dumps(item, allow_nan=False)
+            return scalar_encoder(item)
         if isinstance(item, str):
-            return json.dumps(item, ensure_ascii=ensure_ascii)
+            return scalar_encoder(item)
         if isinstance(item, list):
             return "[" + ", ".join(map(encode, item)) + "]"
         if isinstance(item, dict):
