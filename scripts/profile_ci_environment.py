@@ -4,7 +4,6 @@ import argparse
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import socket
-import os
 from pathlib import Path
 import platform
 import statistics
@@ -14,7 +13,7 @@ import time
 import urllib.request
 
 
-def measure(repeats=3):
+def measure(repeats=3, *, hostname_probe=False):
     # Child startup includes waiting/capture and process exit. No network requests.
     operations = {
         'python_child': lambda: subprocess.run([sys.executable, '-c', 'pass'], check=True, capture_output=True, timeout=30),
@@ -29,26 +28,27 @@ def measure(repeats=3):
             operation()
             rows.append(time.perf_counter() - started)
         samples[name] = dict(seconds=rows, median_seconds=statistics.median(rows))
-    # HTTPServer.server_bind resolves its server name even for a loopback-only
-    # mock. Attribute that lookup separately without changing its behavior.
-    lookup = []
-    original = socket.getfqdn
-    def timed_lookup(*args, **kwargs):
+    if hostname_probe:
+        # HTTPServer.server_bind resolves its server name even for a loopback-only
+        # mock. Attribute that lookup separately without changing its behavior.
+        lookup = []
+        original = socket.getfqdn
+        def timed_lookup(*args, **kwargs):
+            started = time.perf_counter()
+            try:
+                return original(*args, **kwargs)
+            finally:
+                lookup.append(time.perf_counter() - started)
+        socket.getfqdn = timed_lookup
         started = time.perf_counter()
         try:
-            return original(*args, **kwargs)
+            server = HTTPServer(('127.0.0.1', 0), BaseHTTPRequestHandler)
+            server.server_close()
         finally:
-            lookup.append(time.perf_counter() - started)
-    socket.getfqdn = timed_lookup
-    started = time.perf_counter()
-    try:
-        server = HTTPServer(('127.0.0.1', 0), BaseHTTPRequestHandler)
-        server.server_close()
-    finally:
-        socket.getfqdn = original
-    elapsed = time.perf_counter() - started
-    samples['loopback_server_construction'] = dict(seconds=[elapsed],
-        hostname_lookup_seconds=lookup, other_seconds=elapsed-sum(lookup))
+            socket.getfqdn = original
+        elapsed = time.perf_counter() - started
+        samples['loopback_server_construction'] = dict(seconds=[elapsed],
+            hostname_lookup_seconds=lookup, other_seconds=elapsed-sum(lookup))
     return dict(version=1, python=platform.python_version(), platform=platform.system(),
                 machine=platform.machine(), samples=samples,
                 limitations=['No HTTP request or real API; server construction may invoke the OS hostname resolver.',
@@ -59,9 +59,11 @@ def measure(repeats=3):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--hostname-probe', action='store_true',
+                        help='Also time the standard server hostname lookup; may wait on OS DNS')
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    result = measure()
+    result = measure(hostname_probe=args.hostname_probe)
     args.output.write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(result))
 

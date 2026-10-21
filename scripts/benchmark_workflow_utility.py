@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import platform
 import runpy
+from socketserver import TCPServer
 import statistics
 import subprocess
 import sys
@@ -37,6 +38,18 @@ PROTECTED = ('evaluate.py', 'train.json', 'holdout.json')
 def require(condition, message):
     if not condition:
         raise RuntimeError(message)
+
+
+class LoopbackServer(ThreadingHTTPServer):
+    """The benchmark uses a numeric loopback address, never reverse DNS."""
+    allow_reuse_address = True
+
+    def server_bind(self):
+        require(self.server_address[0] == '127.0.0.1',
+                'Benchmark server must bind to 127.0.0.1')
+        TCPServer.server_bind(self)
+        self.server_name = 'localhost'
+        self.server_port = self.server_address[1]
 
 
 def save(path, value):
@@ -230,10 +243,7 @@ def worker(output, arm, resume, *, profile_cli=False, poll_interval=0.01):
                   input_message_bytes=sum(len(m['content'].encode()) for m in payload['messages']),
                   output_text_bytes=len(json.dumps(body).encode()), response=body)
 
-    class Server(ThreadingHTTPServer):
-        allow_reuse_address = True
-
-    server = Server(('127.0.0.1', checkpoint['port'] if resume else 0), Handler)
+    server = LoopbackServer(('127.0.0.1', checkpoint['port'] if resume else 0), Handler)
     thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval': poll_interval}, daemon=True)
     thread.start()
     url = f'http://127.0.0.1:{server.server_port}/v1'
