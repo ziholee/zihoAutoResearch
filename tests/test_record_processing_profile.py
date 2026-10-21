@@ -47,7 +47,9 @@ class RecordProcessingProfileTests(unittest.TestCase):
     def test_small_paired_profile_has_same_cli_semantics(self):
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp) / 'profile'
-            result = subprocess.run([sys.executable, '-I', str(SCRIPT), '--source', str(ROOT),
+            # -I ignores CI's PYTHONUTF8 environment setting; retain the
+            # repository's UTF-8 mode explicitly in this isolated child.
+            result = subprocess.run([sys.executable, '-I', '-X', 'utf8', str(SCRIPT), '--source', str(ROOT),
                 '--output', str(output), '--records', '2', '--repeats', '1'],
                 capture_output=True, text=True, timeout=60)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
