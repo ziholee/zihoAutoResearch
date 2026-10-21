@@ -74,7 +74,9 @@ class HistoryBoundaryTests(unittest.TestCase):
         for delta in (-1, 0, 1):
             newest = self.write(7, size + delta)
             cache = {}
-            self.assertEqual(sum(p.stat().st_size for p in self.directory.glob('*.json')), limit + delta)
+            # Cache coverage counts text after universal-newline normalization.
+            self.assertEqual(sum(len(p.read_text(encoding='utf-8').encode('utf-8'))
+                                 for p in self.directory.glob('*.json')), limit + delta)
             self.select(cache)
             with patch.object(research, 'loads', wraps=research.loads) as parse:
                 selected = self.select(cache)
