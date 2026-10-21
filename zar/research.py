@@ -223,13 +223,16 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
         s['revision_context_hash']=digest(revision_context)
     save(root,s);return view(s)
 
-def context(root,s,role,*,checked=None):
+def context(root,s,role,*,checked=None,record_context=None):
     from . import cli
     if checked is None:
         p=get_project(root);snap=cli.load_records(root,p)
     else:
         p,snap=checked
-    data,_=cli.build_context(p,snap.records,[],max_bytes=16384)
+    if record_context is None:
+        data,_=cli.build_context(p,snap.records,[],max_bytes=16384)
+    else:
+        data=deepcopy(record_context)
     observation=snap.records['experiment'].get(s['experiment_id'])
     comparison=None
     if observation and observation['baseline_id']:
@@ -274,6 +277,9 @@ def call_api(profile,messages,remaining):
 def advance(root,identifier,*,send=False):
     require(send,'Use --send after reviewing session transmission scope; no model request sent.')
     from . import cli
+    # Only the bounded projection survives a lock phase, never a reusable snapshot.
+    # Each role still rereads/checks records before and after its model call.
+    projection_key=None;record_context=None
     while True:
         with project_lock(root/'.autoresearch'):
             s=load(root,identifier)
@@ -286,7 +292,11 @@ def advance(root,identifier,*,send=False):
             require(role is not None,'No pending role.')
             prior=s['state'];s['state']='calling';s['active_role']=role;s['return_state']=prior
             s['calls']+=1;s['error']=None
-            payload=context(root,s,role,checked=checked);save(root,s)
+            key=(s['project_hash'],s['records_hash'])
+            if key!=projection_key:
+                record_context,_=cli.build_context(checked[0],checked[1].records,[],max_bytes=16384)
+                projection_key=key
+            payload=context(root,s,role,checked=checked,record_context=record_context);save(root,s)
         measurement=new_measurement()
         try:
             profile=deepcopy(s['profile'])
