@@ -1,0 +1,452 @@
+{
+  "run_id": 39593526762,
+  "commit": "4b51db9a220ee3c262db414ea64a405e12b02c10",
+  "kind": "github_macos_ci_baseline",
+  "reports": {
+    "local-loop-costs": {
+      "version": 1,
+      "python": "3.14.8",
+      "platform": "Darwin",
+      "source_sha256": {
+        "zar/__init__.py": "ac8b72031bbdfd0e7ea4e64aeb96e13708cf0eb728f997009460e6aba829afe3",
+        "zar/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "zar/call_metrics.py": "ccf91125218a140103694d1191bf1bb99e4ee018f5abeb2ad322ab61b2f244c7",
+        "zar/candidates.py": "fb470be010b20895d876acdaaee9063006597e3d307b54e62d0aac1cb22f98c5",
+        "zar/cli.py": "05f35333ab942663f0388eb513b4d8d5381bb917f05e3bf39a91e6716081cf66",
+        "zar/codec.py": "76b0ff347bb2cfe15cc02b3654a4918c777b47c8307c28509e9940199366fcee",
+        "zar/codex_agent.py": "a02e3d4345a37241a807dfc17fa50fd7ce98100b4c346b7cc9cb845ee55653f9",
+        "zar/comparisons.py": "6449fa517325771a0eeaf8715929acbbe691ff9462b3932af4d3a913c805a52f",
+        "zar/context.py": "d8ea44a11d11a226e39cef9c43dea6334e2262c787c70985b5777ed92658339d",
+        "zar/continuation.py": "e78b8db7c20b1ce9559d43c792b35b2a5260f6c2dc937bcd5ae69806214976f8",
+        "zar/evidence.py": "f24012799370766864056e68a2f1c0cd89b9565b59158ec9714f3cc0844f8ff1",
+        "zar/experiments.py": "152fff7db29be6ccdfd97f306f4fc08a1e499a80f09692418fc62fc7c6e431a0",
+        "zar/git_tracking.py": "1575e68244cf065cfd26f80ef8ffa4726e460d4568ab37e85d46b336920b11a5",
+        "zar/lineage.py": "80ae94a7bb6baf38a0c4aa0fb6e4eb07bfdce46eae4ffa9c2d838a3dd0202f60",
+        "zar/llm.py": "5a3f3729b99ec05df91783c09c0dfbcca4678d623cc43bbe480ce8b9411e1a23",
+        "zar/memories.py": "8db95b8a0e9038cc083ed549470a519a5bf759ef42623687e74d0bb1dfd9c04e",
+        "zar/records.py": "cf745b6d07d079a7016f9b1914695ad0c58a6c75122af51dc8dfb11f453f66aa",
+        "zar/reporting.py": "8a818004ecf8916e4af0cd795187069faf9f431f8421bc7f52e393c1d68cb960",
+        "zar/research.py": "b0ce2ca9f075cfd47dc279b5af61ce08b47c9f90c09e7df433ed165138cd9f62",
+        "zar/research_arguments.py": "1ffbe04432258f78d4639607b10a7a108223a2d57fe73ea96ada3c1467d22bdf",
+        "zar/reviews.py": "7307be4ce3873b22535b0fa5118d31ee944e7e00132e31d1be2c6eb637a1acf0",
+        "zar/revision.py": "f383c7164fa761769b1220bd6ea0ce9f17d673d9c8ee8f134337591515175481",
+        "zar/roles.py": "6503373f6f0c26624bec0a1104c0573fbc67cfeb76a11084eb9e65e811b3edd0",
+        "zar/runner.py": "e351a7934ca8d0805fffa00f6db5a4d549b39b204c601250b9f029660293d46a",
+        "zar/setup.py": "d8dfcca4b7fb3e21dfd89e3966f7a8e6fb8de2b8ac6eb178310bc3ebc6e9fc77",
+        "zar/skill_install.py": "fde9b5665100da85627ab82bfe8179b25948eba028107577cfd441d38f2ade13",
+        "zar/storage.py": "62affe8fedda7328751aad5d986167ddbd853416315ab0df8b26ef59c09f814b",
+        "zar/submissions.py": "fe7956af96fa990c2d6ac238c46556ed3547f9a662a835325fb51fd892df75e9",
+        "zar/validation.py": "69d4e05cde740380b5e0425210e9ae600cc7ef52f05a463dafacec99113df763",
+        "scripts/benchmark_workflow_utility.py": "5bb7a6705ae413525d9b8de91e3b462d8edbc6b77ec99d74c93362908d474e03",
+        "scripts/benchmark_local_loop_costs.py": "b475f4ed4d6eab66b4e7a8170bb364bf083e5aaa2d27836344712c8ca3cfca50",
+        "scripts/profile_local_cli.py": "18dbb528fe58ba7a7ad74ffad5b1a79e0a9857a713fa6307729f7383ecb5bf7c",
+        "examples/ml-loop.py": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d",
+        "tests/ci_cost_support.py": "da4b553881fc1067892e77e32c04c192735e6e35473851a22b5ee98ec0a914a5",
+        "tests/test_workflow_utility.py": "e6940dcfb35e548c9a5f3d94994fd9e175a0561fa9fc378c08ff317f7eb1caaf",
+        "tests/test_local_loop_costs.py": "658a340e2f639c9b68f0b977253700f856a81d32ff657d67caad2c67081d4551"
+      },
+      "configurations": {
+        "baseline": {
+          "profile_cli": false,
+          "poll_interval": 0.5
+        },
+        "profiled": {
+          "profile_cli": true,
+          "poll_interval": 0.5
+        },
+        "short_poll": {
+          "profile_cli": false,
+          "poll_interval": 0.01
+        }
+      },
+      "trials": [
+        {
+          "repeat": 1,
+          "results": {
+            "baseline": {
+              "total_seconds": 73.60491291700004,
+              "partition_seconds": {
+                "cli": 2.8750847060001092,
+                "external_git": 0.24314600099990002,
+                "server_shutdown": 0.178911208000045,
+                "worker_other": 70.30777100199998
+              },
+              "counts": {
+                "zar_cli": 20,
+                "git": 13,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              }
+            },
+            "profiled": {
+              "total_seconds": 73.449197083,
+              "partition_seconds": {
+                "cli": 2.7530452499999,
+                "external_git": 0.24486087600001838,
+                "server_shutdown": 0.15310541599995986,
+                "worker_other": 70.29818554100012
+              },
+              "cli_partition_seconds": {
+                "records": 0.027862573999811957,
+                "validation": 0.027368171000034636,
+                "storage": 0.05970270800014532,
+                "git": 0.0,
+                "other": 0.6693988359999707,
+                "startup": 1.7281243759998688,
+                "launcher_exit_residual": 0.24058858500006863
+              },
+              "startup_diagnostics_seconds": {
+                "parent_launch_to_entry": 0.5701772929997446,
+                "launcher_setup_and_imports": 0.9130784579999158
+              },
+              "cli_calls": {
+                "records": 64,
+                "validation": 288,
+                "storage": 74,
+                "git": 0,
+                "other": 20
+              },
+              "counts": {
+                "zar_cli": 20,
+                "git": 13,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              }
+            },
+            "short_poll": {
+              "total_seconds": 73.16249754200004,
+              "partition_seconds": {
+                "cli": 2.6467387480000752,
+                "external_git": 0.2152588310000283,
+                "server_shutdown": 0.01972683399998232,
+                "worker_other": 70.28077312899995
+              },
+              "counts": {
+                "zar_cli": 20,
+                "git": 13,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              }
+            }
+          }
+        }
+      ],
+      "median": {
+        "baseline": {
+          "total_seconds": 73.60491291700004,
+          "partition_seconds": {
+            "cli": 2.8750847060001092,
+            "external_git": 0.24314600099990002,
+            "server_shutdown": 0.178911208000045,
+            "worker_other": 70.30777100199998
+          }
+        },
+        "profiled": {
+          "total_seconds": 73.449197083,
+          "partition_seconds": {
+            "cli": 2.7530452499999,
+            "external_git": 0.24486087600001838,
+            "server_shutdown": 0.15310541599995986,
+            "worker_other": 70.29818554100012
+          },
+          "cli_partition_seconds": {
+            "records": 0.027862573999811957,
+            "validation": 0.027368171000034636,
+            "storage": 0.05970270800014532,
+            "git": 0.0,
+            "other": 0.6693988359999707,
+            "startup": 1.7281243759998688,
+            "launcher_exit_residual": 0.24058858500006863
+          },
+          "startup_diagnostics_seconds": {
+            "parent_launch_to_entry": 0.5701772929997446,
+            "launcher_setup_and_imports": 0.9130784579999158
+          }
+        },
+        "short_poll": {
+          "total_seconds": 73.16249754200004,
+          "partition_seconds": {
+            "cli": 2.6467387480000752,
+            "external_git": 0.2152588310000283,
+            "server_shutdown": 0.01972683399998232,
+            "worker_other": 70.28077312899995
+          }
+        }
+      },
+      "paired_deltas_seconds": [
+        {
+          "repeat": 1,
+          "profiling": -0.1557158340000342,
+          "short_poll": -0.44241537499999595
+        }
+      ],
+      "test_elapsed_seconds": 221.13289270799999,
+      "verification_and_test_overhead_seconds": 0.9162851659999092,
+      "limitations": [
+        "Existing test fixture only; no extra workflow execution or real API.",
+        "CLI partition and startup diagnostics are nested; do not add them to workflow totals.",
+        "Other includes worker startup, fixture preparation, persistence, and unclassified work.",
+        "Medians of components need not sum to median total.",
+        "Post-workflow evidence verification is outside the reported worker total.",
+        "Test overhead includes evidence verification, assertions, benchmark orchestration and setup; not pure verifier time."
+      ]
+    },
+    "workflow-utility": {
+      "version": 1,
+      "python": "3.14.8",
+      "platform": "Darwin",
+      "source_sha256": {
+        "zar/__init__.py": "ac8b72031bbdfd0e7ea4e64aeb96e13708cf0eb728f997009460e6aba829afe3",
+        "zar/__main__.py": "935a1c1166b0c1ea35a82256345000bf2c73ded718d77773bc27a71ecce28f7d",
+        "zar/call_metrics.py": "ccf91125218a140103694d1191bf1bb99e4ee018f5abeb2ad322ab61b2f244c7",
+        "zar/candidates.py": "fb470be010b20895d876acdaaee9063006597e3d307b54e62d0aac1cb22f98c5",
+        "zar/cli.py": "05f35333ab942663f0388eb513b4d8d5381bb917f05e3bf39a91e6716081cf66",
+        "zar/codec.py": "76b0ff347bb2cfe15cc02b3654a4918c777b47c8307c28509e9940199366fcee",
+        "zar/codex_agent.py": "a02e3d4345a37241a807dfc17fa50fd7ce98100b4c346b7cc9cb845ee55653f9",
+        "zar/comparisons.py": "6449fa517325771a0eeaf8715929acbbe691ff9462b3932af4d3a913c805a52f",
+        "zar/context.py": "d8ea44a11d11a226e39cef9c43dea6334e2262c787c70985b5777ed92658339d",
+        "zar/continuation.py": "e78b8db7c20b1ce9559d43c792b35b2a5260f6c2dc937bcd5ae69806214976f8",
+        "zar/evidence.py": "f24012799370766864056e68a2f1c0cd89b9565b59158ec9714f3cc0844f8ff1",
+        "zar/experiments.py": "152fff7db29be6ccdfd97f306f4fc08a1e499a80f09692418fc62fc7c6e431a0",
+        "zar/git_tracking.py": "1575e68244cf065cfd26f80ef8ffa4726e460d4568ab37e85d46b336920b11a5",
+        "zar/lineage.py": "80ae94a7bb6baf38a0c4aa0fb6e4eb07bfdce46eae4ffa9c2d838a3dd0202f60",
+        "zar/llm.py": "5a3f3729b99ec05df91783c09c0dfbcca4678d623cc43bbe480ce8b9411e1a23",
+        "zar/memories.py": "8db95b8a0e9038cc083ed549470a519a5bf759ef42623687e74d0bb1dfd9c04e",
+        "zar/records.py": "cf745b6d07d079a7016f9b1914695ad0c58a6c75122af51dc8dfb11f453f66aa",
+        "zar/reporting.py": "8a818004ecf8916e4af0cd795187069faf9f431f8421bc7f52e393c1d68cb960",
+        "zar/research.py": "b0ce2ca9f075cfd47dc279b5af61ce08b47c9f90c09e7df433ed165138cd9f62",
+        "zar/research_arguments.py": "1ffbe04432258f78d4639607b10a7a108223a2d57fe73ea96ada3c1467d22bdf",
+        "zar/reviews.py": "7307be4ce3873b22535b0fa5118d31ee944e7e00132e31d1be2c6eb637a1acf0",
+        "zar/revision.py": "f383c7164fa761769b1220bd6ea0ce9f17d673d9c8ee8f134337591515175481",
+        "zar/roles.py": "6503373f6f0c26624bec0a1104c0573fbc67cfeb76a11084eb9e65e811b3edd0",
+        "zar/runner.py": "e351a7934ca8d0805fffa00f6db5a4d549b39b204c601250b9f029660293d46a",
+        "zar/setup.py": "d8dfcca4b7fb3e21dfd89e3966f7a8e6fb8de2b8ac6eb178310bc3ebc6e9fc77",
+        "zar/skill_install.py": "fde9b5665100da85627ab82bfe8179b25948eba028107577cfd441d38f2ade13",
+        "zar/storage.py": "62affe8fedda7328751aad5d986167ddbd853416315ab0df8b26ef59c09f814b",
+        "zar/submissions.py": "fe7956af96fa990c2d6ac238c46556ed3547f9a662a835325fb51fd892df75e9",
+        "zar/validation.py": "69d4e05cde740380b5e0425210e9ae600cc7ef52f05a463dafacec99113df763",
+        "scripts/benchmark_workflow_utility.py": "5bb7a6705ae413525d9b8de91e3b462d8edbc6b77ec99d74c93362908d474e03",
+        "scripts/benchmark_local_loop_costs.py": "b475f4ed4d6eab66b4e7a8170bb364bf083e5aaa2d27836344712c8ca3cfca50",
+        "scripts/profile_local_cli.py": "18dbb528fe58ba7a7ad74ffad5b1a79e0a9857a713fa6307729f7383ecb5bf7c",
+        "examples/ml-loop.py": "7e0036c37dc563fb1c52d2076f07837d810d233201a1ed9d7d41e0b7c7b4959d",
+        "tests/ci_cost_support.py": "da4b553881fc1067892e77e32c04c192735e6e35473851a22b5ee98ec0a914a5",
+        "tests/test_workflow_utility.py": "e6940dcfb35e548c9a5f3d94994fd9e175a0561fa9fc378c08ff317f7eb1caaf",
+        "tests/test_local_loop_costs.py": "658a340e2f639c9b68f0b977253700f856a81d32ff657d67caad2c67081d4551"
+      },
+      "trials": [
+        {
+          "repeat": 1,
+          "arms": {
+            "direct": {
+              "partition_seconds": {
+                "zar_cli": 0,
+                "git": 0.23264187699965078,
+                "training": 0.08888100100000429,
+                "server_shutdown": 0.01009041600002547,
+                "other": 70.5946367060003
+              },
+              "event_seconds": {
+                "zar_cli": 0,
+                "git": 0.23264187699965078,
+                "training": 0.08888100100000429,
+                "server_shutdown": 0.01009041600002547,
+                "provider": 0.004557457000146314,
+                "approval": 0.0,
+                "git_commit": 0.0
+              },
+              "event_counts": {
+                "zar_cli": 0,
+                "git": 13,
+                "training": 2,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              },
+              "total_seconds": 70.92624999999998,
+              "setup_other_seconds": 35.02389508299996,
+              "phase_diagnostics_seconds": {
+                "setup": 35.04432112500001,
+                "baseline": 0.1948419579999836,
+                "candidate": 0.0903427499999907,
+                "pause": 0.00036779200002001744,
+                "resume": 35.11654345799991
+              }
+            },
+            "zar": {
+              "partition_seconds": {
+                "zar_cli": 3.3546174589998827,
+                "git": 0.2580212920000804,
+                "training": 0,
+                "server_shutdown": 0.009601250000059736,
+                "other": 70.52017487399996
+              },
+              "event_seconds": {
+                "zar_cli": 3.3546174589998827,
+                "git": 0.2580212920000804,
+                "training": 0,
+                "server_shutdown": 0.009601250000059736,
+                "provider": 0.007999957000379254,
+                "approval": 0.0,
+                "git_commit": 0.0
+              },
+              "event_counts": {
+                "zar_cli": 20,
+                "git": 13,
+                "training": 0,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              },
+              "total_seconds": 74.14241487499999,
+              "setup_other_seconds": 35.0304141659999,
+              "phase_diagnostics_seconds": {
+                "setup": 35.26045899999997,
+                "baseline": 1.2381169580000915,
+                "candidate": 0.9693211669999755,
+                "pause": 0.0002819159999489784,
+                "resume": 36.20179620900001
+              }
+            }
+          }
+        },
+        {
+          "repeat": 2,
+          "arms": {
+            "direct": {
+              "partition_seconds": {
+                "zar_cli": 0,
+                "git": 0.211170791999848,
+                "training": 0.07479979200002163,
+                "server_shutdown": 0.010534167000059824,
+                "other": 70.4817420820001
+              },
+              "event_seconds": {
+                "zar_cli": 0,
+                "git": 0.211170791999848,
+                "training": 0.07479979200002163,
+                "server_shutdown": 0.010534167000059824,
+                "provider": 0.0033399570000938184,
+                "approval": 0.0,
+                "git_commit": 0.0
+              },
+              "event_counts": {
+                "zar_cli": 0,
+                "git": 13,
+                "training": 2,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              },
+              "total_seconds": 70.77824683300003,
+              "setup_other_seconds": 35.01178516699997,
+              "phase_diagnostics_seconds": {
+                "setup": 35.034597291999944,
+                "baseline": 0.1542899999999463,
+                "candidate": 0.08667108300005566,
+                "pause": 0.00026724999997895793,
+                "resume": 35.107267542000045
+              }
+            },
+            "zar": {
+              "partition_seconds": {
+                "zar_cli": 2.2826582499999404,
+                "git": 0.17739237299974775,
+                "training": 0,
+                "server_shutdown": 0.010554667999940648,
+                "other": 70.4783438750004
+              },
+              "event_seconds": {
+                "zar_cli": 2.2826582499999404,
+                "git": 0.17739237299974775,
+                "training": 0,
+                "server_shutdown": 0.010554667999940648,
+                "provider": 0.005019751000077122,
+                "approval": 0.0,
+                "git_commit": 0.0
+              },
+              "event_counts": {
+                "zar_cli": 20,
+                "git": 13,
+                "training": 0,
+                "server_shutdown": 2,
+                "provider": 14,
+                "approval": 4,
+                "git_commit": 4
+              },
+              "total_seconds": 72.94894916600003,
+              "setup_other_seconds": 35.0194769159998,
+              "phase_diagnostics_seconds": {
+                "setup": 35.19211937499995,
+                "baseline": 1.0772384169999896,
+                "candidate": 0.5373802919999662,
+                "pause": 0.0002998749999960637,
+                "resume": 35.69580829200004
+              }
+            }
+          }
+        }
+      ],
+      "test_elapsed_seconds": 290.470934167,
+      "verification_and_test_overhead_seconds": 1.6750732929999685,
+      "limitations": [
+        "Existing test fixture only; no extra workflow execution or real API.",
+        "Phases and setup_other_seconds overlap subprocess partitions and must not be added again.",
+        "Setup other excludes measured child calls; includes server start, dataset/files preparation and bookkeeping.",
+        "Provider and milestone event timings overlap subprocess intervals.",
+        "Other includes worker startup, fixture preparation, persistence, and unclassified work.",
+        "Post-workflow evidence verification is outside the reported worker total.",
+        "Test overhead includes evidence verification, assertions, benchmark orchestration and setup; not pure verifier time."
+      ]
+    },
+    "environment": {
+      "version": 1,
+      "python": "3.14.8",
+      "platform": "Darwin",
+      "machine": "arm64",
+      "samples": {
+        "python_child": {
+          "seconds": [
+            0.02174620800001037,
+            0.021298709000006966,
+            0.021095833999993374
+          ],
+          "median_seconds": 0.021298709000006966
+        },
+        "python_import_child": {
+          "seconds": [
+            0.14835158299999307,
+            0.08446641599999793,
+            0.10236320799999987
+          ],
+          "median_seconds": 0.10236320799999987
+        },
+        "opener_construction": {
+          "seconds": [
+            0.07914908300000434,
+            0.010250584000004892,
+            0.009141999999997097
+          ],
+          "median_seconds": 0.010250584000004892
+        }
+      },
+      "limitations": [
+        "No network request or real API.",
+        "Uncontrolled filesystem caches; three diagnostic samples, not a performance guarantee.",
+        "Opener construction includes default handlers and platform proxy discovery."
+      ]
+    }
+  },
+  "limitations": [
+    "One GitHub-hosted runner execution, not repeated paired performance trials.",
+    "Test elapsed excludes reporting and TemporaryDirectory cleanup."
+  ]
+}

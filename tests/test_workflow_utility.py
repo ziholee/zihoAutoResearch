@@ -9,6 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import time
+
+from ci_cost_support import write_utility_costs
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,6 +58,7 @@ class WorkflowUtilityTests(unittest.TestCase):
         }
 
     def test_paired_workflows_preserve_measured_evidence_across_fresh_resume(self):
+        diagnostic_started = time.perf_counter()
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp) / 'comparison'
             self.invoke(output)
@@ -139,6 +143,7 @@ class WorkflowUtilityTests(unittest.TestCase):
                     verify(destination, arm)
                 ledger.write_bytes(original)
                 verify(destination, arm)
+            write_utility_costs(output, summary, time.perf_counter() - diagnostic_started)
 
     def test_existing_output_is_refused_without_modification(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -8,7 +8,10 @@ import sys
 import tempfile
 import threading
 import unittest
+import time
 from unittest.mock import patch
+
+from ci_cost_support import write_local_costs
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +82,7 @@ class LocalCostReportTests(unittest.TestCase):
             BENCHMARK['summarize'](events, 1)
 
     def test_real_profiled_and_unprofiled_workflows_preserve_evidence(self):
+        diagnostic_started = time.perf_counter()
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / 'costs'
             command = [sys.executable, str(ROOT / 'scripts/benchmark_local_loop_costs.py'),
@@ -113,6 +117,7 @@ class LocalCostReportTests(unittest.TestCase):
                                    capture_output=True, timeout=10)
             self.assertNotEqual(retry.returncode, 0)
             self.assertEqual((output / 'summary.json').read_bytes(), previous)
+            write_local_costs(summary, time.perf_counter() - diagnostic_started)
 
 
 if __name__ == '__main__':
