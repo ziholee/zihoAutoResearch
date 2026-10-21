@@ -62,11 +62,14 @@ def session_path(root,identifier):
     require(isinstance(identifier,str) and re.fullmatch(r'session-[a-f0-9]{32}',identifier), 'Invalid session ID.')
     return safe_path(root,f'.autoresearch/sessions/{identifier}.json',metadata=True)
 
-def load(root,identifier):
+def _read_session(root,identifier):
     p=session_path(root,identifier)
     require(p.is_file(),'Session does not exist.')
     require(p.stat().st_size<=2_000_000,'Session exceeds size limit.')
-    return loads(p.read_text(encoding='utf-8'))
+    return p.read_text(encoding='utf-8')
+
+def load(root,identifier):
+    return loads(_read_session(root,identifier))
 
 def save(root,s):
     atomic_write(session_path(root,s['id']),dumps(s))
@@ -223,7 +226,37 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
         s['revision_context_hash']=digest(revision_context)
     save(root,s);return view(s)
 
-def context(root,s,role,*,checked=None,record_context=None):
+# Bound retained input coverage, not total Python RSS. No full session bodies
+# survive a scan; only their digest and the projected memory are retained.
+HISTORY_CACHE_MAX_ENTRIES = 2048
+HISTORY_CACHE_MAX_BYTES = 8 * 1024 * 1024
+
+def _prior_lessons(root,s,cache=None):
+    lessons=[];updated={};retained_bytes=0
+    paths=sorted((root/'.autoresearch/sessions').glob('*.json'),key=lambda p:p.name)
+    for path in paths:
+        if path.stem==s['id']:continue
+        # Never trust mtime/size: preserve path checks and reread every role.
+        text=_read_session(root,path.stem)
+        raw=text.encode('utf-8')
+        identity=digest(raw) if cache is not None else None
+        prior=cache.get(path.stem) if cache is not None else None
+        if prior is not None and prior[0]==identity:
+            lesson=prior[1]
+        else:
+            old=loads(text)
+            lesson=None
+            if old['state']=='complete' and 'memory' in old['outputs']:
+                lesson=dict(session_id=old['id'],experiment_id=old['experiment_id'],
+                            proposal=old['outputs']['memory'],created_at=old['created_at'])
+        if lesson is not None:lessons.append(lesson)
+        if cache is not None and len(updated)<HISTORY_CACHE_MAX_ENTRIES and retained_bytes+len(raw)<=HISTORY_CACHE_MAX_BYTES:
+            updated[path.stem]=(identity,lesson,len(raw));retained_bytes+=len(raw)
+    if cache is not None:
+        cache.clear();cache.update(updated)
+    return deepcopy(sorted(lessons,key=lambda x:x['created_at'])[-5:])
+
+def context(root,s,role,*,checked=None,record_context=None,history_cache=None):
     from . import cli
     if checked is None:
         p=get_project(root);snap=cli.load_records(root,p)
@@ -237,14 +270,7 @@ def context(root,s,role,*,checked=None,record_context=None):
     comparison=None
     if observation and observation['baseline_id']:
         comparison=cli.compare(snap.records['experiment'][observation['baseline_id']],observation,snap.records['experiment'])
-    lessons=[]
-    paths=sorted((root/'.autoresearch/sessions').glob('*.json'),key=lambda p:p.name)
-    for path in paths:
-        if path.stem==s['id']:continue
-        old=load(root,path.stem)
-        if old['state']=='complete' and 'memory' in old['outputs']:
-            lessons.append(dict(session_id=old['id'],experiment_id=old['experiment_id'],proposal=old['outputs']['memory'],created_at=old['created_at']))
-    lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
+    lessons=_prior_lessons(root,s,history_cache)
     return dict(experiment_mode=s.get('experiment_mode','legacy'),baseline_id=s.get('baseline_id'),next_context=s.get('next_context'),revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
                 project=p,records=data,sources=s['sources'],command=s['command'],
                 metric_file=s['metric_file'],metric_key=s['metric_key'],run_context=s['run_context'],
@@ -279,7 +305,7 @@ def advance(root,identifier,*,send=False):
     from . import cli
     # Only the bounded projection survives a lock phase, never a reusable snapshot.
     # Each role still rereads/checks records before and after its model call.
-    projection_key=None;record_context=None
+    projection_key=None;record_context=None;history_cache={}
     while True:
         with project_lock(root/'.autoresearch'):
             s=load(root,identifier)
@@ -296,7 +322,7 @@ def advance(root,identifier,*,send=False):
             if key!=projection_key:
                 record_context,_=cli.build_context(checked[0],checked[1].records,[],max_bytes=16384)
                 projection_key=key
-            payload=context(root,s,role,checked=checked,record_context=record_context);save(root,s)
+            payload=context(root,s,role,checked=checked,record_context=record_context,history_cache=history_cache);save(root,s)
         measurement=new_measurement()
         try:
             profile=deepcopy(s['profile'])
