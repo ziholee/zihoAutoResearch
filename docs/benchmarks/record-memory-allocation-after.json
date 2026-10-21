@@ -1,0 +1,802 @@
+{
+  "measurement_version": 1,
+  "label": "after",
+  "methodology": "Separate allocation diagnostics for fresh-process mocked record research loops.\n\nThis diagnostic is deliberately separate from profile_record_processing.py's\ncontrol/time-profile arms. tracemalloc perturbs allocation, runtime and RSS; use\nthat existing tool's control arm for performance comparisons. Start tracing just\nbefore the benchmark CLI worker and sample current traced bytes and cumulative\npeak at record-load, freshness-check, context and provider-call boundaries.\nThese overlapping observations are not additive or exclusive phase allocation.\nThey cannot identify which phase allocated a transient object between samples.\nWeak references count live snapshots and their documents without extending their\nlifetimes; no garbage collection is forced. Read/parse/validate counts apply to\nrecord loading on the main thread. Snapshot references and tracing machinery add\noverhead. No filenames, document contents, credentials or tracebacks are exported.\n\nFixture creation/copying, interrupted-resume preparation and parent verification\nare outside tracing. The worker includes CLI startup within already imported\nmodules, JSON output, persisted-session/token verification and metadata writing. Allocation-report assembly/write after tracing is excluded.\nResume continues two persisted roles after controlled mock interruption; it is\nnot an OS-crash benchmark. No real API or training is performed. The CLI semantics,\nlatest memory, role/budget/approval and input-preservation checks are reused from\nthe research-scale benchmark. Allocation counts and peaks are diagnostic evidence,\nnot a process RSS limit or a statistical performance claim.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "source_digest": {
+    "files": 29,
+    "sha256": "3a3447938daf22162c00bfdd3c2deac5968db183d21a6cb33cb5c07ff8d983d8"
+  },
+  "measurement_digest": {
+    "profile_record_memory.py": "eff8bf14ee7be24271c2d7f4cec802e310473d0b5dab9f61fe08ba6a69fd082b",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950"
+  },
+  "repeats": 1,
+  "warmups": 0,
+  "cases": [
+    {
+      "records": 10000,
+      "completed_sessions": 0,
+      "fixture_digest": {
+        "files": 10004,
+        "sha256": "1a7bf8e2dfccd1410425946ff9663a6ca33ad0add2f40519555d558405dced71"
+      },
+      "operations": {
+        "plan": {
+          "trials": [
+            {
+              "peak_rss_bytes": 355221504,
+              "record_loads": 11,
+              "session_loads": 10,
+              "cli_exit_code": 0,
+              "allocation_trace": {
+                "events": [
+                  {
+                    "phase": "worker_begin",
+                    "current_traced_bytes": 0,
+                    "cumulative_peak_traced_bytes": 432,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 287448,
+                    "cumulative_peak_traced_bytes": 289526,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67318284,
+                    "cumulative_peak_traced_bytes": 67932049,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 488666,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 493807,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67341661,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67342759,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67459836,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67465472,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 648110,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 647513,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 655924,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 660575,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67711516,
+                    "cumulative_peak_traced_bytes": 122212253,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67712482,
+                    "cumulative_peak_traced_bytes": 122497445,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 582788,
+                    "cumulative_peak_traced_bytes": 122497445,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 587362,
+                    "cumulative_peak_traced_bytes": 122497445,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67723091,
+                    "cumulative_peak_traced_bytes": 122497445,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67724061,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67724169,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67729917,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 603637,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 602295,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 606637,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 611232,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67748537,
+                    "cumulative_peak_traced_bytes": 122509024,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67749515,
+                    "cumulative_peak_traced_bytes": 122534478,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 618308,
+                    "cumulative_peak_traced_bytes": 122534478,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 623075,
+                    "cumulative_peak_traced_bytes": 122534478,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67760453,
+                    "cumulative_peak_traced_bytes": 122534478,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67761616,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67761496,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67767244,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 640808,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 639434,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 641483,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 646128,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67785809,
+                    "cumulative_peak_traced_bytes": 122546579,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67786972,
+                    "cumulative_peak_traced_bytes": 122571935,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 654601,
+                    "cumulative_peak_traced_bytes": 122571935,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 659182,
+                    "cumulative_peak_traced_bytes": 122571935,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67794756,
+                    "cumulative_peak_traced_bytes": 122571935,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67795919,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67795801,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67801549,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 675620,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 674488,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 677202,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 681838,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67823784,
+                    "cumulative_peak_traced_bytes": 122580882,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67824947,
+                    "cumulative_peak_traced_bytes": 122609910,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 692693,
+                    "cumulative_peak_traced_bytes": 122609910,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 697398,
+                    "cumulative_peak_traced_bytes": 122609910,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67834798,
+                    "cumulative_peak_traced_bytes": 122609910,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67835957,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67835833,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67841644,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 716024,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 715007,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 717121,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 721703,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67859862,
+                    "cumulative_peak_traced_bytes": 122620920,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67861025,
+                    "cumulative_peak_traced_bytes": 122645988,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "worker_end",
+                    "current_traced_bytes": 665351,
+                    "cumulative_peak_traced_bytes": 122645988,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  }
+                ],
+                "counts": {
+                  "record_loads": 11,
+                  "records_read": 110000,
+                  "records_parse": 110000,
+                  "records_validate": 110000
+                },
+                "max_live_snapshots": 1,
+                "peak_traced_bytes": 122645988
+              },
+              "wall_seconds": 46.82742395900277,
+              "stdout_bytes": 7583,
+              "stderr_bytes": 0,
+              "model_calls": 5,
+              "prompt_bytes": 36619,
+              "semantic_sha256": "da977645e3782b8c4671b80691ac03b61d562274731170b08ca9e4fb1ba65b0d",
+              "validated": true
+            }
+          ]
+        },
+        "resume": {
+          "trials": [
+            {
+              "peak_rss_bytes": 308363264,
+              "record_loads": 6,
+              "session_loads": 6,
+              "cli_exit_code": 0,
+              "allocation_trace": {
+                "events": [
+                  {
+                    "phase": "worker_begin",
+                    "current_traced_bytes": 0,
+                    "cumulative_peak_traced_bytes": 432,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 283510,
+                    "cumulative_peak_traced_bytes": 289060,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 289013,
+                    "cumulative_peak_traced_bytes": 291155,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67343180,
+                    "cumulative_peak_traced_bytes": 67956881,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67344237,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67459622,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67465458,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 638684,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 638539,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 652577,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 657026,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67729316,
+                    "cumulative_peak_traced_bytes": 122129200,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67730090,
+                    "cumulative_peak_traced_bytes": 122515053,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 577126,
+                    "cumulative_peak_traced_bytes": 122515053,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 581636,
+                    "cumulative_peak_traced_bytes": 122515053,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67738851,
+                    "cumulative_peak_traced_bytes": 122515053,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67739687,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67739859,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67745736,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 599425,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 597916,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 600890,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 605408,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67767879,
+                    "cumulative_peak_traced_bytes": 122524650,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67768718,
+                    "cumulative_peak_traced_bytes": 122553681,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 616333,
+                    "cumulative_peak_traced_bytes": 122553681,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 620963,
+                    "cumulative_peak_traced_bytes": 122553681,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67779517,
+                    "cumulative_peak_traced_bytes": 122553681,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67780416,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_begin",
+                    "current_traced_bytes": 67780292,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "context_end",
+                    "current_traced_bytes": 67786169,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "provider_begin",
+                    "current_traced_bytes": 639805,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "provider_end",
+                    "current_traced_bytes": 638222,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "freshness_begin",
+                    "current_traced_bytes": 640932,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_begin",
+                    "current_traced_bytes": 645379,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  },
+                  {
+                    "phase": "load_end",
+                    "current_traced_bytes": 67804489,
+                    "cumulative_peak_traced_bytes": 122565379,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "freshness_end",
+                    "current_traced_bytes": 67805590,
+                    "cumulative_peak_traced_bytes": 122590553,
+                    "live_snapshots": 1,
+                    "live_record_documents": 10000
+                  },
+                  {
+                    "phase": "worker_end",
+                    "current_traced_bytes": 587096,
+                    "cumulative_peak_traced_bytes": 122590553,
+                    "live_snapshots": 0,
+                    "live_record_documents": 0
+                  }
+                ],
+                "counts": {
+                  "record_loads": 6,
+                  "records_read": 60000,
+                  "records_parse": 60000,
+                  "records_validate": 60000
+                },
+                "max_live_snapshots": 1,
+                "peak_traced_bytes": 122590553
+              },
+              "wall_seconds": 25.413396708005166,
+              "stdout_bytes": 5991,
+              "stderr_bytes": 0,
+              "model_calls": 3,
+              "prompt_bytes": 22597,
+              "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+              "validated": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

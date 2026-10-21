@@ -197,6 +197,8 @@ Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-valid
 
 [완료 세션 반복 조회](docs/completed-session-costs.md)는 매 역할의 경로 검사와 원문 읽기를 유지하면서 내용이 같은 과거 세션의 반복 파싱만 줄입니다.
 
+[대규모 기록 메모리](docs/record-memory-costs.md)는 호출 전후 변경 감지를 유지하면서 전체 기록 스냅샷의 중복 보관 비용을 측정합니다.
+
 [큰 세션·캐시 경계](docs/session-cache-boundaries.md)는 큰 응답과 2,048개·8MiB 경계의 시간·메모리·재개 비용 및 기억 선택을 검증합니다.
 
 [macOS CI 비용 분해](docs/macos-ci-costs.md)는 검사 범위를 유지하면서 자식 프로세스·서버 종료·반복 준비·증거 검증 비용을 진단합니다.
