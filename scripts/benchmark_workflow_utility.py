@@ -129,13 +129,16 @@ def verify_arm(output, arm):
     require(evidence[1]['score'] < evidence[0]['score'], 'Known candidate did not improve')
     history = subprocess.run(['git', 'rev-list', '--count', 'HEAD'], cwd=project, env=isolated_git_env(output), capture_output=True, check=True, text=True).stdout.strip()
     require(history == '4', 'Git history does not contain four milestones')
+    # Both modes may reference the same committed evidence. Check each path
+    # once in this invocation; never reuse blobs across verification calls.
+    paths = []
     for mode in ('baseline', 'candidate'):
         record = load(project / checkpoint[mode + '_record'])
-        paths = ['evidence/selected.json', checkpoint[mode + '_record'], 'evidence/' + mode + '-record.json', 'evidence/' + mode + '-model.py']
+        paths += ['evidence/selected.json', checkpoint[mode + '_record'], 'evidence/' + mode + '-record.json', 'evidence/' + mode + '-model.py']
         paths += [item['ref'] for item in record['execution']['evidence']] if arm == 'zar' else list(record['evidence'])
-        for name in paths:
-            blob = subprocess.run(['git', 'show', 'HEAD:' + name], cwd=project, env=isolated_git_env(output), capture_output=True, check=True).stdout
-            require(blob == (project / name).read_bytes(), 'Git does not retain current record evidence')
+    for name in dict.fromkeys(paths):
+        blob = subprocess.run(['git', 'show', 'HEAD:' + name], cwd=project, env=isolated_git_env(output), capture_output=True, check=True).stdout
+        require(blob == (project / name).read_bytes(), 'Git does not retain current record evidence')
     events = load(output / 'events.json')
     requests = [e for e in events if e['kind'] == 'provider']
     require([(e['mode'], e['role']) for e in requests] == [(m, r) for m in ('baseline', 'candidate') for r in ROLES], 'Unexpected provider role sequence')
