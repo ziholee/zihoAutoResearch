@@ -1,0 +1,78 @@
+{
+  "kind": "diagnostic_cprofile",
+  "baseline_commit": "70a1d790c96e672225d4d4f10b720a9c1c5634bc",
+  "scenario": {
+    "records": 100,
+    "completed_sessions": 1000,
+    "mode": "plan",
+    "model": "mock"
+  },
+  "source_sha256": {
+    "zar/research.py": "705b5efb346b1e5c9bba53fb056bd074db5aed265e6a1229fbc617078537a439",
+    "zar/codec.py": "76b0ff347bb2cfe15cc02b3654a4918c777b47c8307c28509e9940199366fcee",
+    "scripts/benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12"
+  },
+  "measurements": [
+    {
+      "function": "research.load",
+      "calls": 5010,
+      "exclusive_seconds": 0.007801560000000001,
+      "cumulative_seconds": 1.010693784
+    },
+    {
+      "function": "research.context",
+      "calls": 5,
+      "exclusive_seconds": 0.012615453,
+      "cumulative_seconds": 1.092084167
+    },
+    {
+      "function": "benchmark.worker",
+      "calls": 1,
+      "exclusive_seconds": 6.3831e-05,
+      "cumulative_seconds": 1.4247208340000002
+    },
+    {
+      "direct_caller": "research.load",
+      "function": "Path.read_text",
+      "calls": 5010,
+      "exclusive_seconds": 0.004075282,
+      "cumulative_seconds": 0.088434709
+    },
+    {
+      "direct_caller": "research.load",
+      "function": "Path.is_file",
+      "calls": 5010,
+      "exclusive_seconds": 0.001979881,
+      "cumulative_seconds": 0.010522392
+    },
+    {
+      "direct_caller": "research.load",
+      "function": "Path.stat",
+      "calls": 5010,
+      "exclusive_seconds": 0.00069448,
+      "cumulative_seconds": 0.007387529
+    },
+    {
+      "direct_caller": "research.load",
+      "function": "codec.loads",
+      "calls": 5010,
+      "exclusive_seconds": 0.0036608,
+      "cumulative_seconds": 0.506178808
+    },
+    {
+      "direct_caller": "research.load",
+      "function": "research.session_path",
+      "calls": 5010,
+      "exclusive_seconds": 0.00451207,
+      "cumulative_seconds": 0.389810998
+    }
+  ],
+  "limitations": [
+    "Single diagnostic sample with cProfile overhead; not an uninstrumented performance comparison.",
+    "Cumulative times are nested and must not be added across parent/child rows.",
+    "The worker includes benchmark wrappers and post-CLI verification. Fixture construction is outside profiling.",
+    "Only the main profiling thread is represented; no real API or training was used.",
+    "Direct load child rows include 5000 historical loads and 10 active-session loads.",
+    "Selection cost is approximated by context exclusive time, which also includes other context assembly work."
+  ]
+}
