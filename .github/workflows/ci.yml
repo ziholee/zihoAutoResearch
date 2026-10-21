@@ -23,7 +23,6 @@ jobs:
     timeout-minutes: 15
     env:
       PYTHONUTF8: '1'
-      ZAR_CI_COST_DIR: ${{ runner.temp }}/zar-ci-costs
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -34,6 +33,8 @@ jobs:
       - name: Measure local CI environment
         run: python scripts/profile_ci_environment.py --output "${{ runner.temp }}/zar-ci-costs/environment.json"
       - run: python -m unittest discover -s tests -v
+        env:
+          ZAR_CI_COST_DIR: ${{ runner.temp }}/zar-ci-costs
       - name: Preserve numeric CI cost diagnostics
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
