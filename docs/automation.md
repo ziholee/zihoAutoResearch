@@ -87,3 +87,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## 역할별 요청 맥락의 크기와 근거 보존
 
 `tests/test_call_metrics.py`는 입력 분해의 UTF-8 바이트 합계·JSON 이스케이프·과거 미관측값·잘못된 분해 거부를 확인합니다. `tests/test_request_context.py`와 `tests/test_request_context_benchmark.py`는 [요청 맥락 효율화](request-context-efficiency.md)의 지침 범위와 같은 요청 내부의 원문 참조를 검증합니다. 실행 전 검토에 원본·제안 전문이 남고, 실행 후에도 원문을 복원할 수 있으며, 저장된 제안·승인 입력은 변경되지 않아야 합니다. 참조 표시·해석 지침을 포함한 메시지 크기가 줄어들지 않으면 원문을 유지합니다. 기존 승인·실행·재개 회귀 검사도 유지하며, 모의 응답의 통과를 실제 공급자의 해석 품질 검증으로 표시하지 않습니다.
+
+## CI 비용 진단
+
+전체 검사 범위를 유지하며 수치 진단을 아티팩트로 보존합니다. 측정 범주·개인정보 제외·해석 한계는 [macOS CI 비용 분해](macos-ci-costs.md)를 참고하세요.

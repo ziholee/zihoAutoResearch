@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "python": "3.14.8",
+  "platform": "Darwin",
+  "machine": "arm64",
+  "samples": {
+    "python_child": {
+      "seconds": [
+        0.019939917000002083,
+        0.017768290999995884,
+        0.015887958999996954
+      ],
+      "median_seconds": 0.017768290999995884
+    },
+    "python_import_child": {
+      "seconds": [
+        0.07941237500000398,
+        0.04933049999999639,
+        0.046537041999997086
+      ],
+      "median_seconds": 0.04933049999999639
+    },
+    "opener_construction": {
+      "seconds": [
+        0.014229166999996323,
+        0.0034463339999888376,
+        0.0034321669999997084
+      ],
+      "median_seconds": 0.0034463339999888376
+    },
+    "loopback_server_construction": {
+      "seconds": [
+        35.013134457999996
+      ],
+      "hostname_lookup_seconds": [
+        35.01279275
+      ],
+      "other_seconds": 0.0003417079999934458
+    }
+  },
+  "limitations": [
+    "No HTTP request or real API; server construction may invoke the OS hostname resolver.",
+    "Uncontrolled filesystem caches; three diagnostic samples, not a performance guarantee.",
+    "Opener construction includes default handlers and platform proxy discovery."
+  ],
+  "run_id": 39595428863,
+  "commit": "e1e8c4a98bfa486948044d93a44bf62740cf0dac",
+  "run_note": "Environment probe completed and artifact downloaded; remaining duplicate integration run deliberately cancelled."
+}

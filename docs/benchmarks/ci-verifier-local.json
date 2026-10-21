@@ -1,0 +1,154 @@
+{
+  "python": "3.14.6",
+  "platform": "Darwin",
+  "kind": "local_verifier_only",
+  "source_sha256": {
+    "before": "5bb7a6705ae413525d9b8de91e3b462d8edbc6b77ec99d74c93362908d474e03",
+    "after": "65056cf4d180491d08c6afe9ad2776078b5e684bdfe073580821bcfcdcf9fe86"
+  },
+  "fixture_sha256": "e749f90ac301b3235f7dc7da185c05641481075e0793f84d539eaf0e6f9ec066",
+  "warmups": 1,
+  "repeats": 5,
+  "trials": [
+    {
+      "after": {
+        "seconds": 0.1820720830000937,
+        "git_child_calls": 18,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      },
+      "before": {
+        "seconds": 0.2026172920013778,
+        "git_child_calls": 19,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      }
+    },
+    {
+      "before": {
+        "seconds": 0.199764208002307,
+        "git_child_calls": 19,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      },
+      "after": {
+        "seconds": 0.1826417920019594,
+        "git_child_calls": 18,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      }
+    },
+    {
+      "after": {
+        "seconds": 0.18296754099719692,
+        "git_child_calls": 18,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      },
+      "before": {
+        "seconds": 0.18595495900081005,
+        "git_child_calls": 19,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      }
+    },
+    {
+      "before": {
+        "seconds": 0.1953967920053401,
+        "git_child_calls": 19,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      },
+      "after": {
+        "seconds": 0.18341037500067614,
+        "git_child_calls": 18,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      }
+    },
+    {
+      "after": {
+        "seconds": 0.18417904099624138,
+        "git_child_calls": 18,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      },
+      "before": {
+        "seconds": 0.19438895799976308,
+        "git_child_calls": 19,
+        "verified": {
+          "verified": true,
+          "baseline_score": 4.940894744681347,
+          "candidate_score": 0.022256767659429855,
+          "improvement": 4.918637977021917,
+          "execution_count": 2,
+          "resumed_without_execution": true
+        }
+      }
+    }
+  ],
+  "median_seconds": {
+    "before": 0.1953967920053401,
+    "after": 0.18296754099719692
+  },
+  "limitations": [
+    "Same existing completed zar fixture; no workflow execution or real API.",
+    "Alternating order, warm filesystem caches; mock subprocess wrapper counts commands on both sides.",
+    "Includes Git source and evidence verification only; not CI total or process-start-only cost.",
+    "Source loaded from Git revisions using the same fixture constants; no timing threshold."
+  ]
+}
