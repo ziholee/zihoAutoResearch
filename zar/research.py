@@ -327,6 +327,9 @@ def advance(root,identifier,*,send=False):
                 record_context,_=cli.build_context(checked[0],checked[1].records,[],max_bytes=16384)
                 projection_key=key
             payload=context(root,s,role,checked=checked,record_context=record_context,history_cache=history_cache);save(root,s)
+            # The payload owns its bounded evidence; release full records before
+            # the provider wait and the next independent freshness snapshot.
+            del checked
         measurement=new_measurement()
         try:
             profile=deepcopy(s['profile'])

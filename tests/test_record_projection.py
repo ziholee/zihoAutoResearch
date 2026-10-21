@@ -1,6 +1,8 @@
 """Reuse bounded projections without reusing record snapshots across model calls."""
 import copy
 import json
+import os
+import weakref
 from pathlib import Path
 import runpy
 import tempfile
@@ -33,6 +35,52 @@ class RecordProjectionTests(unittest.TestCase):
         payload = json.loads(messages[-1]['content'])
         self.payloads.append(payload)
         return dict(content=json.dumps(BENCH['body'](payload['role'])), usage=None)
+
+    def test_full_snapshots_are_released_before_provider_and_next_load(self):
+        original = records.load_records
+        references = []
+        load_live, provider_live = [], []
+        def load(*args, **kwargs):
+            load_live.append(sum(ref() is not None for ref in references))
+            snapshot = original(*args, **kwargs)
+            references.append(weakref.ref(snapshot))
+            return snapshot
+        def answer(*args):
+            provider_live.append(sum(ref() is not None for ref in references))
+            return self.respond(*args)
+        with patch.object(records, 'load_records', new=load), \
+                patch.object(research, 'chat', side_effect=answer):
+            result = research.advance(self.root, self.session['id'], send=True)
+        self.assertEqual(result['state'], 'awaiting_approval')
+        self.assertEqual(load_live, [0] * 10)
+        self.assertEqual(provider_live, [0] * 5)
+        self.assertTrue(all(ref() is None for ref in references))
+
+    def test_same_size_same_mtime_record_edit_is_detected_after_call(self):
+        original = self.record.read_bytes()
+        before = self.record.stat()
+        doc = loads(original.decode('utf-8'))
+        reference = doc['code_ref']
+        replacement = reference[:-1] + ('2' if reference[-1] != '2' else '3')
+        changed = original.replace(json.dumps(reference).encode('utf-8'),
+                                   json.dumps(replacement).encode('utf-8'), 1)
+        self.assertEqual(len(changed), len(original))
+        self.assertNotEqual(changed, original)
+        def answer(*args):
+            result = self.respond(*args)
+            self.record.write_bytes(changed)
+            os.utime(self.record, ns=(before.st_atime_ns, before.st_mtime_ns))
+            self.assertEqual(self.record.stat().st_size, before.st_size)
+            self.assertEqual(self.record.stat().st_mtime_ns, before.st_mtime_ns)
+            return result
+        with patch.object(research, 'chat', side_effect=answer):
+            with self.assertRaises(research.ResearchError):
+                research.advance(self.root, self.session['id'], send=True)
+        saved = research.load(self.root, self.session['id'])
+        self.assertEqual(saved['state'], 'blocked')
+        self.assertEqual(saved['error'], 'inputs_changed')
+        self.assertEqual(saved['outputs'], {})
+        self.assertEqual(len(self.payloads), 1)
 
     def test_one_projection_but_all_freshness_checks_and_latest_role_outputs(self):
         with patch.object(cli, 'build_context', wraps=cli.build_context) as build, \

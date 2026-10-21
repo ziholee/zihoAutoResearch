@@ -1,0 +1,264 @@
+{
+  "measurement_version": 1,
+  "label": "before-reverse",
+  "methodology": "Development-only attribution of mocked research record processing.\n\nThe same fresh-process benchmark worker runs with and without category timers.\nIts fixture preparation, interrupted-resume preparation and parent verification\nare outside timing. Wall time includes process startup, imports, timer setup,\nworker execution, output capture and exit. Timed worker execution includes the\nbenchmark's load counters, JSON output, persisted-session/token verification and\nmetadata write. The control disables these category timers, not the benchmark's\nexisting counters or verification; it is not a pure CLI timing.\n\nExclusive categories partition the profiled worker body on the main thread.\nRead, parse and document-validation categories only apply inside load_records.\nSerialization covers codec.dumps aliases in CLI, research and context modules.\nSHA256 covers constructor, update and hexdigest calls; digest_other includes\nUTF-8 conversion and other research.digest work, excluding nested serialization/\nSHA256. Projection/identity categories exclude their nested serialization/hash.\nOnly per-trial category sums partition body time; component medians need not.\nrecords_other includes enumeration, safety checks and remaining record loading.\nImports/setup/exit remain outside this partition. Instrumentation perturbs timings;\nuse paired control wall time for performance comparisons. No API or training runs.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "source_digest": {
+    "files": 29,
+    "sha256": "7ffa8f5ec2e26bdeda396fd348c3c0fb1a8931f77d925dbca8563c44a3a4ca3a"
+  },
+  "measurement_digest": {
+    "profile_record_processing.py": "b180a6510e337d53189886a4912b856b6fc86b639f215908e6cdcfb735f52103",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950"
+  },
+  "repeats": 3,
+  "warmup_pairs": 1,
+  "cases": [
+    {
+      "records": 10000,
+      "completed_sessions": 0,
+      "fixture_digest": {
+        "files": 10004,
+        "sha256": "1a7bf8e2dfccd1410425946ff9663a6ca33ad0add2f40519555d558405dced71"
+      },
+      "operations": {
+        "resume": {
+          "order": [
+            [
+              "control",
+              "profiled"
+            ],
+            [
+              "profiled",
+              "control"
+            ],
+            [
+              "control",
+              "profiled"
+            ]
+          ],
+          "trials": {
+            "control": [
+              {
+                "peak_rss_bytes": 324026368,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": null,
+                "wall_seconds": 5.4458434999978635,
+                "stdout_bytes": 5988,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              },
+              {
+                "peak_rss_bytes": 324141056,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": null,
+                "wall_seconds": 5.334973208999145,
+                "stdout_bytes": 5992,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              },
+              {
+                "peak_rss_bytes": 324124672,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": null,
+                "wall_seconds": 5.418506500005606,
+                "stdout_bytes": 5991,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              }
+            ],
+            "profiled": [
+              {
+                "peak_rss_bytes": 324075520,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": {
+                  "body_seconds": 5.391037499997765,
+                  "seconds": {
+                    "records_read": 0.9463300089191762,
+                    "records_parse": 1.2616477457559085,
+                    "records_validate": 0.9266703507018974,
+                    "records_other": 0.6193448546328,
+                    "serialize": 1.4658254794339882,
+                    "sha256": 0.027574368999921717,
+                    "digest_other": 0.02315750102570746,
+                    "projection_build": 0.027051750010286923,
+                    "snapshot_identity": 0.03380085952812806,
+                    "worker_other": 0.059634580989950337
+                  },
+                  "calls": {
+                    "records_read": 60000,
+                    "records_parse": 60000,
+                    "records_validate": 60000,
+                    "records_other": 6,
+                    "serialize": 10035,
+                    "sha256": 20065,
+                    "digest_other": 29,
+                    "projection_build": 1,
+                    "snapshot_identity": 1,
+                    "worker_other": 1
+                  },
+                  "outside_body_seconds": 0.09922662500321167
+                },
+                "wall_seconds": 5.4902641250009765,
+                "stdout_bytes": 5992,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              },
+              {
+                "peak_rss_bytes": 324091904,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": {
+                  "body_seconds": 5.43451195799571,
+                  "seconds": {
+                    "records_read": 0.9793583743667114,
+                    "records_parse": 1.2743904121089145,
+                    "records_validate": 0.9370001124843839,
+                    "records_other": 0.6251642690476729,
+                    "serialize": 1.447452085049008,
+                    "sha256": 0.02800593967549503,
+                    "digest_other": 0.023011711062281393,
+                    "projection_build": 0.026526541994826403,
+                    "snapshot_identity": 0.03373613722214941,
+                    "worker_other": 0.05986637498426717
+                  },
+                  "calls": {
+                    "records_read": 60000,
+                    "records_parse": 60000,
+                    "records_validate": 60000,
+                    "records_other": 6,
+                    "serialize": 10035,
+                    "sha256": 20065,
+                    "digest_other": 29,
+                    "projection_build": 1,
+                    "snapshot_identity": 1,
+                    "worker_other": 1
+                  },
+                  "outside_body_seconds": 0.09825370800535893
+                },
+                "wall_seconds": 5.532765666001069,
+                "stdout_bytes": 5991,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              },
+              {
+                "peak_rss_bytes": 324157440,
+                "record_loads": 6,
+                "session_loads": 6,
+                "cli_exit_code": 0,
+                "profile": {
+                  "body_seconds": 5.398192249995191,
+                  "seconds": {
+                    "records_read": 0.9526090366125572,
+                    "records_parse": 1.2506794604705647,
+                    "records_validate": 0.9372596928733401,
+                    "records_other": 0.6225638940377394,
+                    "serialize": 1.4621010723058134,
+                    "sha256": 0.02808591588109266,
+                    "digest_other": 0.022854169968923088,
+                    "projection_build": 0.02597658299782779,
+                    "snapshot_identity": 0.0348472158293589,
+                    "worker_other": 0.06121520901797339
+                  },
+                  "calls": {
+                    "records_read": 60000,
+                    "records_parse": 60000,
+                    "records_validate": 60000,
+                    "records_other": 6,
+                    "serialize": 10035,
+                    "sha256": 20065,
+                    "digest_other": 29,
+                    "projection_build": 1,
+                    "snapshot_identity": 1,
+                    "worker_other": 1
+                  },
+                  "outside_body_seconds": 0.09555258299951674
+                },
+                "wall_seconds": 5.493744832994707,
+                "stdout_bytes": 5990,
+                "stderr_bytes": 0,
+                "model_calls": 3,
+                "prompt_bytes": 22597,
+                "semantic_sha256": "8dbddaf8686200e6fbb7b266e23cf814df2eaccb9ce5a5a869a4ec2179640f53",
+                "validated": true
+              }
+            ]
+          },
+          "medians": {
+            "control": {
+              "wall_seconds": 5.418506500005606,
+              "peak_rss_bytes": 324124672,
+              "stdout_bytes": 5991,
+              "record_loads": 6,
+              "session_loads": 6,
+              "model_calls": 3,
+              "prompt_bytes": 22597
+            },
+            "profiled": {
+              "wall_seconds": 5.493744832994707,
+              "peak_rss_bytes": 324091904,
+              "stdout_bytes": 5991,
+              "record_loads": 6,
+              "session_loads": 6,
+              "model_calls": 3,
+              "prompt_bytes": 22597,
+              "profile": {
+                "body_seconds": 5.398192249995191,
+                "seconds": {
+                  "records_read": 0.9526090366125572,
+                  "records_parse": 1.2616477457559085,
+                  "records_validate": 0.9370001124843839,
+                  "records_other": 0.6225638940377394,
+                  "serialize": 1.4621010723058134,
+                  "sha256": 0.02800593967549503,
+                  "digest_other": 0.023011711062281393,
+                  "projection_build": 0.026526541994826403,
+                  "snapshot_identity": 0.03380085952812806,
+                  "worker_other": 0.05986637498426717
+                },
+                "calls": {
+                  "records_read": 60000,
+                  "records_parse": 60000,
+                  "records_validate": 60000,
+                  "records_other": 6,
+                  "serialize": 10035,
+                  "sha256": 20065,
+                  "digest_other": 29,
+                  "projection_build": 1,
+                  "snapshot_identity": 1,
+                  "worker_other": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
