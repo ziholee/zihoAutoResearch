@@ -162,7 +162,7 @@ class SessionHistoryLoopTests(unittest.TestCase):
             metric_key='score', max_calls=9, session_seconds=300, scope='full', seed=42, budget_ref='test')
         self.history_id = 'session-' + '0' * 32
         self.path = self.root / '.autoresearch/sessions' / (self.history_id + '.json')
-        self.history = dict(id=self.history_id, experiment_id='prior', created_at='2026-01-01',
+        self.history = dict(id=self.history_id, experiment_id=None, created_at='2026-01-01',
                             state='complete', outputs={'memory': {'lesson': 'before'}})
         self.write_history()
         self.payloads = []

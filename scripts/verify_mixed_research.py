@@ -100,7 +100,7 @@ def worker(source, root, scenario, metadata):
     def answer(profile, messages):
         nonlocal memory_mutations
         payload = json.loads(messages[-1]['content'])
-        BASE['verify_legacy_lessons'](payload['prior_lessons'], expected(candidates))
+        BASE['verify_legacy_lessons'](payload['prior_lessons'], expected(candidates), payload.get('memory_selection'))
         role = payload['role']
         if scenario == 'interrupt' and role == 'planning':
             raise KeyboardInterrupt('Controlled mixed-fixture interruption')

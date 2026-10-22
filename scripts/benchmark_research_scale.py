@@ -82,7 +82,7 @@ def worker(source, root, mode, metadata):
         if mode == 'prepare' and role == 'planning':
             raise KeyboardInterrupt('Controlled mock provider interruption')
         calls.append(dict(role=role, prompt_bytes=sum(len(m['content'].encode()) for m in messages),
-                          prior_lessons=payload['prior_lessons']))
+                          prior_lessons=payload['prior_lessons'],memory_selection=payload.get('memory_selection')))
         return dict(content=json.dumps(body(role)), usage=None)
 
     prefix = ['--project', str(root), '--json', 'research']
@@ -182,15 +182,30 @@ def normalize_cli_results(envelopes, identifier):
     return normalized
 
 
-def verify_legacy_lessons(actual, expected):
+def verify_legacy_lessons(actual, expected, selection=None):
     """Check fixed legacy fixtures, including the new unassessed label if present.
 
     Older frozen sources lack the additive assessment field. Never discard a
     changed assessment silently or call product projection code for the oracle.
     """
+    if selection is not None:
+        assert selection['version'] == 1 and selection['limit'] == 5
+        counts = selection['counts']
+        assert counts['matched'] == counts['mismatch'] == counts['source_changed'] == 0
+        assert counts['eligible'] == counts['unknown']
+        assert counts['limit'] == max(0, counts['eligible'] - 5)
+        expected = sorted(expected, key=lambda x: (x['created_at'], x['session_id']), reverse=True)
     projected = []
     for item in actual:
         item = dict(item)
+        if selection is not None:
+            assert item.pop('relevance') == 'unknown'
+            assert item.pop('condition_matches') == dict(comparison='unknown', environment='unknown',
+                scope='unknown', budget_ref='unknown')
+            assert item.pop('selection_reasons') == ['comparison_unknown', 'environment_unknown',
+                'scope_unknown', 'budget_ref_unknown', 'original_conditions_unavailable',
+                'relevance_does_not_validate_effect_or_grant_approval']
+            assert item.pop('differences') == {}
         if 'assessment' in item:
             assert item.pop('assessment') == dict(version=1, status='unassessed',
                 claim_effect=None, observed_effect=None,
@@ -216,7 +231,7 @@ def verify(root, sample, mode, expected_lessons, records_before, history_before)
     expected_roles = [] if mode == 'status' else ROLES[2:] if mode == 'resume' else ROLES
     assert [call['role'] for call in sample['calls']] == expected_roles
     for call in sample['calls']:
-        verify_legacy_lessons(call['prior_lessons'], expected_lessons)
+        verify_legacy_lessons(call['prior_lessons'], expected_lessons, call.get('memory_selection'))
     assert records_digest(root) == records_before
     assert history_digest(root) == history_before
     assert not (root / 'metric.json').exists()

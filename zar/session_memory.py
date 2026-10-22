@@ -12,7 +12,16 @@ def identity(doc):
     return hashlib.sha256(dumps(doc).encode('utf-8')).hexdigest()
 
 
-def build_evidence(session, experiments):
+def source_identity(doc, identities=None):
+    # The caller owns this memo for exactly one validated records snapshot.
+    if identities is None:
+        return identity(doc)
+    if doc['id'] not in identities:
+        identities[doc['id']]=identity(doc)
+    return identities[doc['id']]
+
+
+def build_evidence(session, experiments, *, superseded=None, identities=None):
     """Project only the actual pair. Never accept model-supplied identities."""
     observation=experiments.get(session.get('experiment_id'))
     baseline=experiments.get(observation.get('baseline_id')) if observation else None
@@ -21,7 +30,7 @@ def build_evidence(session, experiments):
         if doc is None:
             provenance[label]=None
             continue
-        sha=identity(doc)
+        sha=source_identity(doc,identities)
         provenance[label]=dict(id=doc['id'],revision=doc['revision'],sha256=sha,
             comparison=deepcopy(doc['comparison']),environment=deepcopy(doc['environment']),
             run_context=deepcopy(doc.get('run_context')))
@@ -35,7 +44,7 @@ def build_evidence(session, experiments):
         if any(doc['execution']['score'] is None for doc in (observation,baseline)):
             reasons.append('missing_score')
         else:
-            comparison=compare_pair(baseline,observation,experiments)
+            comparison=compare_pair(baseline,observation,experiments,superseded=superseded)
             reasons.extend(comparison['reasons'])
     return dict(version=VERSION,session_id=session['id'],provenance=provenance,
                 handles=handles,comparison=comparison,reasons=reasons,evidence_files_checked=False,
@@ -72,7 +81,7 @@ def assess(proposal,evidence):
                 limitation='Recorded score direction only; no verified causal or transferable lesson. Approval is still required.')
 
 
-def project(session,experiments=None, *, superseded=None):
+def project(session,experiments=None, *, superseded=None, identities=None):
     """Keep the proposal verbatim, recheck saved provenance against current records."""
     saved=session.get('memory_assessment')
     if not isinstance(saved,dict) or saved.get('version')!=VERSION or not isinstance(saved.get('provenance'),dict):
@@ -88,9 +97,9 @@ def project(session,experiments=None, *, superseded=None):
         for source in saved['provenance'].values():
             if source:
                 current=experiments.get(source['id'])
-                if current is None or identity(current)!=source['sha256'] or source['id'] in superseded:
+                if current is None or source_identity(current,identities)!=source['sha256'] or source['id'] in superseded:
                     changed=True
-        evidence=build_evidence(session,experiments)
+        evidence=build_evidence(session,experiments,superseded=superseded,identities=identities)
         try:
             assessment=assess(session['outputs']['memory'],evidence)
         except (ValueError,KeyError,TypeError):
