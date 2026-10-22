@@ -5,6 +5,7 @@ from decimal import Decimal
 import difflib
 import hashlib
 import json
+from itertools import islice
 import os
 from pathlib import Path, PureWindowsPath
 import re
@@ -34,6 +35,35 @@ def require(value, message):
 
 def digest(value):
     return hashlib.sha256(value if isinstance(value,bytes) else dumps(value).encode()).hexdigest()
+
+def records_digest(records):
+    """Hash legacy JSON bytes in record batches, without a whole-store string.
+
+    Keep insertion order and the codec's exact separators/newline. Batches hold
+    at most 64 document references; a single large document still costs memory.
+    No parsed records or serialized bytes survive this call.
+    """
+    if not isinstance(records, dict) or not all(isinstance(k, str) for k in records):
+        raise ValueError('Record groups must be a mapping with string keys')
+    result = hashlib.sha256(b'{')
+    for group_index, (kind, group) in enumerate(records.items()):
+        if not isinstance(group, dict):
+            raise ValueError('Record groups must contain mappings')
+        if group_index:
+            result.update(b', ')
+        result.update((dumps(kind)[:-1] + ': {').encode('utf-8'))
+        items = iter(group.items())
+        first = True
+        while batch := dict(islice(items, 64)):
+            if not first:
+                result.update(b', ')
+            # Strip only the outer braces and the codec's final newline.
+            result.update(dumps(batch)[1:-2].encode('utf-8'))
+            first = False
+        result.update(b'}')
+    result.update(b'}\n')
+    return result.hexdigest()
+
 
 def safe_path(root, name, *, metadata=False):
     require(isinstance(name,str) and name and '\\' not in name and not PureWindowsPath(name).drive,
@@ -111,12 +141,12 @@ def assert_fresh(root,s):
     require(digest(execution_environment(s['profile']))==s['environment_hash'],'Execution environment changed; start a new session.')
     require(digest(project)==s['project_hash'],'Project settings changed; start a new session.')
     require(snapshot(root,list(s['sources']))==s['sources'],'Source inputs changed; start a new session.')
-    require(digest(snap.records)==s['records_hash'],'Research records changed; start a new session.')
+    require(records_digest(snap.records)==s['records_hash'],'Research records changed; start a new session.')
     return project,snap
 
 def records_identity(root):
     from .records import load_records
-    return digest(load_records(root,get_project(root)).records)
+    return records_digest(load_records(root,get_project(root)).records)
 
 def token(s):
     return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id') if k in s}))
@@ -215,7 +245,7 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
     s=dict(schema_version=1,id='session-'+uuid4().hex,state='planning',created_at=cli.now(),
            deadline=datetime.now(timezone.utc).timestamp()+session_seconds,session_seconds=session_seconds,goal=goal,profile=profile,
            max_calls=max_calls,calls=0,outputs={},trace=[],sources=sources,project_hash=digest(p),
-           records_hash=digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
+           records_hash=records_digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
            run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
     s.update(experiment_mode=mode,baseline_id=baseline)
