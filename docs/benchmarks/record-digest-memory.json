@@ -1,0 +1,453 @@
+{
+  "version": 1,
+  "methodology": "Record-digest temporary allocation and time, separate from CLI latency.\n\nEach frozen source loads the same validated records outside measurement. The\nactual research.records_digest helper is used when present, otherwise the original\nresearch.digest. Control measures only that digest call. A separate allocation\nmode traces the same call after input loading and garbage collection; it measures\ntemporary Python allocations, not RSS or the existing record snapshot. Fresh\nprocesses isolate every mode/source/repetition; one warmup precedes measured pairs\nand before/after execution order alternates.\n\nAfter timing/tracing has stopped, a second call writes every SHA256 constructor\nand update input to a private file in order. That instrumentation retains no chunk\nlist and never runs during measurement. The parent directly compares these bytes\nacross sources/modes/repetitions, also checking hashes and immutable fixtures.\nOnly numeric summaries and hashes are public. Loading, validation, instrumentation,\noutput writing and process startup are outside timing. No API or training runs.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "source_digest": {
+    "before": {
+      "files": 29,
+      "sha256": "d3057e0619f91649f237dac386868fecd884075a4255c4c923e7324420c70d76"
+    },
+    "after": {
+      "files": 29,
+      "sha256": "344c1a304f0648346798960bb8ce7984ef5ad946b015c734c60a9585d02781c4"
+    }
+  },
+  "measurement_digest": {
+    "profile_record_digest.py": "a43484929e9b359169a91b7b5953492a64daf20e3c4600c01f2b42b7c4c6f36f",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950"
+  },
+  "repeats": 3,
+  "warmups": 1,
+  "cases": [
+    {
+      "records": 100,
+      "fixture_digest": {
+        "files": 104,
+        "sha256": "85380b89e5d5a4e0c369dbe026c2f671e58abbffb0cabaa639b3333bcc475106"
+      },
+      "modes": {
+        "control": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.001956167005118914,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.001856833005149383,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.0018517499993322417,
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.0019339589998708107,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.001919999995152466,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.001873500004876405,
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": 0.001856833005149383
+            },
+            "after": {
+              "seconds": 0.001919999995152466
+            }
+          }
+        },
+        "allocation": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.011330875000567175,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 548995
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.011287665998679586,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 548995
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 1,
+                "max_chunk_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.011369707994163036,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 548995
+                }
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.011262624997470994,
+                "allocation": {
+                  "current_traced_bytes": 4753,
+                  "peak_traced_bytes": 354514
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.011403958000300918,
+                "allocation": {
+                  "current_traced_bytes": 4753,
+                  "peak_traced_bytes": 354514
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "chunks": 19,
+                "max_chunk_bytes": 71827,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "seconds": 0.01136433299689088,
+                "allocation": {
+                  "current_traced_bytes": 4753,
+                  "peak_traced_bytes": 354514
+                }
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": 0.011330875000567175,
+              "peak_traced_bytes": 548995,
+              "current_traced_bytes": 721
+            },
+            "after": {
+              "seconds": 0.01136433299689088,
+              "peak_traced_bytes": 354514,
+              "current_traced_bytes": 4753
+            }
+          }
+        }
+      },
+      "byte_equality_verified": true,
+      "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+      "serialized_bytes": 112306
+    },
+    {
+      "records": 10000,
+      "fixture_digest": {
+        "files": 10004,
+        "sha256": "1a7bf8e2dfccd1410425946ff9663a6ca33ad0add2f40519555d558405dced71"
+      },
+      "modes": {
+        "control": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.19085737499699462,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.20956650000152877,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.19942587499826914,
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.1853304169999319,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.17556270900240634,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 0.17389550000370946,
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": 0.19942587499826914
+            },
+            "after": {
+              "seconds": 0.17556270900240634
+            }
+          }
+        },
+        "allocation": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.1701408329972764,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 54785665
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.1340830000044662,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 54785665
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 1,
+                "max_chunk_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.11078925000038,
+                "allocation": {
+                  "current_traced_bytes": 721,
+                  "peak_traced_bytes": 54785665
+                }
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.1468265000003157,
+                "allocation": {
+                  "current_traced_bytes": 19361,
+                  "peak_traced_bytes": 410920
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.1189197080020676,
+                "allocation": {
+                  "current_traced_bytes": 19361,
+                  "peak_traced_bytes": 410920
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "chunks": 329,
+                "max_chunk_bytes": 71827,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "seconds": 1.2865698750028969,
+                "allocation": {
+                  "current_traced_bytes": 19361,
+                  "peak_traced_bytes": 410920
+                }
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": 1.1340830000044662,
+              "peak_traced_bytes": 54785665,
+              "current_traced_bytes": 721
+            },
+            "after": {
+              "seconds": 1.1468265000003157,
+              "peak_traced_bytes": 410920,
+              "current_traced_bytes": 19361
+            }
+          }
+        }
+      },
+      "byte_equality_verified": true,
+      "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+      "serialized_bytes": 11221990
+    }
+  ]
+}
