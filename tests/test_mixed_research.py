@@ -42,3 +42,21 @@ class MixedResearchTests(unittest.TestCase):
             self.assertTrue(resume['new_process_memory_update_verified'])
             self.assertTrue(report['scenarios']['approval']['approval_checked'])
             self.assertTrue(report['scenarios']['stale-approval']['stale_approval_refused'])
+
+
+class LargeMixedResearchTests(unittest.TestCase):
+    def test_large_hypotheses_preserve_all_mutation_and_approval_scenarios(self):
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'large'
+            completed = subprocess.run([sys.executable, '-I', '-X', 'utf8', str(SCRIPT),
+                '--source', str(ROOT), '--output', str(output), '--records', '63',
+                '--sessions', '6', '--memory-characters', '32', '--large-characters', '128'],
+                capture_output=True, text=True, timeout=120)
+            self.assertEqual(completed.returncode, 0, completed.stdout + completed.stderr)
+            report = json.loads((output / 'summary.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['large_characters'], 128)
+            self.assertIsNotNone(report['record_dimensions'])
+            self.assertEqual(set(report['scenarios']), set(VERIFY['SCENARIOS']))
+            self.assertTrue(all(r['validated'] and r['execution_absent'] for r in report['scenarios'].values()))
+            self.assertTrue(report['scenarios']['stale-approval']['stale_approval_refused'])
+            self.assertTrue(report['scenarios']['resume']['new_process_memory_update_verified'])

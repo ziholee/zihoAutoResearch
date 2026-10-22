@@ -205,6 +205,8 @@ def main():
     parser.add_argument('--records', type=int, default=10000)
     parser.add_argument('--sessions', type=int, default=2500)
     parser.add_argument('--memory-characters', type=int, default=16000)
+    parser.add_argument('--large-characters', type=int, default=0,
+                        help='Optional large hypothesis characters at record indices 0, 31 and 62')
     parser.add_argument('--timeout', type=float, default=600)
     parser.add_argument('--worker', choices=SCENARIOS + ('interrupt',), help=argparse.SUPPRESS)
     parser.add_argument('--root', type=Path, help=argparse.SUPPRESS)
@@ -215,10 +217,15 @@ def main():
         return
     if not args.output or args.output.exists() or args.records < 1 or args.sessions < 6 or not 2 <= args.memory_characters <= 20000:
         parser.error('New output, positive records, at least six sessions and 2..20000 memory characters required')
+    if args.large_characters < 0 or (args.large_characters and args.records < 63):
+        parser.error('Large hypotheses require non-negative characters and at least 63 records')
     original = args.source.resolve()
     source_hash = BASE['tree_digest'](original / 'zar', '*.py')
     measured_paths = [HERE, HERE.with_name('benchmark_session_boundaries.py'),
                       HERE.with_name('benchmark_research_scale.py'), HERE.with_name('benchmark_records.py')]
+    if args.large_characters:
+        measured_paths.extend(HERE.with_name(name) for name in (
+            'benchmark_large_records.py', 'benchmark_crossed_research.py', 'profile_record_digest.py'))
     def measurement_hash():
         return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in measured_paths}
     measured_hash = measurement_hash()
@@ -230,6 +237,10 @@ def main():
     shutil.copy2(original / 'pyproject.toml', source / 'pyproject.toml')
     seed = private / 'fixture'
     BASE['fixture'](source, seed, args.records, args.sessions, private, args.timeout)
+    record_dimensions = None
+    if args.large_characters:
+        large = runpy.run_path(str(HERE.with_name('benchmark_large_records.py')))
+        record_dimensions = large['resize_records'](seed, args.large_characters)
     dimensions = BOUNDARY['resize_history'](seed, memory_characters=args.memory_characters)
     candidates = tied_history(seed)
     BOUNDARY['validate_history'](source, seed, args.timeout)
@@ -260,6 +271,8 @@ def main():
         platform=platform.system() + '-' + platform.machine(), records=args.records,
         dimensions=dimensions, memory_characters=args.memory_characters, source_digest=source_hash,
         measurement_digest=measured_hash, fixture_digest=seed_hash, scenarios=results)
+    if record_dimensions is not None:
+        report.update(large_characters=args.large_characters, record_dimensions=record_dimensions)
     BASE['write_json'](output / 'summary.json', report)
 
 
