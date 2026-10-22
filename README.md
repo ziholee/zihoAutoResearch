@@ -30,6 +30,8 @@
 
 개발 소스에서는 `research start --provider codex --codex-command codex --model <모델>`로 설치된 Codex를 선택하거나 `research setup`에서 연결 방식을 고를 수 있습니다. 신뢰하는 Codex CLI 0.162.1 이상과 macOS/Linux가 필요합니다. 기존 Codex 인증을 사용하며 모델 서비스 전송·요금이 발생할 수 있습니다. Codex는 제안을 반환하고 기존 zar 전송·실행·판단 승인 절차를 그대로 따릅니다. 모의 에이전트로 검증했으며 실제 Codex 인증·추론은 미검증입니다. [지원 범위와 연결 안내](docs/research-api.md#설치된-codex로-연결하기)를 확인하세요.
 
+개발 소스의 세션 기억은 모델 제안과 CLI의 관찰 근거를 분리합니다. 근거 부족·효과 혼재·단일 비교의 일반화는 보류하며, 기존 세션 재개와 승인 절차를 유지합니다. [세션 기억의 근거와 한계](docs/session-memory-evidence.md)를 확인하세요.
+
 개발 소스의 `zar research metrics SESSION_ID --project ./my-ml-project --json`으로 역할별 호출 시간·메시지 바이트·보고된 토큰을 조회할 수 있습니다. 누락값과 부분 관측을 구분하며 실제 전송량·요금을 추정하지 않습니다. [측정 범위](docs/research-api.md#역할별-호출-측정-조회)를 확인하세요. 입력의 지침·소스·기록·누적 응답 크기와 필수 근거를 보존하는 중복 제거 범위는 [요청 맥락 효율화](docs/request-context-efficiency.md)에 설명합니다. 실제 API 품질·비용 검증은 후속입니다.
 
 `zar`는 **zihoAutoResearch의 약칭이자 실행 명령어**입니다. 설치할 패키지 이름은 `ziho-autoresearch`이고, 설치 후에는 `zar init`, `zar status`처럼 사용합니다.

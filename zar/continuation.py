@@ -17,6 +17,9 @@ def next_session(root,identifier,*,ask,emit):
         experiment=records.records['experiment'].get(parent['experiment_id'])
         research.require(experiment is not None and experiment.get('decision') and experiment['execution']['status'] in ('succeeded','failed','interrupted'),'Parent needs a terminal canonical experiment and decision.')
         context=dict(records_hash=research.records_digest(records.records),parent_id=identifier,parent_hash=research.digest(parent),experiment=deepcopy(experiment),memory_proposal=deepcopy(parent['outputs'].get('memory')))
+        from .session_memory import project as project_memory
+        if 'memory' in parent['outputs']:
+            context['memory_assessment']=project_memory(parent,records.records['experiment'])['assessment']
         research.require(len(dumps(context).encode())<=32768,'Next context exceeds 32 KB; start a separate session.')
     emit(dumps(dict(parent_session_id=identifier,experiment_id=experiment['id'],decision=experiment['decision'],score=experiment['execution']['score'],selected_baseline=project['selected_experiment_id'])))
     if not project['selected_experiment_id']:emit('No selected baseline: acquire an unchanged baseline, then explicitly keep and select it before candidate comparison.')

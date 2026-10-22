@@ -118,6 +118,14 @@ def role_messages(role, context):
         f'Total response must not exceed {MAX_RESPONSE_BYTES} UTF-8 bytes.\n\n'
         + instructions
     )
+    if role == 'memory' and context.get('memory_contract_version') == 1:
+        system += ('\nMemory contract version 1: optionally add contrast with exactly effect, applicability, evidence. '
+                   'effect is helped, hurt, no_observed_effect, confounded or insufficient_evidence; '
+                   'applicability is nonempty text at most 2000 characters; evidence is at most 20 distinct '
+                   'handles (each at most 512 characters) from memory_evidence.handles. Cite both pair handles '
+                   'for a comparison. Missing contrast is accepted but held as insufficient evidence. '
+                   'Score direction is not causal proof. Mixed effects or missing evidence must be held. '
+                   'The CLI assessment is separate from your proposal and never grants approval.\n')
     if context.get('context_encoding') == 'source_refs_v1':
         system += _SOURCE_REF_NOTE
     return [{'role': 'system', 'content': system}, {'role': 'user', 'content': content}]
@@ -150,12 +158,14 @@ def _changes(value):
         _text(change['content'], 'content', limit=100_000, empty=True)
 
 
-def validate_response(role, obj):
+def validate_response(role, obj, *, memory_version=None):
     """Validate syntax and role scope; references/permissions require loop checks."""
     _role(role)
     if not isinstance(obj, dict):
         raise RoleError('Role response must be an object')
     contract = {**_COMMON, **_EXTRA[role]}
+    if role == 'memory' and memory_version == 1 and 'contrast' in obj:
+        contract['contrast'] = 'contrast'
     if set(obj) != set(contract):
         raise RoleError('Role response fields do not match the contract')
     encoded = _json(obj, MAX_RESPONSE_BYTES)
@@ -168,6 +178,20 @@ def validate_response(role, obj):
                 raise RoleError(f'{field} must be a bounded list')
             for item in value:
                 _text(item, field)
+        elif kind == 'contrast':
+            from .session_memory import EFFECTS
+            if not isinstance(value, dict) or set(value) != {'effect', 'applicability', 'evidence'}:
+                raise RoleError('Invalid memory contrast fields')
+            if value['effect'] not in EFFECTS:
+                raise RoleError('Invalid memory contrast effect')
+            _text(value['applicability'], 'contrast.applicability', limit=2000)
+            refs = value['evidence']
+            if not isinstance(refs, list) or len(refs) > 20:
+                raise RoleError('contrast.evidence must have at most 20 handles')
+            for ref in refs:
+                _text(ref, 'contrast.evidence', limit=512)
+            if len(set(refs)) != len(refs):
+                raise RoleError('Duplicate contrast evidence handle')
         elif kind == 'changes':
             _changes(value)
         elif not isinstance(value, str) or value not in kind:

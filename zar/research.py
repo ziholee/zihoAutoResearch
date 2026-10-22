@@ -149,7 +149,7 @@ def records_identity(root):
     return records_digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id') if k in s}))
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version') if k in s}))
 
 def next_actions(s):
     """Suggestions only: never infer a stopped process or grant consent."""
@@ -248,7 +248,7 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
            records_hash=records_digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
            run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
-    s.update(experiment_mode=mode,baseline_id=baseline)
+    s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1)
     if next_context is not None:
         s['next_context']=deepcopy(next_context);s['next_context_hash']=digest(next_context)
     if revision_context is not None:
@@ -277,8 +277,8 @@ def _prior_lessons(root,s,cache=None):
             old=loads(text)
             lesson=None
             if old['state']=='complete' and 'memory' in old['outputs']:
-                lesson=dict(session_id=old['id'],experiment_id=old['experiment_id'],
-                            proposal=old['outputs']['memory'],created_at=old['created_at'])
+                from .session_memory import project as project_memory
+                lesson=project_memory(old)
         if lesson is not None:
             # Retain only selected memories outside the bounded parsing cache.
             # Stable sorting preserves filename order for equal timestamps.
@@ -305,10 +305,19 @@ def context(root,s,role,*,checked=None,record_context=None,history_cache=None):
     if observation and observation['baseline_id']:
         comparison=cli.compare(snap.records['experiment'][observation['baseline_id']],observation,snap.records['experiment'])
     lessons=_prior_lessons(root,s,history_cache)
-    return dict(experiment_mode=s.get('experiment_mode','legacy'),baseline_id=s.get('baseline_id'),next_context=s.get('next_context'),revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
+    from .session_memory import project as project_memory, build_evidence
+    superseded={doc['correction']['supersedes_id'] for doc in snap.records['experiment'].values() if doc.get('correction')} if any('provenance' in item['assessment'] for item in lessons) else set()
+    lessons=[project_memory(dict(id=item['session_id'],experiment_id=item['experiment_id'],
+                outputs={'memory':item['proposal']},created_at=item['created_at'],
+                memory_assessment=item['assessment']),snap.records['experiment'],superseded=superseded) for item in lessons]
+    result=dict(experiment_mode=s.get('experiment_mode','legacy'),baseline_id=s.get('baseline_id'),next_context=s.get('next_context'),revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
                 project=p,records=data,sources=s['sources'],command=s['command'],
                 metric_file=s['metric_file'],metric_key=s['metric_key'],run_context=s['run_context'],
                 outputs=s['outputs'],experiment_id=s['experiment_id'],allowed_tools=[])
+    if s.get('memory_contract_version') == 1:
+        result['memory_contract_version']=1
+        if role=='memory':result['memory_evidence']=build_evidence(s,snap.records['experiment'])
+    return result
 
 def call_api(profile,messages,remaining):
     """Bound local waiting even if DNS/headers exceed a socket timeout.
@@ -364,6 +373,9 @@ def advance(root,identifier,*,send=False):
         try:
             profile=deepcopy(s['profile'])
             profile['timeout_seconds']=min(float(profile.get('timeout_seconds',60)),max(0.1,float(s['deadline'])-datetime.now(timezone.utc).timestamp()))
+            # Transport JSON uses floats; causal guardrails must retain the
+            # exact Decimal comparison derived from the bounded canonical pair.
+            memory_evidence=payload.get('memory_evidence')
             payload=compact_context(role,json.loads(dumps(payload)))
             messages=role_messages(role,payload)
             measurement['input_message_bytes']=measure_messages(messages)
@@ -374,7 +386,11 @@ def advance(root,identifier,*,send=False):
             finally:
                 measurement['call_seconds']=max(0.0,time.perf_counter()-started)
             record_answer(measurement,answer,profile.get('provider','api'))
-            output=validate_response(role,loads(answer['content']))
+            output=validate_response(role,loads(answer['content']),memory_version=s.get('memory_contract_version'))
+            assessment=None
+            if role=='memory' and s.get('memory_contract_version') == 1:
+                from .session_memory import assess
+                assessment=assess(output,memory_evidence)
             valid_refs=set(s['sources']) | set(s['outputs']) | {'project','records'} | {v['session_id'] for v in payload['prior_lessons']}
             if s.get('next_context'):valid_refs.update(('next_context',s['next_context']['parent_id'],s['next_context']['experiment']['id']))
             if s.get('baseline_id'):valid_refs.add(s['baseline_id'])
@@ -425,7 +441,9 @@ def advance(root,identifier,*,send=False):
                 if s['state']!='blocked':s['state']='awaiting_approval'
                 s['diff']=''.join(''.join(difflib.unified_diff(s['sources'][c['path']]['content'].splitlines(True),c['content'].splitlines(True),fromfile=c['path'],tofile=c['path'])) for c in s['outputs']['implementation']['changes'])
             if role=='interpretation':s['state']='awaiting_decision'
-            if role=='memory':s['state']='complete'
+            if role=='memory':
+                s['state']='complete'
+                if assessment is not None:s['memory_assessment']=assessment
             if datetime.now(timezone.utc).timestamp()>s['deadline']:
                 s['state']='blocked';s['error']='deadline_exceeded'
             if s['state'] in ('awaiting_approval','awaiting_decision'):s['approval_token']=token(s)
