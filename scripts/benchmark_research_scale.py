@@ -182,6 +182,23 @@ def normalize_cli_results(envelopes, identifier):
     return normalized
 
 
+def verify_legacy_lessons(actual, expected):
+    """Check fixed legacy fixtures, including the new unassessed label if present.
+
+    Older frozen sources lack the additive assessment field. Never discard a
+    changed assessment silently or call product projection code for the oracle.
+    """
+    projected = []
+    for item in actual:
+        item = dict(item)
+        if 'assessment' in item:
+            assert item.pop('assessment') == dict(version=1, status='unassessed',
+                claim_effect=None, observed_effect=None,
+                reasons=['legacy_or_missing_assessment']), 'Legacy memory promoted or changed'
+        projected.append(item)
+    assert projected == expected, 'Latest five memory selection/order changed'
+
+
 def verify(root, sample, mode, expected_lessons, records_before, history_before):
     session = json.loads((root / '.autoresearch/sessions' / (sample['session_id'] + '.json')).read_text())
     assert session['state'] == 'awaiting_approval'
@@ -199,7 +216,7 @@ def verify(root, sample, mode, expected_lessons, records_before, history_before)
     expected_roles = [] if mode == 'status' else ROLES[2:] if mode == 'resume' else ROLES
     assert [call['role'] for call in sample['calls']] == expected_roles
     for call in sample['calls']:
-        assert call['prior_lessons'] == expected_lessons, 'Latest five memory selection/order changed'
+        verify_legacy_lessons(call['prior_lessons'], expected_lessons)
     assert records_digest(root) == records_before
     assert history_digest(root) == history_before
     assert not (root / 'metric.json').exists()

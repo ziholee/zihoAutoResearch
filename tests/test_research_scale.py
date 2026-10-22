@@ -17,6 +17,20 @@ finally:
 
 
 class ResearchScaleTests(unittest.TestCase):
+    def test_legacy_memory_oracle_does_not_hide_assessment_changes(self):
+        original = dict(session_id='old', experiment_id='exp', created_at='then',
+                        proposal={'lesson': 'one observation'})
+        expected = [original]
+        verify = BENCH['verify_legacy_lessons']
+        verify(expected, expected)
+        assessed = dict(original, assessment=dict(version=1, status='unassessed',
+            claim_effect=None, observed_effect=None, reasons=['legacy_or_missing_assessment']))
+        verify([assessed], expected)
+        for changed in (dict(assessed, proposal={'lesson': 'different'}),
+                        dict(assessed, assessment={**assessed['assessment'], 'status': 'verified'})):
+            with self.assertRaises(AssertionError):
+                verify([changed], expected)
+
     def test_normalization_keeps_actions_budgets_and_other_evidence(self):
         envelope = [{'ok': True, 'diagnostics': [], 'data': {
             'id': 'session-a', 'created_at': 'now', 'deadline': 123,
