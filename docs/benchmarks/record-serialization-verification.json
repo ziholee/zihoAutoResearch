@@ -1,0 +1,154 @@
+{
+  "version": 1,
+  "methodology": "Functional mixed-scale CLI verification with synthetic records and large history.\n\nNo timing claim, actual provider, training or OS-crash recovery is involved.\nEach scenario starts in a new process; interrupted resume uses another process.\nExpected recent memories come from six deliberately tied history identifiers,\nnot the product selector. Mutations are intentional and isolated per fixture.\nOnly numeric counts, flags, source/measurement hashes and aggregate dimensions\nare public. Fixture contents and CLI output remain under private/.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "records": 10000,
+  "dimensions": {
+    "completed_sessions": 2500,
+    "normalized_utf8_bytes": 46290000,
+    "min_session_bytes": 18516,
+    "max_session_bytes": 18516,
+    "expected_retained_entries": 453,
+    "expected_retained_input_bytes": 8387748,
+    "uncertainty_padding_bytes": 0
+  },
+  "memory_characters": 16000,
+  "source_digest": {
+    "files": 29,
+    "sha256": "d3057e0619f91649f237dac386868fecd884075a4255c4c923e7324420c70d76"
+  },
+  "measurement_digest": {
+    "verify_mixed_research.py": "4713eed261e98e259711406e0f06584b15308d77943d9bf9be04a39d250a3beb",
+    "benchmark_session_boundaries.py": "0420023738569786925007d6c6544e72526a5e86da8cdbc8da0f90ad5a462013",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950"
+  },
+  "fixture_digest": {
+    "files": 12505,
+    "sha256": "8f7f7f635c6a9d73a6ae64102dfe5ac0463311f140c100f2b5bc054e648a1636"
+  },
+  "scenarios": {
+    "record-edit": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-add": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-delete": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-correction": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "between-roles": {
+      "validated": true,
+      "model_calls": 1,
+      "stored_call_attempts": 1,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "history-changes": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 3,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "resume": {
+      "validated": true,
+      "model_calls": 3,
+      "stored_call_attempts": 6,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0,
+      "interruption": {
+        "validated": true,
+        "model_calls": 2,
+        "stored_call_attempts": 3,
+        "preserved_successful_roles": 2,
+        "memory_mutations": 0,
+        "expected_failure": true,
+        "execution_absent": true,
+        "approval_checked": false,
+        "stale_approval_refused": false,
+        "stderr_bytes": 0
+      },
+      "new_process_memory_update_verified": true
+    },
+    "approval": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "stale-approval": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": true,
+      "stderr_bytes": 0
+    }
+  }
+}

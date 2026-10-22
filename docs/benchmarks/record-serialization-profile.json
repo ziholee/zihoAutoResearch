@@ -1,0 +1,1285 @@
+{
+  "version": 1,
+  "methodology": "Isolated record-identity serialization diagnostics, not CLI latency.\n\nBoth frozen sources load the same validated synthetic records outside timing.\nControl times codec.dumps, UTF-8 encoding and SHA256 separately. Scalar-profile\nwraps JSONEncoder.encode inside the actual serializer: its elapsed time and call\ncount diagnose scalar quoting, while the remaining dumps time combines dispatch,\nvalidation, recursive traversal, separators and joining. There is no independent\nnormalization pass in the current codec, so the remainder is not a normalization\nmeasurement. Wrapper overhead perturbs that diagnostic; control is the comparison.\nAllocation runs use tracemalloc separately, starting after records are loaded.\nThey measure temporary traced allocations, not RSS or the complete live record\nsnapshot. Text and UTF-8 output coexist during conversion, then text is released\nbefore hashing, matching the digest expression's lifetime. Preparation, loading,\nvalidation, output writing and process startup are excluded from phase timings.\nEach mode/source/repetition uses a fresh process; source order alternates.\nOne warmup per mode/source precedes measured repetitions. Output bytes are compared\ndirectly across every worker; public reports contain only numbers and hashes.\nNo API, training or mutation is performed. No speed threshold determines validity.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "source_digest": {
+    "before": {
+      "files": 29,
+      "sha256": "3a3447938daf22162c00bfdd3c2deac5968db183d21a6cb33cb5c07ff8d983d8"
+    },
+    "after": {
+      "files": 29,
+      "sha256": "d3057e0619f91649f237dac386868fecd884075a4255c4c923e7324420c70d76"
+    }
+  },
+  "measurement_digest": {
+    "profile_record_serialization.py": "e23a17feed2cc4a48f1de8162cd04d26fc9228db549b39e0662dec005e57b044",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950"
+  },
+  "repeats": 3,
+  "warmups": 1,
+  "cases": [
+    {
+      "records": 100,
+      "fixture_digest": {
+        "files": 104,
+        "sha256": "85380b89e5d5a4e0c369dbe026c2f671e58abbffb0cabaa639b3333bcc475106"
+      },
+      "modes": {
+        "control": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.002176415997382719,
+                  "utf8": 3.9000005926936865e-05,
+                  "sha256": 4.816699947696179e-05,
+                  "total": 0.0022635830027866177
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0020725409995066,
+                  "utf8": 5.433300248114392e-05,
+                  "sha256": 4.6749999455641955e-05,
+                  "total": 0.002173624001443386
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.002105375002429355,
+                  "utf8": 4.0083999920170754e-05,
+                  "sha256": 4.9665999540593475e-05,
+                  "total": 0.002195125001890119
+                },
+                "scalar_profile": null,
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0016906249948078766,
+                  "utf8": 3.954100247938186e-05,
+                  "sha256": 4.929200076730922e-05,
+                  "total": 0.0017794579980545677
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0016172090035979636,
+                  "utf8": 4.1250001231674105e-05,
+                  "sha256": 4.720799915958196e-05,
+                  "total": 0.0017056670039892197
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0018002079959842376,
+                  "utf8": 9.120899630943313e-05,
+                  "sha256": 5.420900561148301e-05,
+                  "total": 0.0019456259979051538
+                },
+                "scalar_profile": null,
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 0.002105375002429355,
+                "utf8": 4.0083999920170754e-05,
+                "sha256": 4.816699947696179e-05,
+                "total": 0.002195125001890119
+              }
+            },
+            "after": {
+              "seconds": {
+                "serialize": 0.0016906249948078766,
+                "utf8": 4.1250001231674105e-05,
+                "sha256": 4.929200076730922e-05,
+                "total": 0.0017794579980545677
+              }
+            }
+          }
+        },
+        "scalar-profile": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.003278583004430402,
+                  "utf8": 3.7500001781154424e-05,
+                  "sha256": 5.345800309441984e-05,
+                  "total": 0.0033695410093059763
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007946251207613386,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.0024839578836690634
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0033085830000345595,
+                  "utf8": 4.425000224728137e-05,
+                  "sha256": 4.720799915958196e-05,
+                  "total": 0.003400041001441423
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007802077525411732,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.0025283752474933863
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0033089580028899945,
+                  "utf8": 4.179200186626986e-05,
+                  "sha256": 4.654100484913215e-05,
+                  "total": 0.0033972910096053965
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007858767348807305,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.002523081268009264
+                },
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.003089666999585461,
+                  "utf8": 9.520800085738301e-05,
+                  "sha256": 5.183399480301887e-05,
+                  "total": 0.0032367089952458628
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007943014134070836,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.0022953655861783773
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.0028902500052936375,
+                  "utf8": 3.924999327864498e-05,
+                  "sha256": 4.783400072483346e-05,
+                  "total": 0.002977333999297116
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007684598895139061,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.0021217901157797314
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.002911707997554913,
+                  "utf8": 4.162500408710912e-05,
+                  "sha256": 4.7166999138426036e-05,
+                  "total": 0.0030005000007804483
+                },
+                "scalar_profile": {
+                  "seconds": 0.0007454205988324247,
+                  "calls": 7532,
+                  "traversal_validation_assembly_seconds": 0.0021662873987224884
+                },
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 0.0033085830000345595,
+                "utf8": 4.179200186626986e-05,
+                "sha256": 4.720799915958196e-05,
+                "total": 0.0033972910096053965
+              },
+              "scalar_profile": {
+                "seconds": 0.0007858767348807305,
+                "calls": 7532,
+                "traversal_validation_assembly_seconds": 0.002523081268009264
+              }
+            },
+            "after": {
+              "seconds": {
+                "serialize": 0.002911707997554913,
+                "utf8": 4.162500408710912e-05,
+                "sha256": 4.783400072483346e-05,
+                "total": 0.0030005000007804483
+              },
+              "scalar_profile": {
+                "seconds": 0.0007684598895139061,
+                "calls": 7532,
+                "traversal_validation_assembly_seconds": 0.0021662873987224884
+              }
+            }
+          }
+        },
+        "allocation": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.011143374998937361,
+                  "utf8": 4.0833001548890024e-05,
+                  "sha256": 5.5083000916056335e-05,
+                  "total": 0.011239291001402307
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220434,
+                      "cumulative_peak_traced_bytes": 448562
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332929,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113671,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113912,
+                      "cumulative_peak_traced_bytes": 549591
+                    }
+                  ],
+                  "peak_traced_bytes": 549591
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.011374375004379544,
+                  "utf8": 4.175000503892079e-05,
+                  "sha256": 4.983299731975421e-05,
+                  "total": 0.01146595800673822
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220434,
+                      "cumulative_peak_traced_bytes": 448562
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332929,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113671,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113912,
+                      "cumulative_peak_traced_bytes": 549591
+                    }
+                  ],
+                  "peak_traced_bytes": 549591
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.01162816699797986,
+                  "utf8": 3.84579980163835e-05,
+                  "sha256": 7.808299415046349e-05,
+                  "total": 0.011744707990146708
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220434,
+                      "cumulative_peak_traced_bytes": 448562
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332929,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113671,
+                      "cumulative_peak_traced_bytes": 549591
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113912,
+                      "cumulative_peak_traced_bytes": 549591
+                    }
+                  ],
+                  "peak_traced_bytes": 549591
+                }
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.010905082999670412,
+                  "utf8": 3.762499545700848e-05,
+                  "sha256": 4.529200668912381e-05,
+                  "total": 0.010988000001816545
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220242,
+                      "cumulative_peak_traced_bytes": 448386
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332737,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113479,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113720,
+                      "cumulative_peak_traced_bytes": 549399
+                    }
+                  ],
+                  "peak_traced_bytes": 549399
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.010654374993464444,
+                  "utf8": 3.9375001506414264e-05,
+                  "sha256": 4.70000013592653e-05,
+                  "total": 0.010740749996330123
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220242,
+                      "cumulative_peak_traced_bytes": 448386
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332737,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113479,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113720,
+                      "cumulative_peak_traced_bytes": 549399
+                    }
+                  ],
+                  "peak_traced_bytes": 549399
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 112306,
+                "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+                "experiment_count": 100,
+                "text_object_bytes": 219386,
+                "utf8_object_bytes": 112339,
+                "seconds": {
+                  "serialize": 0.01097870800003875,
+                  "utf8": 4.2583000322338194e-05,
+                  "sha256": 5.575000250246376e-05,
+                  "total": 0.011077041002863552
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 220242,
+                      "cumulative_peak_traced_bytes": 448386
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 332737,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 113479,
+                      "cumulative_peak_traced_bytes": 549399
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 113720,
+                      "cumulative_peak_traced_bytes": 549399
+                    }
+                  ],
+                  "peak_traced_bytes": 549399
+                }
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 0.011374375004379544,
+                "utf8": 4.0833001548890024e-05,
+                "sha256": 5.5083000916056335e-05,
+                "total": 0.01146595800673822
+              },
+              "peak_traced_bytes": 549591
+            },
+            "after": {
+              "seconds": {
+                "serialize": 0.010905082999670412,
+                "utf8": 3.9375001506414264e-05,
+                "sha256": 4.70000013592653e-05,
+                "total": 0.010988000001816545
+              },
+              "peak_traced_bytes": 549399
+            }
+          }
+        }
+      },
+      "byte_equality_verified": true,
+      "sha256": "0dc76286214f81f9069ed06b26697eb866ad45923afad2b26a2ac0b944e916ac",
+      "serialized_bytes": 112306
+    },
+    {
+      "records": 10000,
+      "fixture_digest": {
+        "files": 10004,
+        "sha256": "1a7bf8e2dfccd1410425946ff9663a6ca33ad0add2f40519555d558405dced71"
+      },
+      "modes": {
+        "control": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.21430354200128932,
+                  "utf8": 0.0037456659993040375,
+                  "sha256": 0.003285999999206979,
+                  "total": 0.22133520799980033
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.21394654199684737,
+                  "utf8": 0.004011457996966783,
+                  "sha256": 0.003739624997251667,
+                  "total": 0.22169762499106582
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.21540058300161036,
+                  "utf8": 0.0037635830012732185,
+                  "sha256": 0.0036400000026333146,
+                  "total": 0.2228041660055169
+                },
+                "scalar_profile": null,
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.17604508299700683,
+                  "utf8": 0.0034492909981054254,
+                  "sha256": 0.00333370799489785,
+                  "total": 0.1828280819900101
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.17652341700159013,
+                  "utf8": 0.003656082997622434,
+                  "sha256": 0.0032956669965642504,
+                  "total": 0.18347516699577682
+                },
+                "scalar_profile": null,
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.17797895900002914,
+                  "utf8": 0.0036267079995013773,
+                  "sha256": 0.0034252920013386756,
+                  "total": 0.1850309590008692
+                },
+                "scalar_profile": null,
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 0.21430354200128932,
+                "utf8": 0.0037635830012732185,
+                "sha256": 0.0036400000026333146,
+                "total": 0.22169762499106582
+              }
+            },
+            "after": {
+              "seconds": {
+                "serialize": 0.17652341700159013,
+                "utf8": 0.0036267079995013773,
+                "sha256": 0.00333370799489785,
+                "total": 0.18347516699577682
+              }
+            }
+          }
+        },
+        "scalar-profile": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.3496559580016765,
+                  "utf8": 0.0035799170000245795,
+                  "sha256": 0.003292249995865859,
+                  "total": 0.3565281249975669
+                },
+                "scalar_profile": {
+                  "seconds": 0.07986218869336881,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.2697937693083077
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.35756370800663717,
+                  "utf8": 0.0036310409996076487,
+                  "sha256": 0.003419209002458956,
+                  "total": 0.3646139580087038
+                },
+                "scalar_profile": {
+                  "seconds": 0.08182561986177461,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.27573808814486256
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.35449283300113166,
+                  "utf8": 0.003759457998967264,
+                  "sha256": 0.0033470000053057447,
+                  "total": 0.36159929100540467
+                },
+                "scalar_profile": {
+                  "seconds": 0.08071241098514292,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.27378042201598873
+                },
+                "allocation": null
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.318708291000803,
+                  "utf8": 0.0035821669953293167,
+                  "sha256": 0.0035628330006147735,
+                  "total": 0.3258532909967471
+                },
+                "scalar_profile": {
+                  "seconds": 0.0800759697885951,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.2386323212122079
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.3064053329944727,
+                  "utf8": 0.00424774999555666,
+                  "sha256": 0.00374391700461274,
+                  "total": 0.3143969999946421
+                },
+                "scalar_profile": {
+                  "seconds": 0.07875261176377535,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.22765272123069735
+                },
+                "allocation": null
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 0.31130529200163437,
+                  "utf8": 0.0036535000035655685,
+                  "sha256": 0.003286709004896693,
+                  "total": 0.31824550101009663
+                },
+                "scalar_profile": {
+                  "seconds": 0.078357488331676,
+                  "calls": 752507,
+                  "traversal_validation_assembly_seconds": 0.23294780366995838
+                },
+                "allocation": null
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 0.35449283300113166,
+                "utf8": 0.0036310409996076487,
+                "sha256": 0.0033470000053057447,
+                "total": 0.36159929100540467
+              },
+              "scalar_profile": {
+                "seconds": 0.08071241098514292,
+                "calls": 752507,
+                "traversal_validation_assembly_seconds": 0.27378042201598873
+              }
+            },
+            "after": {
+              "seconds": {
+                "serialize": 0.31130529200163437,
+                "utf8": 0.0036535000035655685,
+                "sha256": 0.0035628330006147735,
+                "total": 0.31824550101009663
+              },
+              "scalar_profile": {
+                "seconds": 0.07875261176377535,
+                "calls": 752507,
+                "traversal_validation_assembly_seconds": 0.23294780366995838
+              }
+            }
+          }
+        },
+        "allocation": {
+          "order": [
+            [
+              "before",
+              "after"
+            ],
+            [
+              "after",
+              "before"
+            ],
+            [
+              "before",
+              "after"
+            ]
+          ],
+          "trials": {
+            "before": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.1058152909972705,
+                  "utf8": 0.0034860000014305115,
+                  "sha256": 0.003320458003145177,
+                  "total": 1.1126217490018462
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21915102,
+                      "cumulative_peak_traced_bytes": 44615154
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137281,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223355,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223596,
+                      "cumulative_peak_traced_bytes": 54786261
+                    }
+                  ],
+                  "peak_traced_bytes": 54786261
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.1087244169975747,
+                  "utf8": 0.003971833000832703,
+                  "sha256": 0.0036314579992904328,
+                  "total": 1.1163277079976979
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21915102,
+                      "cumulative_peak_traced_bytes": 44615154
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137281,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223355,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223596,
+                      "cumulative_peak_traced_bytes": 54786261
+                    }
+                  ],
+                  "peak_traced_bytes": 54786261
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.1295190829987405,
+                  "utf8": 0.0037209160000202246,
+                  "sha256": 0.003725833994394634,
+                  "total": 1.1369658329931553
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21915102,
+                      "cumulative_peak_traced_bytes": 44615154
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137281,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223355,
+                      "cumulative_peak_traced_bytes": 54786261
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223596,
+                      "cumulative_peak_traced_bytes": 54786261
+                    }
+                  ],
+                  "peak_traced_bytes": 54786261
+                }
+              }
+            ],
+            "after": [
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.0575765000030515,
+                  "utf8": 0.0033618750021560118,
+                  "sha256": 0.003283000005467329,
+                  "total": 1.0642213750106748
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21914910,
+                      "cumulative_peak_traced_bytes": 44614978
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137089,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223163,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223404,
+                      "cumulative_peak_traced_bytes": 54786069
+                    }
+                  ],
+                  "peak_traced_bytes": 54786069
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.0721598750023986,
+                  "utf8": 0.0038895839970791712,
+                  "sha256": 0.0034611670052981935,
+                  "total": 1.079510626004776
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21914910,
+                      "cumulative_peak_traced_bytes": 44614978
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137089,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223163,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223404,
+                      "cumulative_peak_traced_bytes": 54786069
+                    }
+                  ],
+                  "peak_traced_bytes": 54786069
+                }
+              },
+              {
+                "validated": true,
+                "serialized_bytes": 11221990,
+                "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+                "experiment_count": 10000,
+                "text_object_bytes": 21914054,
+                "utf8_object_bytes": 11222023,
+                "seconds": {
+                  "serialize": 1.0860825839990866,
+                  "utf8": 0.0038341249965014867,
+                  "sha256": 0.0036495000022114255,
+                  "total": 1.0935662089977995
+                },
+                "scalar_profile": null,
+                "allocation": {
+                  "events": [
+                    {
+                      "phase": "begin",
+                      "current_traced_bytes": 152,
+                      "cumulative_peak_traced_bytes": 152
+                    },
+                    {
+                      "phase": "serialized",
+                      "current_traced_bytes": 21914910,
+                      "cumulative_peak_traced_bytes": 44614978
+                    },
+                    {
+                      "phase": "utf8_encoded",
+                      "current_traced_bytes": 33137089,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "text_released",
+                      "current_traced_bytes": 11223163,
+                      "cumulative_peak_traced_bytes": 54786069
+                    },
+                    {
+                      "phase": "hashed",
+                      "current_traced_bytes": 11223404,
+                      "cumulative_peak_traced_bytes": 54786069
+                    }
+                  ],
+                  "peak_traced_bytes": 54786069
+                }
+              }
+            ]
+          },
+          "medians": {
+            "before": {
+              "seconds": {
+                "serialize": 1.1087244169975747,
+                "utf8": 0.0037209160000202246,
+                "sha256": 0.0036314579992904328,
+                "total": 1.1163277079976979
+              },
+              "peak_traced_bytes": 54786261
+            },
+            "after": {
+              "seconds": {
+                "serialize": 1.0721598750023986,
+                "utf8": 0.0038341249965014867,
+                "sha256": 0.0034611670052981935,
+                "total": 1.079510626004776
+              },
+              "peak_traced_bytes": 54786069
+            }
+          }
+        }
+      },
+      "byte_equality_verified": true,
+      "sha256": "d6d022e97a872a2ed74d274b92763eb0734ac9d7a15884589b5a9add16f6fa5d",
+      "serialized_bytes": 11221990
+    }
+  ]
+}
