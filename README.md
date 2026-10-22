@@ -197,6 +197,8 @@ Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-valid
 
 [완료 세션 반복 조회](docs/completed-session-costs.md)는 매 역할의 경로 검사와 원문 읽기를 유지하면서 내용이 같은 과거 세션의 반복 파싱만 줄입니다.
 
+[큰 기록 배치 검증](docs/large-record-batches.md)은 크기가 다른 기록을 63·64·65개 경계와 10,000개 혼합 조건에서 교차 측정합니다.
+
 [기록 해시 일시 메모리](docs/record-digest-memory.md)는 기존 바이트·해시를 유지하는 분할 처리와 작은·혼합 조건의 교차 측정을 다룹니다.
 
 [기록 직렬화 비용](docs/record-serialization-costs.md)은 바이트·해시를 유지하면서 검증된 키의 중복 타입 분기를 줄이고 시간·일시 할당을 분리해 측정합니다.

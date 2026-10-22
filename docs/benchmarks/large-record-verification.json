@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "methodology": "Functional mixed-scale CLI verification with synthetic records and large history.\n\nNo timing claim, actual provider, training or OS-crash recovery is involved.\nEach scenario starts in a new process; interrupted resume uses another process.\nExpected recent memories come from six deliberately tied history identifiers,\nnot the product selector. Mutations are intentional and isolated per fixture.\nOnly numeric counts, flags, source/measurement hashes and aggregate dimensions\nare public. Fixture contents and CLI output remain under private/.\n",
+  "python": "3.11.17",
+  "platform": "Darwin-arm64",
+  "records": 10000,
+  "dimensions": {
+    "completed_sessions": 2500,
+    "normalized_utf8_bytes": 46290000,
+    "min_session_bytes": 18516,
+    "max_session_bytes": 18516,
+    "expected_retained_entries": 453,
+    "expected_retained_input_bytes": 8387748,
+    "uncertainty_padding_bytes": 0
+  },
+  "memory_characters": 16000,
+  "source_digest": {
+    "files": 29,
+    "sha256": "344c1a304f0648346798960bb8ce7984ef5ad946b015c734c60a9585d02781c4"
+  },
+  "measurement_digest": {
+    "verify_mixed_research.py": "2efa570df1e78c2174273d086e99d10ad353b612bb488123349e5a7fa9ea2f5b",
+    "benchmark_session_boundaries.py": "0420023738569786925007d6c6544e72526a5e86da8cdbc8da0f90ad5a462013",
+    "benchmark_research_scale.py": "842a728a91eeae65e9d7ffe6fd63e109d5a7cc8e19bb802b97fd2b62c632dc12",
+    "benchmark_records.py": "0747f1835c8b7d87e934244681d6193714c76d5b560a09bcc416009f33fa8950",
+    "benchmark_large_records.py": "c281dbee0d3fc75d6ac623438829694e1e75a6d6b5e71ba43373a01ee0b23504",
+    "benchmark_crossed_research.py": "9f10a3373db4cfd5f5f6a27b992e3c36364bba72159196ace735c589a16328b0",
+    "profile_record_digest.py": "a43484929e9b359169a91b7b5953492a64daf20e3c4600c01f2b42b7c4c6f36f"
+  },
+  "fixture_digest": {
+    "files": 12505,
+    "sha256": "acd4779ee97d23b4abc570cf1fdf154c2448dd96d8c8a80ba8233dc25a394cdb"
+  },
+  "scenarios": {
+    "record-edit": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-add": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-delete": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "record-correction": {
+      "validated": true,
+      "model_calls": 2,
+      "stored_call_attempts": 2,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "between-roles": {
+      "validated": true,
+      "model_calls": 1,
+      "stored_call_attempts": 1,
+      "preserved_successful_roles": 1,
+      "memory_mutations": 0,
+      "expected_failure": true,
+      "execution_absent": true,
+      "approval_checked": false,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "history-changes": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 3,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "resume": {
+      "validated": true,
+      "model_calls": 3,
+      "stored_call_attempts": 6,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0,
+      "interruption": {
+        "validated": true,
+        "model_calls": 2,
+        "stored_call_attempts": 3,
+        "preserved_successful_roles": 2,
+        "memory_mutations": 0,
+        "expected_failure": true,
+        "execution_absent": true,
+        "approval_checked": false,
+        "stale_approval_refused": false,
+        "stderr_bytes": 0
+      },
+      "new_process_memory_update_verified": true
+    },
+    "approval": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": false,
+      "stderr_bytes": 0
+    },
+    "stale-approval": {
+      "validated": true,
+      "model_calls": 5,
+      "stored_call_attempts": 5,
+      "preserved_successful_roles": 5,
+      "memory_mutations": 0,
+      "expected_failure": false,
+      "execution_absent": true,
+      "approval_checked": true,
+      "stale_approval_refused": true,
+      "stderr_bytes": 0
+    }
+  },
+  "large_characters": 262144,
+  "record_dimensions": {
+    "records": 10000,
+    "total_file_bytes": 15830337,
+    "min_file_bytes": 1061,
+    "max_file_bytes": 1049414,
+    "large_records": [
+      {
+        "index": 0,
+        "characters": 262144,
+        "hypothesis_utf8_bytes": 262144,
+        "file_bytes": 263708
+      },
+      {
+        "index": 31,
+        "characters": 262144,
+        "hypothesis_utf8_bytes": 786432,
+        "file_bytes": 787243
+      },
+      {
+        "index": 62,
+        "characters": 262144,
+        "hypothesis_utf8_bytes": 1048576,
+        "file_bytes": 1049414
+      }
+    ]
+  }
+}
