@@ -69,6 +69,7 @@ def dumps(value, *, ensure_ascii=False):
         if isinstance(item, dict):
             if not all(isinstance(key, str) for key in item):
                 raise ValueError("JSON keys must be strings")
-            return "{" + ", ".join(encode(k) + ": " + encode(v) for k, v in item.items()) + "}"
+            # Keys are already validated strings; skip generic scalar dispatch.
+            return "{" + ", ".join(scalar_encoder(k) + ": " + encode(v) for k, v in item.items()) + "}"
         raise ValueError(f"Unsupported JSON value: {type(item).__name__}")
     return encode(value) + "\n"
