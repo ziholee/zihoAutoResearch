@@ -149,7 +149,7 @@ def records_identity(root):
     return records_digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version') if k in s}))
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version','memory_selection_version') if k in s}))
 
 def next_actions(s):
     """Suggestions only: never infer a stopped process or grant consent."""
@@ -248,7 +248,7 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
            records_hash=records_digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
            run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
-    s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1)
+    s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1,memory_selection_version=1)
     if next_context is not None:
         s['next_context']=deepcopy(next_context);s['next_context_hash']=digest(next_context)
     if revision_context is not None:
@@ -261,7 +261,15 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
 HISTORY_CACHE_MAX_ENTRIES = 2048
 HISTORY_CACHE_MAX_BYTES = 8 * 1024 * 1024
 
-def _prior_lessons(root,s,cache=None):
+def _prior_lessons(root,s,cache=None,*,project=None,experiments=None):
+    require('memory_selection_version' not in s or (type(s['memory_selection_version']) is int and s['memory_selection_version']==1),'Unsupported memory selection version.')
+    relevant=s.get('memory_selection_version')==1
+    if relevant:
+        from .memory_selection import classify, rank
+        require(project is not None and experiments is not None,'Relevant memory selection requires a current records snapshot.')
+        superseded={d['correction']['supersedes_id'] for d in experiments.values() if d.get('correction')}
+        identities={}
+        counts=dict(eligible=0,matched=0,unknown=0,mismatch=0,source_changed=0,limit=0)
     lessons=[];updated={};retained_bytes=0
     paths=sorted((root/'.autoresearch/sessions').glob('*.json'),key=lambda p:p.name)
     for path in paths:
@@ -282,12 +290,34 @@ def _prior_lessons(root,s,cache=None):
         if lesson is not None:
             # Retain only selected memories outside the bounded parsing cache.
             # Stable sorting preserves filename order for equal timestamps.
-            lessons.append(lesson)
-            lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
+            if relevant:
+                counts['eligible']+=1
+                selection,excluded=classify(lesson,s,project,experiments,superseded,identities)
+                if excluded:
+                    counts[excluded]+=1
+                else:
+                    counts[selection['relevance']]+=1
+                    candidate=dict(lesson,**selection)
+                    lessons.append(candidate)
+                    lessons=sorted(lessons,key=rank,reverse=True)[:5]
+            else:
+                lessons.append(lesson)
+                lessons=sorted(lessons,key=lambda x:x['created_at'])[-5:]
         if cache is not None and len(updated)<HISTORY_CACHE_MAX_ENTRIES and retained_bytes+len(raw)<=HISTORY_CACHE_MAX_BYTES:
             updated[path.stem]=(identity,lesson,len(raw));retained_bytes+=len(raw)
     if cache is not None:
         cache.clear();cache.update(updated)
+    if relevant:
+        from .session_memory import project as project_memory
+        projected=[]
+        for item in lessons:
+            fresh=project_memory(dict(id=item['session_id'],experiment_id=item['experiment_id'],
+                outputs={'memory':item['proposal']},created_at=item['created_at'],
+                memory_assessment=item['assessment']),experiments,superseded=superseded,identities=identities)
+            fresh.update({key:item[key] for key in ('relevance','condition_matches','selection_reasons','differences')})
+            projected.append(fresh)
+        counts['limit']=counts['matched']+counts['unknown']-len(projected)
+        return projected,dict(version=1,limit=5,counts=counts)
     return deepcopy(sorted(lessons,key=lambda x:x['created_at'])[-5:])
 
 def context(root,s,role,*,checked=None,record_context=None,history_cache=None):
@@ -304,16 +334,21 @@ def context(root,s,role,*,checked=None,record_context=None,history_cache=None):
     comparison=None
     if observation and observation['baseline_id']:
         comparison=cli.compare(snap.records['experiment'][observation['baseline_id']],observation,snap.records['experiment'])
-    lessons=_prior_lessons(root,s,history_cache)
+    selected=_prior_lessons(root,s,history_cache,project=p,experiments=snap.records['experiment'])
+    selection=None
+    if s.get('memory_selection_version')==1:lessons,selection=selected
+    else:lessons=selected
     from .session_memory import project as project_memory, build_evidence
-    superseded={doc['correction']['supersedes_id'] for doc in snap.records['experiment'].values() if doc.get('correction')} if any('provenance' in item['assessment'] for item in lessons) else set()
-    lessons=[project_memory(dict(id=item['session_id'],experiment_id=item['experiment_id'],
-                outputs={'memory':item['proposal']},created_at=item['created_at'],
-                memory_assessment=item['assessment']),snap.records['experiment'],superseded=superseded) for item in lessons]
+    if selection is None:
+        superseded={doc['correction']['supersedes_id'] for doc in snap.records['experiment'].values() if doc.get('correction')} if any('provenance' in item['assessment'] for item in lessons) else set()
+        lessons=[project_memory(dict(id=item['session_id'],experiment_id=item['experiment_id'],
+                    outputs={'memory':item['proposal']},created_at=item['created_at'],
+                    memory_assessment=item['assessment']),snap.records['experiment'],superseded=superseded) for item in lessons]
     result=dict(experiment_mode=s.get('experiment_mode','legacy'),baseline_id=s.get('baseline_id'),next_context=s.get('next_context'),revision_context=s.get('revision_context'),prior_lessons=lessons,observation=observation,comparison=comparison,role=role,role_version=ROLE_VERSION,session_id=s['id'],goal=s['goal'],
                 project=p,records=data,sources=s['sources'],command=s['command'],
                 metric_file=s['metric_file'],metric_key=s['metric_key'],run_context=s['run_context'],
                 outputs=s['outputs'],experiment_id=s['experiment_id'],allowed_tools=[])
+    if selection is not None:result['memory_selection']=selection
     if s.get('memory_contract_version') == 1:
         result['memory_contract_version']=1
         if role=='memory':result['memory_evidence']=build_evidence(s,snap.records['experiment'])

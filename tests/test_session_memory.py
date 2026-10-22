@@ -117,6 +117,7 @@ class SessionMemoryGateTests(unittest.TestCase):
             session=research.advance(self.root,session['id'],send=True)
         pinned=research.token(session)
         session.pop('memory_contract_version')
+        session.pop('memory_selection_version', None)
         expected=research.digest(dict({k:session[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:session[k] for k in ('revision_context','next_context','experiment_mode','baseline_id') if k in session}))
         self.assertEqual(research.token(session),expected)
         self.assertNotEqual(pinned,expected)

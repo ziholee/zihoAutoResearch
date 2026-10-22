@@ -31,6 +31,22 @@ class ResearchScaleTests(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 verify([changed], expected)
 
+    def test_relevance_oracle_checks_unknown_labels_and_order(self):
+        expected = [dict(session_id=str(n), experiment_id='exp', created_at=str(n),
+                         proposal={'lesson': str(n)}) for n in range(2)]
+        actual = [dict(x, assessment=dict(version=1,status='unassessed',claim_effect=None,
+                    observed_effect=None,reasons=['legacy_or_missing_assessment']),
+                    relevance='unknown',condition_matches=dict(comparison='unknown',environment='unknown',
+                    scope='unknown',budget_ref='unknown'),selection_reasons=['comparison_unknown',
+                    'environment_unknown','scope_unknown','budget_ref_unknown','original_conditions_unavailable',
+                    'relevance_does_not_validate_effect_or_grant_approval'],differences={}) for x in reversed(expected)]
+        selection = dict(version=1,limit=5,counts=dict(eligible=2,unknown=2,matched=0,mismatch=0,source_changed=0,limit=0))
+        verify = BENCH['verify_legacy_lessons']
+        verify(actual,expected,selection)
+        with self.assertRaises(AssertionError):verify(list(reversed(actual)),expected,selection)
+        actual[0]['relevance']='matched'
+        with self.assertRaises(AssertionError):verify(actual,expected,selection)
+
     def test_normalization_keeps_actions_budgets_and_other_evidence(self):
         envelope = [{'ok': True, 'diagnostics': [], 'data': {
             'id': 'session-a', 'created_at': 'now', 'deadline': 123,
