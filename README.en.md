@@ -24,15 +24,7 @@ The badges show the latest PyPI version, supported Python version, license, CI s
 - **Agent skill**: Guides your coding agent through a research workflow within the scope you authorize, using your existing project.
 - **Resuming and reporting**: Looks up unfinished experiments, failure memory, candidate rationale, and experiment lineage, and generates Markdown reports.
 
-The record commands in public v0.3.0 do not call an LLM or run training. **The development branch adds an unreleased `research` command.** It sends role-specific instructions to an OpenAI-compatible API or installed Codex and runs and records one local experiment after user approval. See the [API research session guide](docs/research-api.md) for connection, approval, recovery, and verification scope. Real cloud API connections remain unverified; automatic code restoration and competition submission are not provided. Passing `check` does not establish that there is no data leakage or that a model is good.
-
-**Development source only:** Run `zar research setup --project ./my-ml-project` in an interactive terminal to answer questions and reach a first experiment plan without editing JSON. Saving and model transmission require separate confirmation; setup stops for plan approval. Bring your existing training code and evaluation protocol. See the [interactive setup guide](docs/research-api.md#질문에-답해-첫-계획-만들기). If a pre-execution plan is blocked or needs changes, use `zar research revise SESSION_ID --project ./my-ml-project` to answer follow-up questions and create a linked new plan. `research status` provides next-action guidance; the revised plan requires fresh approval.
-
-Use `baseline` mode to measure the current original code without model edits. Candidate plans require a compatible selected valid keep experiment. After completion, `zar research next SESSION_ID --project ./my-ml-project` carries settings and bounded decision/memory context into a new plan, with a fresh metric path, transmission consent and approval. It does not restore code or run experiments automatically.
-
-In development source, select installed Codex with `research start --provider codex --codex-command codex --model <model>` or choose the backend in `research setup`. This requires a trusted Codex CLI 0.162.1 or later on macOS/Linux. It uses existing Codex authentication and may send context to a billable model service. Codex returns proposals; zar retains its transmission, execution and decision approval steps. Validation uses a fake agent; actual Codex authentication/inference remain unverified. See [connection scope and limits](docs/research-api.md#설치된-codex로-연결하기).
-
-In development source, `zar research metrics SESSION_ID --project ./my-ml-project --json` reports role-call time, message bytes and reported token usage. Missing values and partial observations remain explicit; it does not estimate delivered network traffic or cost. See [measurement scope](docs/research-api.md#역할별-호출-측정-조회). See [request context efficiency](docs/request-context-efficiency.md) for input bytes by instructions, sources, records and accumulated responses, and deduplication that preserves required evidence. Actual API quality and cost remain unverified.
+**Public v0.3.0** provides the recording and validation CLI and agent skill. The installation and usage instructions below target this release. Record commands themselves do not call an LLM or run training; passing `check` does not establish the absence of data leakage or model quality.
 
 `zar` is **the abbreviation for zihoAutoResearch and its executable command**. The package you install is named `ziho-autoresearch`; after installation, use commands such as `zar init` and `zar status`.
 
@@ -181,13 +173,21 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle` must be a new path that does not exist yet. The example uses mock scores and logs to demonstrate recording → comparison → decision → reporting, without training. The Python environment used by uv tool and a separate Python environment do not share packages, so install the package in the example's virtual environment as shown above. See the [resume example](docs/first-run-and-resume.md#학습-없는-두-세션-연습) for a two-session exercise.
 
-## Try a real training and evaluation loop (development source)
+## Development source features (unreleased)
 
-The [synthetic regression example](docs/ml-loop-example.md) uses a mock LLM and actual local training to exercise baseline → candidate comparison → safe stopping and resumption. Download the current development source, run `python -m pip install .` in the virtual environment above, then `python examples/ml-loop.py --output ./demo-ml`. The output path must not exist yet. Released v0.3.0 lacks the required `research` commands. No cloud API or paid model is called.
+The `research` features on `dev` are not included in public v0.3.0. Validation uses mock providers and local execution; real API/Codex authentication and inference, real-world quality, and cost effects remain unverified. Model transmission and experiment execution require consent and approval. Automatic code restoration, unattended repetition, and external submission are not provided.
 
-On Linux/macOS, the [CLI crash recovery example](docs/crash-recovery-validation.md) checks unknown-state preservation, duplicate-run rejection and evidence-based recovery after terminating a live CLI. It uses a mock provider; Windows process recovery is outside its scope.
+- `research setup` / `revise`: answer questions to prepare configuration, a first plan, or a revised plan.
+- `baseline` / `next`: establish a baseline from the original code and connect the next experiment with fresh approval.
+- API / Codex: receive role-specific proposals, then execute and record an approved local experiment.
+- Session memory: select by declared-condition relevance while retaining `hold` for insufficient or confounded evidence.
+- `research metrics`: inspect role-call time, message bytes, and reported tokens. Missing observations are not estimated as cost.
 
-The [workflow utility comparison](docs/workflow-utility-comparison.md) runs the same synthetic task with direct execution + Git and zar, comparing records, recovery outcomes and execution overhead. This scripted scenario does not establish human time savings or real LLM cost reductions.
+Follow the [research session guide](docs/research-api.md) for connection requirements, commands, approval, and recovery. [Memory evidence](docs/session-memory-evidence.md) and [relevance selection](docs/session-memory-relevance.md) have separate contracts.
+
+To run the [synthetic training example](docs/ml-loop-example.md), download development source and run `python -m pip install .`, then `python examples/ml-loop.py --output ./demo-ml` in a virtual environment. The output path must be new. It uses a mock LLM and actual local training without paid model calls.
+
+See [performance and scale measurements](docs/record-scale-performance.md) for methodology, raw results, and recovery verification.
 
 ## Before sharing records
 
@@ -202,7 +202,6 @@ If a lock remains, verify that no CLI process is running before recovering. Do n
 - [From initial setup to interruption and resumption](docs/first-run-and-resume.md)
 - [Research workflow and decision rules](docs/research-workflow.md)
 - [Project integration and environment configuration](docs/project-adapter-and-environment.md)
-- [Record-scale performance measurements and limitations](docs/record-scale-performance.md)
 - [Product direction and research references](docs/product-direction.md)
 - [Release artifact verification](docs/releasing.md) · [Contribution and CI requirements](docs/automation.md)
 
