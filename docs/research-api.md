@@ -76,6 +76,12 @@ zar research start --project ./my-ml-project \
 
 연결 플래그 대신 `--profile profile.json`을 사용할 수 있습니다. 프로필 필드는 `base_url`, `model`, `api_key_env`, 선택적 `timeout_seconds`, `max_output_tokens`, `max_response_bytes`입니다. HTTPS 또는 로컬 루프백 HTTP만 허용합니다. 모델은 JSON 응답 형식과 해당 API 필드를 지원해야 합니다. 자동 공급자 대체나 자동 재시도는 없습니다.
 
+## 승인한 역할 지침 비교
+
+다음 역할 하나의 원본·변형 지침을 같은 입력·모델·연결 프로필로 비교하려면 [단일 역할 지침 비교 안내](role-variant-comparison.md)를 따릅니다. `variant-prepare`에서 지침과 입력 해시를 고정하고, 별도 토큰 승인 후 `variant-advance --send`로 두 요청을 전송합니다. 부모 호출 예산을 사용하며 비교 중에는 부모 루프를 잠급니다.
+
+결과는 항상 `hold`이며 자동 채택·실험 실행은 없습니다. 완료 후 부모 응답은 그대로 유지되고 원래 역할을 다시 호출해야 합니다. 중단한 요청은 `unknown`으로 보존하며 종료 확인 후 아직 보내지 않은 요청만 이어갈 수 있습니다. 실제 API 품질·비용 검증은 포함하지 않습니다.
+
 ## 설치된 Codex로 연결하기
 
 개발 소스에서만 지원합니다. 신뢰하는 **Codex CLI 0.162.1 이상**이 설치된 macOS/Linux가 첫 지원 범위입니다. Windows에서는 Codex 어댑터 실행을 거부하므로 API 방식을 사용하세요. `codex --version`으로 버전을 확인하고 기존 Codex 인증을 준비합니다. 도움말·버전 검사는 로그인이나 실제 모델 호출 성공을 검증하지 않습니다.

@@ -54,6 +54,18 @@ Incomplete/unknown sessions must follow their existing recovery path. Noninterac
 
 Use a configured project and explicit source allowlist. `research start` saves transmission scope without calling the provider. `advance --send` authorizes transmission and obtains role proposals. Inspect the actual diff and configured command before `approve --token`; only explicit `research run` applies approved changes and executes one command. Existing record commands do not execute. Do not call an API in a mock-only task.
 
+## Compare one approved role variant
+
+For an explicit request to compare role instructions, use `research variant-prepare <session> --file <project-relative-file>` only while the parent has a pending role in planning, observed or remembering. The next pending role is selected automatically. Supply a complete replacement for that role's instructions, not a patch; shared constraints remain fixed. Inspect the returned bundle's role, original/variant instructions, hashes, context, profile and both requests before `variant-approve <variant-id> --token <token>`. Approval alone sends nothing; `variant-advance <variant-id> --send` transmits original then variant.
+
+Both requests share the pinned input/model/profile and per-call limits. Charge both attempts to the parent's existing budget; do not extend the deadline or shrink only the later request's timeout. The parent stays in comparing until completion or cancellation. Input, source, history or instruction changes invalidate continuation. Never edit comparison JSON or approval tokens to bypass a failed check.
+
+Responses and measurements are observations, not proof of better instructions. Keep hold and automatic_selection=false, including invalid or unknown pairs. Never apply either response or install the variant automatically. Completion restores the parent's previous state without changing its outputs. Resuming the ordinary loop calls the original role again and needs remaining budget and all original approvals. Legacy parents retain their existing memory contracts.
+
+If a comparison is calling or unknown, inspect and stop the actual prior process before `variant-recover <variant-id> --confirm-stopped`. Preserve the attempted arm as unknown; never resend it. Only an unattempted pending arm may be sent with explicit advance. Cancel awaiting_approval, approved or blocked comparisons with `variant-cancel`; unknown/calling require recovery first. Cancellation does not refund consumed calls. These commands never replace recovery of an actual experiment.
+
+The variant file is at most 65,536 UTF-8 bytes, the pinned bundle is smaller than 2 MiB, and the stored comparison is at most 4,000,000 bytes. Keep secrets out of the retained requests and responses. See `docs/role-variant-comparison.md` in the development source for examples. Mock-only validation establishes control flow, not real inference quality or monetary savings.
+
 ## Interpret, decide and retain memory
 
 After observations, advance for interpretation, confirm the judgment with `decide --token` (optional explicit `--select`), then advance for memory. Memory proposals retain limitations in the session and new sessions select up to five completed memories by declared-condition relevance; sessions without a selection-policy version retain their existing recency policy; they are not automatic canonical failure-memory records.

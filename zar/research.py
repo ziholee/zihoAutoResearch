@@ -156,6 +156,8 @@ def next_actions(s):
     identifier=s['id'];state=s['state'];actions=[]
     def add(action,reason,suffix=''):
         actions.append(dict(action=action,command=f'zar research {action} {identifier}'+suffix,reason=reason))
+    if state=='comparing':
+        return [dict(action='variant-status',command='zar research variant-status '+s['active_comparison'],reason='Inspect the pinned comparison; cancel it or complete it before resuming the original loop.')]
     if s.get('superseded_by'):
         return [dict(action='status',command='zar research status '+s['superseded_by'],reason='Continue the replacement session; the old approval is invalid.')]
     if state in ('planning','observed','remembering') and s['calls']<s['max_calls'] and datetime.now(timezone.utc).timestamp()<s['deadline']:
@@ -682,6 +684,14 @@ def dispatch(root,args):
             return revise(root,args.id,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
         return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
     cli.safe_layout(root/'.autoresearch')
+    if args.action.startswith('variant-'):
+        from . import variant_comparison as vc
+        action=args.action.removeprefix('variant-')
+        if action=='prepare':return vc.prepare(root,args.id,args.file)
+        if action=='approve':return vc.approve(root,args.id,args.token)
+        if action=='advance':return vc.advance(root,args.id,send=args.send)
+        if action=='recover':return vc.recover(root,args.id,confirm_stopped=args.confirm_stopped)
+        return {'status':vc.status,'cancel':vc.cancel}[action](root,args.id)
     if args.action=='start':
         require(not(args.profile and any((args.base_url,args.model,args.api_key_env,args.provider,args.codex_command))), 'Choose a profile file or connection flags, not both.')
         if args.profile:

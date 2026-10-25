@@ -16,6 +16,13 @@ def add_arguments(parser, parser_class):
     first.add_argument('--scope',choices=('proxy','full'),default='full');first.add_argument('--seed',type=int)
     first.add_argument('--budget-ref',required=True)
     first.add_argument('--mode',choices=('baseline','candidate'),help='default: baseline without selection, candidate with a valid selected result')
+    pair=actions.add_parser('variant-prepare',help='freeze the next role input and a user-supplied instruction variant; no calls')
+    pair.add_argument('id');pair.add_argument('--file',required=True,help='project-relative UTF-8 role instructions')
+    for name in ('variant-status','variant-approve','variant-advance','variant-recover','variant-cancel'):
+        sub=actions.add_parser(name);sub.add_argument('id')
+        if name=='variant-approve':sub.add_argument('--token',required=True)
+        if name=='variant-advance':sub.add_argument('--send',action='store_true')
+        if name=='variant-recover':sub.add_argument('--confirm-stopped',action='store_true')
     for name in ('next','revise','status','metrics','advance','approve','reject','run','decide','reconcile','recover'):
         sub=actions.add_parser(name);sub.add_argument('id')
         if name=='recover':sub.add_argument('--confirm-stopped',action='store_true')
