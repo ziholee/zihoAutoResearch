@@ -83,13 +83,22 @@ def compact_context(role, context):
     return candidate
 
 
-def role_messages(role, context):
+def role_instructions(role):
+    """Read the installed instructions for one bounded role."""
+    _role(role)
+    return skill_source().joinpath('references', 'roles', role + '.md').read_text(encoding='utf-8')
+
+
+def role_messages(role, context, *, instructions=None):
     """Return separate trusted instructions and untrusted JSON evidence."""
     _role(role)
     if not isinstance(context, dict):
         raise RoleError('Context must be an object')
     content = _json(context, MAX_CONTEXT_BYTES, compact=True)
-    instructions = skill_source().joinpath('references', 'roles', role + '.md').read_text(encoding='utf-8')
+    if instructions is None:
+        instructions = role_instructions(role)
+    if not isinstance(instructions, str) or not instructions.strip():
+        raise RoleError('Role instructions must be nonempty text')
     contract = {**_COMMON, **_EXTRA[role]}
     # Only implementation emits changes; review still needs the complete
     # proposal grammar to inspect the supplied implementation output.
