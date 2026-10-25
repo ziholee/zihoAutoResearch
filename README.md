@@ -22,17 +22,7 @@
 - **에이전트 스킬**: 사용 중인 코딩 에이전트가 프로젝트를 읽고, 허용된 범위 안에서 연구 절차를 따르도록 안내합니다.
 - **재개와 보고서**: 미완료 실험, 실패 기억, 후보 근거, 실험 계보를 조회하고 Markdown 보고서를 만듭니다.
 
-공개 v0.3.0의 기록 명령은 LLM 호출이나 학습을 실행하지 않습니다. **개발 브랜치에는 미배포 `research` 명령을 추가했습니다.** 원하는 OpenAI 호환 API 또는 설치된 Codex에 역할별 지침을 전달하고, 사용자 승인 후 로컬 실험 한 번을 실행·기록합니다. [API 연구 세션 사용법](docs/research-api.md)에서 연결·승인·재개 절차와 검증 범위를 확인하세요. 실제 클라우드 API 연결은 아직 검증하지 않았으며, 자동 코드 복구·대회 제출은 제공하지 않습니다. `check` 통과도 데이터 누수나 모델 품질의 자동 판정을 뜻하지 않습니다.
-
-**개발 소스 전용:** `zar research setup --project ./my-ml-project`를 터미널에서 실행하면 질문에 답해 JSON 수동 편집 없이 설정부터 첫 실험 계획까지 진행합니다. 저장과 모델 전송은 따로 확인하며 계획의 승인 대기에서 멈춥니다. 기존 학습 코드·평가 조건은 사용자가 준비합니다. [대화형 설정 안내](docs/research-api.md#질문에-답해-첫-계획-만들기)를 참고하세요. 실행 전 계획이 막혔거나 수정이 필요하면 `zar research revise SESSION_ID --project ./my-ml-project`로 추가 질문에 답하고 새 계획을 만들 수 있습니다. `research status`는 다음 행동을 안내하며, 수정된 계획에는 새 승인이 필요합니다.
-
-첫 기준은 `baseline` 모드로 모델 변경 없이 현재 원본을 실행해 확보합니다. 후보 계획에는 비교 가능한 선택된 유효 keep 실험이 필요합니다. 완료 후 `zar research next SESSION_ID --project ./my-ml-project`로 설정·판단·기억 맥락을 이어 다음 계획을 준비하며, 새 지표 경로와 새 전송 동의·승인이 필요합니다. 자동 코드 복원이나 반복 실행은 하지 않습니다.
-
-개발 소스에서는 `research start --provider codex --codex-command codex --model <모델>`로 설치된 Codex를 선택하거나 `research setup`에서 연결 방식을 고를 수 있습니다. 신뢰하는 Codex CLI 0.162.1 이상과 macOS/Linux가 필요합니다. 기존 Codex 인증을 사용하며 모델 서비스 전송·요금이 발생할 수 있습니다. Codex는 제안을 반환하고 기존 zar 전송·실행·판단 승인 절차를 그대로 따릅니다. 모의 에이전트로 검증했으며 실제 Codex 인증·추론은 미검증입니다. [지원 범위와 연결 안내](docs/research-api.md#설치된-codex로-연결하기)를 확인하세요.
-
-개발 소스의 세션 기억은 모델 제안과 CLI의 관찰 근거를 분리합니다. 근거 부족·효과 혼재·단일 비교의 일반화는 보류하며, 기존 세션 재개와 승인 절차를 유지합니다. [세션 기억의 근거와 한계](docs/session-memory-evidence.md)를 확인하세요. 새 세션은 [관련성 기반 선택](docs/session-memory-relevance.md)으로 조건이 맞는 과거 기억을 우선하며, 조건 일치를 효과 입증으로 간주하지 않습니다.
-
-개발 소스의 `zar research metrics SESSION_ID --project ./my-ml-project --json`으로 역할별 호출 시간·메시지 바이트·보고된 토큰을 조회할 수 있습니다. 누락값과 부분 관측을 구분하며 실제 전송량·요금을 추정하지 않습니다. [측정 범위](docs/research-api.md#역할별-호출-측정-조회)를 확인하세요. 입력의 지침·소스·기록·누적 응답 크기와 필수 근거를 보존하는 중복 제거 범위는 [요청 맥락 효율화](docs/request-context-efficiency.md)에 설명합니다. 실제 API 품질·비용 검증은 후속입니다.
+**공개 v0.3.0**은 기록·검증 CLI와 에이전트 스킬을 제공합니다. 아래 설치·사용 안내는 이 버전을 기준으로 합니다. 기록 명령 자체는 LLM 호출이나 학습을 실행하지 않으며, `check` 통과가 데이터 누수 없음이나 모델 품질을 보장하지 않습니다.
 
 `zar`는 **zihoAutoResearch의 약칭이자 실행 명령어**입니다. 설치할 패키지 이름은 `ziho-autoresearch`이고, 설치 후에는 `zar init`, `zar status`처럼 사용합니다.
 
@@ -181,37 +171,21 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle`은 존재하지 않는 새 경로여야 합니다. 예제는 가짜 점수와 로그로 기록 → 비교 → 판단 → 보고서 흐름을 보여주며 학습하지 않습니다. uv tool의 Python 환경과 별도 Python 환경은 패키지를 공유하지 않으므로, 위 예제용 가상환경에도 패키지를 설치합니다. 두 세션의 재개 연습은 [재개 예제](docs/first-run-and-resume.md#학습-없는-두-세션-연습)를 참고하세요.
 
-## 실제 학습·평가 루프 체험하기 (개발 소스)
+## 개발 소스 기능 (미배포)
 
-[합성 회귀 학습 예제](docs/ml-loop-example.md)는 모의 LLM과 실제 로컬 학습으로 기준 실험 → 후보 비교 → 안전한 중단·재개를 확인합니다. 현재 개발 소스를 내려받아 위 가상환경에서 `python -m pip install .` 후 `python examples/ml-loop.py --output ./demo-ml`을 실행하세요. 출력 경로는 새 경로여야 합니다. 공개 v0.3.0에는 필요한 `research` 명령이 없으며, 클라우드 API나 유료 모델은 호출하지 않습니다.
+`dev`의 `research` 기능은 공개 v0.3.0에 포함되지 않습니다. 모의 공급자와 로컬 실행으로 검증했으며, 실제 API·Codex 인증/추론과 실사용 품질·비용 효과는 미검증입니다. 모델 전송과 실험 실행에는 동의·승인이 필요하며 자동 코드 복원·무인 반복·외부 제출은 제공하지 않습니다.
 
-Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-validation.md)로 호출·실행 중 강제 종료 후 unknown 보존, 중복 실행 거부와 근거 기반 복구도 확인할 수 있습니다. 모의 공급자만 사용하며 Windows 프로세스 복구는 검증 범위 밖입니다.
+- `research setup` / `revise`: 질문에 답해 설정·첫 계획·수정 계획을 준비합니다.
+- `baseline` / `next`: 원본 실행의 기준을 확보하고 새 승인으로 다음 실험을 연결합니다.
+- API / Codex: 역할별 제안을 받아 승인된 로컬 실험을 실행·기록합니다.
+- 세션 기억: 선언 조건의 관련성으로 선택하며, 근거 부족·효과 혼재는 `hold`로 유지합니다.
+- `research metrics`: 역할별 시간·메시지 바이트·보고된 토큰을 조회합니다. 누락값을 비용으로 추정하지 않습니다.
 
-[도구 효용 비교](docs/workflow-utility-comparison.md)는 같은 합성 작업을 직접 실행+Git과 zar로 수행해 기록·복구 결과와 실행 부가 비용을 대조합니다. 자동화된 시나리오이며 실제 사용자 시간·LLM 비용 절감을 입증하지 않습니다.
+연결 요건·명령·승인·재개 절차는 [연구 세션 안내](docs/research-api.md)를 따르세요. [세션 기억의 근거](docs/session-memory-evidence.md)와 [관련성 선택](docs/session-memory-relevance.md)은 별도 계약입니다.
 
-[로컬 루프 비용 분해](docs/local-loop-costs.md)는 CLI 시작·기록 로딩·검증·저장·Git·모의 서버 종료 시간을 구분합니다. 확인된 모의 서버 종료 대기만 줄였으며 제품의 승인·검토·저장·재개 절차는 유지합니다.
+[합성 학습 예제](docs/ml-loop-example.md)를 실행하려면 개발 소스를 받은 뒤 가상환경에서 `python -m pip install .`, `python examples/ml-loop.py --output ./demo-ml`을 실행하세요. 출력은 새 경로여야 합니다. 모의 LLM과 실제 로컬 학습을 사용하며 유료 모델은 호출하지 않습니다.
 
-[CLI 시작 비용](docs/cli-startup-costs.md)은 Python 시작·import·명령 초기화·계측 준비를 구분합니다. 명령 정의와 연구 실행부를 분리해 일반 조회·도움말의 불필요한 import를 줄이고, 비계측 실행으로 효과를 확인합니다.
-
-[기록·세션 규모별 연구 루프](docs/research-scale-costs.md)는 기록 100·1,000·10,000개와 완료 세션 수를 독립적으로 늘려 계획·조회·재개의 시간·메모리·출력을 비교합니다. 모의 공급자와 승인 대기까지의 동작을 검증하며 실제 API 성능을 뜻하지 않습니다.
-
-[대규모 기록 처리 비용](docs/record-processing-costs.md)은 읽기·파싱·검증·직렬화·해시를 분해합니다. 매 역할의 변경 검사를 유지하면서 같은 `advance` 안에서 검증된 기록 요약의 중복 생성만 줄입니다.
-
-[완료 세션 반복 조회](docs/completed-session-costs.md)는 매 역할의 경로 검사와 원문 읽기를 유지하면서 내용이 같은 과거 세션의 반복 파싱만 줄입니다.
-
-[큰 기록 배치 검증](docs/large-record-batches.md)은 크기가 다른 기록을 63·64·65개 경계와 10,000개 혼합 조건에서 교차 측정합니다.
-
-[기록 해시 일시 메모리](docs/record-digest-memory.md)는 기존 바이트·해시를 유지하는 분할 처리와 작은·혼합 조건의 교차 측정을 다룹니다.
-
-[기록 직렬화 비용](docs/record-serialization-costs.md)은 바이트·해시를 유지하면서 검증된 키의 중복 타입 분기를 줄이고 시간·일시 할당을 분리해 측정합니다.
-
-[혼합 규모 검증](docs/mixed-research-scale.md)은 대규모 기록과 큰 완료 세션을 함께 사용한 계획·조회·재개 및 변경 감지·승인 절차를 확인합니다.
-
-[대규모 기록 메모리](docs/record-memory-costs.md)는 호출 전후 변경 감지를 유지하면서 전체 기록 스냅샷의 중복 보관 비용을 측정합니다.
-
-[큰 세션·캐시 경계](docs/session-cache-boundaries.md)는 큰 응답과 2,048개·8MiB 경계의 시간·메모리·재개 비용 및 기억 선택을 검증합니다.
-
-[macOS CI 비용 분해](docs/macos-ci-costs.md)는 검사 범위를 유지하면서 자식 프로세스·서버 종료·반복 준비·증거 검증 비용을 진단합니다.
+측정 방법·원자료·복구 검증은 [성능·규모 측정](docs/record-scale-performance.md)에서 확인할 수 있습니다.
 
 ## 기록을 공유하기 전에
 
@@ -226,7 +200,6 @@ Linux/macOS에서는 [실제 CLI 장애 복구 예제](docs/crash-recovery-valid
 - [처음 설정부터 중단·재개까지](docs/first-run-and-resume.md)
 - [연구 절차와 판단 규칙](docs/research-workflow.md)
 - [프로젝트 연결·환경 설정](docs/project-adapter-and-environment.md)
-- [기록 규모별 성능 측정과 한계](docs/record-scale-performance.md)
 - [제품 방향과 참고 연구](docs/product-direction.md)
 - [배포 파일 검증](docs/releasing.md) · [기여·CI 기준](docs/automation.md)
 

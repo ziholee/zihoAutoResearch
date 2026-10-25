@@ -24,15 +24,7 @@
 - **智能体技能**：指导你使用的编程智能体读取项目，并在授权范围内遵循研究流程。
 - **恢复与报告**：查看未完成实验、失败记录、候选方案依据及实验谱系，生成 Markdown 报告。
 
-公开版 v0.3.0 的记录命令不会调用 LLM 或执行训练。**开发分支新增了尚未发布的 `research` 命令。** 它向 OpenAI 兼容 API 或已安装的 Codex 传递各角色的指令，并在用户批准后执行和记录一次本地实验。连接、批准、恢复流程及验证范围请参阅 [API 研究会话指南](docs/research-api.md)。真实云端 API 连接尚未验证，也不提供自动代码恢复或竞赛提交。通过 `check` 并不代表已确认不存在数据泄漏或模型质量合格。
-
-**仅限开发源码：** 在交互式终端运行 `zar research setup --project ./my-ml-project`，回答问题即可完成配置并生成首个实验计划，无需手动编辑 JSON。保存与模型发送分别确认，流程停在计划待批准状态。请先准备现有训练代码和评估方案。参阅[交互式配置指南](docs/research-api.md#질문에-답해-첫-계획-만들기)。 执行前的计划受阻或需要修改时，可运行 `zar research revise SESSION_ID --project ./my-ml-project`，回答补充问题并创建关联的新计划。`research status` 提供下一步操作提示；修改后的计划需要重新批准。
-
-使用 `baseline` 模式测量当前原始代码，模型不能修改代码。候选实验需要可比较且已选中的有效 keep 实验作为基准。完成后，运行 `zar research next SESSION_ID --project ./my-ml-project`，将配置以及有限的决策和记忆上下文带入新计划；需要新的指标文件路径、发送同意和批准。不会自动恢复代码或循环运行实验。
-
-在开发源码中，可使用 `research start --provider codex --codex-command codex --model <模型>`，或在 `research setup` 中选择 Codex。需要 macOS/Linux 上可信的 Codex CLI 0.162.1 或更高版本。它使用现有 Codex 认证，可能向模型服务发送上下文并产生费用。Codex 返回提案，zar 保留发送、执行和决策的批准流程。当前使用模拟智能体验证；真实 Codex 认证和推理尚未验证。请参阅[连接范围与限制](docs/research-api.md#설치된-codex로-연결하기)。
-
-开发源码中，`zar research metrics SESSION_ID --project ./my-ml-project --json` 可查看各角色的调用时间、消息字节数和供应方报告的 token 用量。缺失值和部分观测会明确标注，不推算实际网络传输量或费用。参阅[测量范围](docs/research-api.md#역할별-호출-측정-조회)。 关于指令、源码、记录及累积响应的输入字节数，以及保留必要证据的去重范围，请参阅[请求上下文优化](docs/request-context-efficiency.md)。真实 API 的质量和费用仍未验证。
+**公开版 v0.3.0** 提供记录与验证 CLI 以及智能体技能。以下安装和使用说明以此版本为准。记录命令本身不会调用 LLM 或执行训练；通过 `check` 不代表已确认不存在数据泄漏或模型质量合格。
 
 `zar` 是 **zihoAutoResearch 的简称，也是可执行命令**。安装包名为 `ziho-autoresearch`，安装后通过 `zar init`、`zar status` 等命令使用。
 
@@ -181,13 +173,21 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle` 必须是尚不存在的新路径。示例使用模拟分数和日志，展示记录 → 比较 → 决策 → 报告的流程，不会执行训练。uv tool 的 Python 环境与其他 Python 环境不共享包，因此也需在上述示例用虚拟环境中安装此包。跨两个会话的恢复练习请参阅[恢复示例](docs/first-run-and-resume.md#학습-없는-두-세션-연습)。
 
-## 体验真实训练与评估循环（开发源码）
+## 开发源码功能（尚未发布）
 
-[合成回归示例](docs/ml-loop-example.md)使用模拟 LLM 和真实本地训练，验证基准实验 → 候选比较 → 安全中断与恢复。获取当前开发源码，在上述虚拟环境中执行 `python -m pip install .`，然后运行 `python examples/ml-loop.py --output ./demo-ml`。输出路径必须尚不存在。已发布的 v0.3.0 不包含所需的 `research` 命令。此示例不会调用云端 API 或付费模型。
+`dev` 中的 `research` 功能不包含在公开版 v0.3.0 中。目前通过模拟提供者与本地执行验证；真实 API、Codex 认证与推理，以及实际使用的质量和成本效果均未验证。模型发送与实验执行需要同意和批准。不提供自动代码恢复、无人循环执行或外部提交。
 
-在 Linux/macOS 上，[CLI 故障恢复示例](docs/crash-recovery-validation.md)验证运行中的 CLI 终止后保留 unknown 状态、拒绝重复执行以及基于证据的恢复。仅使用模拟提供者，不验证 Windows 进程恢复。
+- `research setup` / `revise`：回答问题，准备配置、首个计划或修改后的计划。
+- `baseline` / `next`：运行原始代码建立基准，并经重新批准连接下一个实验。
+- API / Codex：接收各角色的提案，再执行和记录获批的本地实验。
+- 会话记忆：按声明条件的相关性选择；证据不足或效果混杂时保留 `hold`。
+- `research metrics`：查看各角色的时间、消息字节数和报告的 token 用量。不将缺失观测推算为费用。
 
-[工作流程效用比较](docs/workflow-utility-comparison.md)用直接执行+Git 和 zar 完成相同的合成任务，对比记录、恢复结果和执行开销。这是自动化场景，不证明节省人工时间或真实 LLM 成本。
+连接要求、命令、批准与恢复流程请参阅[研究会话指南](docs/research-api.md)。[记忆证据](docs/session-memory-evidence.md)与[相关性选择](docs/session-memory-relevance.md)采用独立契约。
+
+体验[合成训练示例](docs/ml-loop-example.md)时，先获取开发源码，在虚拟环境中执行 `python -m pip install .`，再执行 `python examples/ml-loop.py --output ./demo-ml`。输出必须使用新路径。示例使用模拟 LLM 与真实本地训练，不调用付费模型。
+
+测量方法、原始结果与恢复验证请参阅[性能与规模测量](docs/record-scale-performance.md)。
 
 ## 分享记录之前
 
@@ -202,7 +202,6 @@ python examples/mock-cycle.py --output ./demo-cycle
 - [从首次配置到中断与恢复](docs/first-run-and-resume.md)
 - [研究流程与决策规则](docs/research-workflow.md)
 - [项目连接与环境配置](docs/project-adapter-and-environment.md)
-- [不同记录规模的性能测量与局限](docs/record-scale-performance.md)
 - [产品方向与参考研究](docs/product-direction.md)
 - [发布文件验证](docs/releasing.md) · [贡献与 CI 标准](docs/automation.md)
 

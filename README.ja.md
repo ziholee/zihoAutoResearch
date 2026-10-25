@@ -24,15 +24,7 @@
 - **エージェントスキル**: 使用中のコーディングエージェントがプロジェクトを読み、許可された範囲内で研究手順に従えるように案内します。
 - **再開とレポート**: 未完了の実験、失敗の記録、候補の根拠、実験の系譜を参照し、Markdown レポートを作成します。
 
-公開版 v0.3.0 の記録コマンドは LLM の呼び出しや学習を実行しません。**開発ブランチには未リリースの `research` コマンドを追加しています。** OpenAI 互換 API またはインストール済み Codex に役割別の指示を渡し、ユーザーの承認後にローカル実験を一度実行して記録します。接続・承認・再開の手順と検証範囲は [API 研究セッションガイド](docs/research-api.md)を参照してください。実際のクラウド API 接続は未検証で、自動コード復元やコンペへの提出は提供しません。`check` の合格も、データリークがないことやモデル品質を保証しません。
-
-**開発ソース限定：** 対話型ターミナルで `zar research setup --project ./my-ml-project` を実行し、質問に答えると、JSON を手作業で編集せずに設定から最初の実験計画まで進めます。保存とモデルへの送信は別々に確認し、計画の承認待ちで停止します。既存の学習コードと評価手順は事前に用意してください。[対話型設定ガイド](docs/research-api.md#질문에-답해-첫-계획-만들기)を参照してください。 実行前の計画が停止した場合や修正が必要な場合は、`zar research revise SESSION_ID --project ./my-ml-project` で追加質問に回答し、関連付けられた新しい計画を作成できます。`research status` は次の操作を案内し、修正後の計画には新たな承認が必要です。
-
-`baseline` モードはモデルによるコード変更なしで現在の元コードを測定します。候補計画には、比較可能で選択済みの有効な keep 実験が必要です。完了後は `zar research next SESSION_ID --project ./my-ml-project` で設定と限定された判断・記憶の文脈を次の計画へ引き継ぎます。新しい指標ファイルのパス、送信への同意、承認が必要です。コードの自動復元や実験の自動反復は行いません。
-
-開発ソースでは `research start --provider codex --codex-command codex --model <モデル>`、または `research setup` の接続方式の質問で Codex を選べます。macOS/Linux 上の信頼できる Codex CLI 0.162.1 以上が必要です。既存の Codex 認証を使用し、モデルサービスへの送信や課金が発生する場合があります。Codex は提案を返し、zar の送信・実行・判断の承認手順は維持されます。模擬エージェントで検証しており、実際の Codex 認証・推論は未検証です。[接続の範囲と制限](docs/research-api.md#설치된-codex로-연결하기)を確認してください。
-
-開発ソースでは `zar research metrics SESSION_ID --project ./my-ml-project --json` で役割別の呼び出し時間・メッセージのバイト数・報告されたトークン使用量を確認できます。欠損値と部分的な観測を明示し、実際の通信量や料金は推定しません。[測定範囲](docs/research-api.md#역할별-호출-측정-조회)を参照してください。 指示・ソース・記録・累積応答ごとの入力サイズと、必要な根拠を保持する重複削減の範囲は[リクエスト文脈の効率化](docs/request-context-efficiency.md)を参照してください。実際の API の品質・費用は未検証です。
+**公開版 v0.3.0** は記録・検証 CLI とエージェントスキルを提供します。以下のインストール・利用手順はこの版を対象とします。記録コマンド自体は LLM 呼び出しや学習を実行せず、`check` の合格もデータリークがないことやモデル品質を保証しません。
 
 `zar` は **zihoAutoResearch の略称であり、実行コマンド名**です。インストールするパッケージ名は `ziho-autoresearch` で、インストール後は `zar init`、`zar status` のように使用します。
 
@@ -181,13 +173,21 @@ python examples/mock-cycle.py --output ./demo-cycle
 
 `demo-cycle` は、まだ存在しない新しいパスである必要があります。サンプルは仮のスコアとログを使って、記録 → 比較 → 判断 → レポートの流れを示し、学習は行いません。uv tool の Python 環境と別の Python 環境ではパッケージを共有しないため、上記のサンプル用仮想環境にもパッケージをインストールします。2 つのセッションで再開を試すには、[再開のサンプル](docs/first-run-and-resume.md#학습-없는-두-세션-연습)を参照してください。
 
-## 実際の学習・評価ループを試す（開発ソース）
+## 開発ソースの機能（未リリース）
 
-[合成回帰のサンプル](docs/ml-loop-example.md)は、模擬 LLM と実際のローカル学習で、基準実験 → 候補の比較 → 安全な中断・再開を確認します。現在の開発ソースを取得し、上記の仮想環境で `python -m pip install .` を実行してから、`python examples/ml-loop.py --output ./demo-ml` を実行してください。出力先は存在しない新しいパスを指定します。公開済み v0.3.0 には必要な `research` コマンドがありません。クラウド API や有料モデルは呼び出しません。
+`dev` の `research` 機能は公開版 v0.3.0 に含まれません。模擬プロバイダーとローカル実行で検証しており、実際の API・Codex の認証や推論、実利用での品質・費用への効果は未検証です。モデルへの送信と実験実行には同意・承認が必要です。コードの自動復元、無人での反復、外部提出は提供しません。
 
-Linux/macOS では[CLI 障害復旧の例](docs/crash-recovery-validation.md)で、実行中の CLI 終了後の unknown 保持、重複実行の拒否、証拠に基づく復旧を確認できます。モックプロバイダーのみを使用し、Windows のプロセス復旧は検証範囲外です。
+- `research setup` / `revise`: 質問に回答して設定・最初の計画・修正計画を準備します。
+- `baseline` / `next`: 元コードの実行で基準を確保し、新たな承認で次の実験につなぎます。
+- API / Codex: 役割別の提案を受け、承認されたローカル実験を実行・記録します。
+- セッション記憶: 宣言条件の関連性で選び、根拠不足や効果の交絡は `hold` に保ちます。
+- `research metrics`: 役割別の時間・メッセージのバイト数・報告されたトークンを確認します。欠損値から費用を推定しません。
 
-[ワークフローの比較](docs/workflow-utility-comparison.md)では、同じ合成タスクを直接実行+Git と zar で処理し、記録・復旧結果と実行負荷を比較します。自動化シナリオであり、人の作業時間や実際の LLM コスト削減を証明するものではありません。
+接続要件・コマンド・承認・再開は[研究セッションガイド](docs/research-api.md)を参照してください。[記憶の根拠](docs/session-memory-evidence.md)と[関連性による選択](docs/session-memory-relevance.md)は別の契約です。
+
+[合成学習のサンプル](docs/ml-loop-example.md)を試すには開発ソースを取得し、仮想環境で `python -m pip install .`、続いて `python examples/ml-loop.py --output ./demo-ml` を実行します。出力先は新しいパスにしてください。模擬 LLM と実際のローカル学習を使い、有料モデルは呼び出しません。
+
+測定方法・生データ・復旧検証は[性能・規模の測定](docs/record-scale-performance.md)を参照してください。
 
 ## 記録を共有する前に
 
@@ -202,7 +202,6 @@ Linux/macOS では[CLI 障害復旧の例](docs/crash-recovery-validation.md)で
 - [初期設定から中断・再開まで](docs/first-run-and-resume.md)
 - [研究手順と判断ルール](docs/research-workflow.md)
 - [プロジェクトの接続・環境設定](docs/project-adapter-and-environment.md)
-- [記録規模別の性能測定と限界](docs/record-scale-performance.md)
 - [製品の方向性と参考研究](docs/product-direction.md)
 - [配布ファイルの検証](docs/releasing.md) · [貢献・CI の基準](docs/automation.md)
 
