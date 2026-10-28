@@ -57,6 +57,9 @@ def classify(lesson,session,project,experiments,superseded,identities):
     matches=dict(comparison=_match(source.get('comparison'),project.get('comparison'),COMPARISON),
                  environment=_match(source.get('environment'),project.get('environment'),ENVIRONMENT),
                  scope=_match(context,target,('scope',)),budget_ref=_match(context,target,('budget_ref',)))
+    if 'file_manifest' in source or 'file_manifest' in session:
+        left,right=source.get('file_manifest'),session.get('file_manifest')
+        matches['file_manifest']='unknown' if left is None or right is None else 'matched' if left==right else 'mismatch'
     if 'mismatch' in matches.values():return None,'mismatch'
     relevance='matched' if all(v=='matched' for v in matches.values()) else 'unknown'
     reasons=[key+'_'+value for key,value in matches.items()]

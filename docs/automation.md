@@ -106,3 +106,7 @@ PR #16 머지 커밋 `784e35e`의 [dev CI](https://github.com/ziholee/zihoAutoRe
 ## CI 비용 진단
 
 전체 검사 범위를 유지하며 수치 진단을 아티팩트로 보존합니다. 측정 범주·개인정보 제외·해석 한계는 [macOS CI 비용 분해](macos-ci-costs.md)를 참고하세요.
+
+## 평가 보호와 추가 파일 출처
+
+`tests/test_file_provenance*.py`는 [고정 입력 계약](evaluation-provenance.md)의 스키마·파일 별칭·불변 기록·비교·승인·변경 감지·복구·구버전 호환성을 검사합니다. loopback HTTP와 별도 CLI 프로세스로 기준 실행부터 완료까지 검증하며, 추가 파일 원문이 공급자 요청에 들어가지 않는지 확인합니다. 실제 API 연결 검증은 포함하지 않습니다.

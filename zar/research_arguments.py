@@ -2,7 +2,9 @@
 
 def add_arguments(parser, parser_class):
     actions=parser.add_subparsers(dest='action',required=True,parser_class=parser_class)
-    actions.add_parser('setup',help='interactively configure a project and prepare its first proposal')
+    setup=actions.add_parser('setup',help='interactively configure a project and prepare its first proposal')
+    setup.add_argument('--evaluation-path',action='append',help='fixed evaluation file; enables local file contract')
+    setup.add_argument('--provenance-path',action='append',help='additional fixed input hashed locally; requires --evaluation-path')
     first=actions.add_parser('start',help='save explicit transmission scope; no model call or execution')
     first.add_argument('--profile',help='JSON connection profile; never include a key value')
     first.add_argument('--base-url');first.add_argument('--model');first.add_argument('--api-key-env')

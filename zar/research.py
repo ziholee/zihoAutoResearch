@@ -160,11 +160,37 @@ def assert_implementation(root,s,project):
     return output['changes']
 
 
+def assert_file_provenance(root,s,project):
+    """Check opted-in fixed inputs without loading or transmitting their contents."""
+    policy=project.get('file_contract')
+    if policy is None and 'file_manifest' not in s:
+        return  # Preserve legacy sessions, never fabricate historical verification.
+    require(policy is not None and 'file_manifest' in s,
+            'File provenance contract is missing; create a new baseline/session.')
+    from . import file_provenance
+    try:
+        file_provenance.validate_paths(root,policy,project['editable_paths'])
+        file_provenance.assert_current(root,policy,s['file_manifest'])
+    except (ValueError,OSError) as exc:
+        raise ResearchError('Fixed input provenance changed or is unavailable; inspect before continuing.') from exc
+
+
+def initial_file_manifest(root,project):
+    if 'file_contract' not in project:return None
+    from . import file_provenance
+    try:
+        file_provenance.validate_paths(root,project['file_contract'],project['editable_paths'])
+        return file_provenance.snapshot(root,project['file_contract'])
+    except (ValueError,OSError) as exc:
+        raise ResearchError('Cannot establish fixed input provenance.') from exc
+
+
 def assert_fresh(root,s):
     # One snapshot per check; callers may reuse it only within this lock phase.
     from .records import load_records
     project=get_project(root)
     assert_transmission(s)
+    assert_file_provenance(root,s,project)
     command=s.get('command')
     require(isinstance(command,dict),'Stored command must be a configured project command.')
     configured=[c for c in project['commands'] if c['name']==command.get('name')]
@@ -189,7 +215,7 @@ def records_identity(root):
     return records_digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version','memory_selection_version','transmission_contract') if k in s}))
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version','memory_selection_version','transmission_contract','file_manifest') if k in s}))
 
 def next_actions(s):
     """Suggestions only: never infer a stopped process or grant consent."""
@@ -221,6 +247,8 @@ def next_actions(s):
 def view(s):
     result=deepcopy(s);result['view']='research_session'
     result['next_actions']=next_actions(s)
+    result['file_provenance']=dict(status='manifest_present' if 'file_manifest' in s else 'legacy_unverified',
+        limitation='Presence only; fixed inputs are checked at action time. Not a sandbox or proof of metric truth.')
     result['transmission']=dict(server=s['profile'].get('base_url'),model=s['profile']['model'],
         files=list(s['sources']), api_key_env=s['profile'].get('api_key_env'),
         contract_status='pinned' if 'transmission_contract' in s else 'legacy_unpinned', includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries, linked parent experiment and memory proposal if present; no raw logs')
@@ -273,6 +301,10 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
     snap=cli.load_records(root,p);cli.enforce(cli.inspect_project(root,p,snapshot=snap))
     require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
     mode,baseline=experiment_target(p,snap.records,dict(scope=scope,seed=seed,budget_ref=budget_ref),mode)
+    file_manifest=initial_file_manifest(root,p)
+    if baseline and file_manifest is not None:
+        require(snap.records['experiment'][baseline].get('file_manifest')==file_manifest,
+                'Selected baseline has missing or different fixed input provenance; acquire a new baseline.')
     commands=[c for c in p['commands'] if c['name']==command]
     require(len(commands)==1,'Choose a unique configured command name.')
     require(safe_path(root,commands[0]['cwd']).is_dir(),'Command cwd is not a directory.')
@@ -293,6 +325,7 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
     s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1,memory_selection_version=1,
              transmission_contract=transmission_contract(profile))
+    if file_manifest is not None:s['file_manifest']=file_manifest
     if next_context is not None:
         s['next_context']=deepcopy(next_context);s['next_context_hash']=digest(next_context)
     if revision_context is not None:
@@ -584,6 +617,7 @@ def run_session(root,identifier):
                   hypothesis=s['outputs']['planning']['hypothesis'],parent_id=baseline,baseline_id=baseline,
                   code_ref='source-sha256:'+digest(s['sources']),config_ref='project-sha256:'+s['project_hash'],
                   command=s['command'],review_ids=[],run_context=s['run_context'])
+        if 'file_manifest' in s:plan['file_manifest']=deepcopy(s['file_manifest'])
         review_path=artifact_dir(root,s)/'review.json'
         atomic_write(review_path,dumps(dict(evaluation=s['outputs']['evaluation'],review=s['outputs']['review'],
                                            source_hash=digest(s['sources']),role_version=ROLE_VERSION)))
@@ -599,7 +633,12 @@ def run_session(root,identifier):
         exp=record(root,p,s,'create',plan)
         adir=artifact_dir(root,s);intent=adir/'intent.json'
         atomic_write(intent,dumps(dict(session_id=s['id'],experiment_id=s['experiment_id'],command=s['command'],source_hash=digest(s['sources']))))
-        exp['execution'].update(status='unknown',note='Launch intent persisted; completion not yet confirmed.',evidence=[evidence(root,intent)])
+        launch_evidence=[evidence(root,intent)]
+        if 'file_manifest' in s:
+            manifest_path=adir/'file-manifest.json'
+            atomic_write(manifest_path,dumps(s['file_manifest']))
+            launch_evidence.append(evidence(root,manifest_path))
+        exp['execution'].update(status='unknown',note='Launch intent persisted; completion not yet confirmed.',evidence=launch_evidence)
         record(root,p,s,'update',exp)
         s['state']='executing';save(root,s)
         timeout=min(p['budget']['max_run_seconds'],max(0.1,float(s['deadline'])-datetime.now(timezone.utc).timestamp()))
@@ -614,8 +653,24 @@ def run_session(root,identifier):
         execution['note']=execution['note'] or None
         log=adir/'run.log'
         if log.is_file():execution['evidence'].append(evidence(root,log))
-        if observed['status']=='succeeded' and (snapshot(root,list(s['sources']))!=s['sources'] or digest(p)!=s['project_hash']):
+        try:current_sources=snapshot(root,list(s['sources']))
+        except (ValueError,OSError):current_sources=None
+        if observed['status']=='succeeded' and (current_sources!=s['sources'] or digest(p)!=s['project_hash']):
             execution.update(status='failed',note='Source or project settings changed during execution; provenance is unverified.')
+        if 'file_manifest' in s or 'file_contract' in p:
+            try:
+                assert_file_provenance(root,s,p)
+                check=dict(status='unchanged',manifest_sha256=digest(s['file_manifest']))
+            except ResearchError:
+                check=dict(status='unverified',reason='fixed_input_changed_or_unavailable',
+                           manifest_sha256=digest(s.get('file_manifest')))
+                # A provenance failure must not turn unknown process ownership
+                # into a safe-to-repeat terminal state.
+                if execution['status']=='succeeded':execution['status']='failed'
+                execution['note']=(execution['note']+'; ' if execution['note'] else '')+'Fixed input provenance changed or is unavailable; score is unverified.'
+            check_path=adir/'file-manifest-result.json'
+            atomic_write(check_path,dumps(check))
+            execution['evidence'].append(evidence(root,check_path))
         if execution['status']=='succeeded':
             try:
                 metric=safe_path(root,s['metric_file'])
@@ -630,7 +685,7 @@ def run_session(root,identifier):
         execution['evidence'].append(evidence(root,receipt))
         exp=record(root,p,s,'update',observation)
         s['state']='unknown' if exp['execution']['status']=='unknown' else 'observed'
-        s['sources']=snapshot(root,list(s['sources']))
+        if current_sources is not None:s['sources']=current_sources
         s['project_hash']=digest(p);s['records_hash']=records_identity(root)
         save(root,s);return view(s)
 
@@ -667,6 +722,7 @@ def finish_decision(root,s):
     cli.enforce(diagnostics)
     require(not any(d['code'] in ('evidence_missing','evidence_changed','evidence_unhashed') for d in diagnostics),'Evidence must remain hash-verified during decision recovery.')
     require(snapshot(root,list(s['sources']))==s['sources'],'Sources changed during decision recovery; inspect manually.')
+    assert_file_provenance(root,s,p)
     if exp['decision']!=intent['decision']:
         require(exp['revision']==intent['revision'],'Experiment changed during decision; inspect manually.')
         record(root,p,s,'decide',dict(revision=exp['revision'],decision=intent['decision']))
@@ -686,6 +742,7 @@ def reconcile(root,identifier):
         p=get_project(root);snap=cli.load_records(root,p);cli.enforce(cli.inspect_project(root,p,snapshot=snap))
         exp=snap.records['experiment'].get(s['experiment_id'])
         require(exp is not None and exp['execution']['status'] in ('succeeded','failed','interrupted'),'Verify actual process/logs, then update the canonical experiment with new evidence first.')
+        assert_file_provenance(root,s,p)
         s['state']='observed';s['sources']=snapshot(root,list(s['sources']));s['project_hash']=digest(p);s['records_hash']=records_identity(root)
         save(root,s);return view(s)
 
@@ -723,7 +780,11 @@ def dispatch(root,args):
         if args.action=='revise':
             from .revision import revise
             return revise(root,args.id,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
-        return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr))
+        policy=None
+        if args.evaluation_path or args.provenance_path:
+            require(bool(args.evaluation_path),'--provenance-path requires --evaluation-path.')
+            policy=dict(version=1,evaluation_paths=args.evaluation_path or [],provenance_paths=args.provenance_path or [])
+        return setup(root,ask=ask,emit=lambda message:cli.emit_text(message,stream=sys.stderr),file_contract=policy)
     cli.safe_layout(root/'.autoresearch')
     if args.action.startswith('variant-'):
         from . import variant_comparison as vc
