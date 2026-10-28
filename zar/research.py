@@ -126,10 +126,50 @@ def execution_environment(profile):
     env.pop(profile.get('api_key_env'),None)
     return env
 
+def transmission_contract(profile):
+    """Pin normalized, non-secret connection settings; this is not authentication."""
+    return dict(version=1,profile_sha256=digest(validate_profile(profile)))
+
+
+def assert_transmission(s):
+    try: expected=transmission_contract(s['profile'])
+    except LLMError as exc: raise ResearchError(str(exc)) from None
+    if 'transmission_contract' not in s:
+        return  # Legacy sessions retain their original token and resume behavior.
+    contract=s['transmission_contract']
+    require(isinstance(contract,dict) and set(contract)=={'version','profile_sha256'}
+            and type(contract['version']) is int and contract['version']==1,
+            'Unsupported transmission contract; start a new session.')
+    require(contract==expected,'Connection profile changed; create a new or revised session and review transmission scope.')
+
+
+def assert_implementation(root,s,project):
+    """Recheck serialized proposals immediately before any source write or launch."""
+    try: output=validate_response('implementation',s['outputs']['implementation'])
+    except (RoleError,KeyError,TypeError) as exc: raise ResearchError('Invalid stored implementation proposal.') from None
+    require(s.get('experiment_mode')!='baseline' or not output['changes'],'Baseline must execute unchanged source; changes are forbidden.')
+    for change in output['changes']:
+        require(change['path'] in project['editable_paths'],'Change must target an exact configured editable file.')
+        require(change['path'] in s['sources'],'Only explicitly transmitted source files can be edited.')
+        safe_path(root,change['path'])
+        require(change['before_sha256']==s['sources'][change['path']]['sha256'],'Change has stale source identity.')
+        require(len(change['content'].encode('utf-8'))<=100_000,'Proposed source exceeds byte limit.')
+    proposed={k:v['content'] for k,v in s['sources'].items()}
+    proposed.update({c['path']:c['content'] for c in output['changes']})
+    require(sum(len(v.encode('utf-8')) for v in proposed.values())<=200_000,'Proposed source context exceeds byte limit.')
+    return output['changes']
+
+
 def assert_fresh(root,s):
     # One snapshot per check; callers may reuse it only within this lock phase.
     from .records import load_records
     project=get_project(root)
+    assert_transmission(s)
+    command=s.get('command')
+    require(isinstance(command,dict),'Stored command must be a configured project command.')
+    configured=[c for c in project['commands'] if c['name']==command.get('name')]
+    require(len(configured)==1 and configured[0]==command,
+            'Stored command differs from configured project command; start a new session.')
     snap=load_records(root,project)
     if s.get('next_context'):
         require(digest(s['next_context'])==s.get('next_context_hash'),'Next context changed; start a new session.')
@@ -149,7 +189,7 @@ def records_identity(root):
     return records_digest(load_records(root,get_project(root)).records)
 
 def token(s):
-    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version','memory_selection_version') if k in s}))
+    return digest(dict({k:s[k] for k in ('id','goal','profile','project_hash','records_hash','sources','command','metric_file','metric_key','outputs','experiment_id','run_context','deadline','max_calls','environment_hash')}, **{k:s[k] for k in ('revision_context','next_context','experiment_mode','baseline_id','memory_contract_version','memory_selection_version','transmission_contract') if k in s}))
 
 def next_actions(s):
     """Suggestions only: never infer a stopped process or grant consent."""
@@ -182,7 +222,8 @@ def view(s):
     result=deepcopy(s);result['view']='research_session'
     result['next_actions']=next_actions(s)
     result['transmission']=dict(server=s['profile'].get('base_url'),model=s['profile']['model'],
-        files=list(s['sources']), includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries, linked parent experiment and memory proposal if present; no raw logs')
+        files=list(s['sources']), api_key_env=s['profile'].get('api_key_env'),
+        contract_status='pinned' if 'transmission_contract' in s else 'legacy_unpinned', includes='goal, project settings, bounded records, role outputs, revision answers and prior proposal summaries, linked parent experiment and memory proposal if present; no raw logs')
     if s['profile'].get('provider') == 'codex':
         result['transmission'].update(provider='codex', command=s['profile']['command'],
             destination='Service authenticated by the installed Codex CLI; may incur charges')
@@ -250,7 +291,8 @@ def _start_locked(root,*,profile,goal,read_paths,command,metric_file,metric_key,
            records_hash=records_digest(snap.records),command=commands[0],metric_file=metric_file,metric_key=metric_key,
            run_context=dict(scope=scope,seed=seed,budget_ref=budget_ref),experiment_id=None,
            approval_token=None,error=None,environment_hash=digest(execution_environment(profile)))
-    s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1,memory_selection_version=1)
+    s.update(experiment_mode=mode,baseline_id=baseline,memory_contract_version=1,memory_selection_version=1,
+             transmission_contract=transmission_contract(profile))
     if next_context is not None:
         s['next_context']=deepcopy(next_context);s['next_context_hash']=digest(next_context)
     if revision_context is not None:
@@ -437,16 +479,8 @@ def advance(root,identifier,*,send=False):
             if role in ('evaluation','review') and output['verdict']=='pass':
                 require(bool(output['evidence']),'A pass needs explicit source references.')
             if role=='implementation':
-                require(s.get('experiment_mode')!='baseline' or not output['changes'],'Baseline must execute unchanged source; changes are forbidden.')
-                editable=get_project(root)['editable_paths']
-                for change in output['changes']:
-                    require(change['path'] in editable,'Change must target an exact configured editable file.')
-                    require(change['path'] in s['sources'],'Only explicitly transmitted source files can be edited.')
-                    require(change['before_sha256']==s['sources'][change['path']]['sha256'],'Change has stale source identity.')
-                    require(len(change['content'].encode('utf-8'))<=100_000,'Proposed source exceeds byte limit.')
-                proposed={k:v['content'] for k,v in s['sources'].items()}
-                proposed.update({c['path']:c['content'] for c in output['changes']})
-                require(sum(len(v.encode('utf-8')) for v in proposed.values())<=200_000,'Proposed source context exceeds byte limit.')
+                proposal=dict(s,outputs=dict(s['outputs'],implementation=output))
+                assert_implementation(root,proposal,get_project(root))
             if role=='interpretation' and output['decision']=='keep':
                 require(payload['observation']['execution']['status']=='succeeded','A failed or unknown execution cannot be kept.')
                 if payload['comparison'] is not None:
@@ -455,17 +489,25 @@ def advance(root,identifier,*,send=False):
             with project_lock(root/'.autoresearch'):
                 current=load(root,identifier)
                 require(current['state']=='calling','Session changed during model call.')
+                changed=digest(current)!=digest(s)
+                try:assert_fresh(root,current)
+                except (ValueError,LLMError,OSError):changed=True
                 current['error']=getattr(exc,'code','invalid_role_response')
-                # An unconfirmed agent process must not become retryable.
-                if current['error']!='agent_cleanup_unconfirmed':current['state']=prior
+                # Unconfirmed agent ownership must remain calling, even if its
+                # connection changed; recovery still needs stopped confirmation.
+                if current['error']!='agent_cleanup_unconfirmed':
+                    current['state']='blocked' if changed else prior
+                    if changed:current['error']='inputs_changed'
                 current['trace'].append(dict(role=role,version=ROLE_VERSION,result=current['error'],measurement=measurement))
                 save(root,current)
             raise ResearchError('Model/role call failed; inspect session error; retry consumes another call.') from None
         with project_lock(root/'.autoresearch'):
             current=load(root,identifier)
             require(current['state']=='calling','Session changed during model call.')
-            try:assert_fresh(root,s)
-            except ResearchError:
+            try:
+                require(digest(current)==digest(s),'Session changed during model call.')
+                assert_fresh(root,current)
+            except (ValueError,LLMError,OSError):
                 current['state']='blocked';current['error']='inputs_changed'
                 current['trace'].append(dict(role=role,version=ROLE_VERSION,result='inputs_changed',measurement=measurement))
                 save(root,current);raise
@@ -529,8 +571,7 @@ def run_session(root,identifier):
         require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown work first.')
         metric=safe_path(root,s['metric_file']);require(not metric.exists(),'Metric output already exists; use a fresh destination in a new session.')
         cwd=safe_path(root,s['command']['cwd']);require(cwd.is_dir(),'Execution cwd unavailable.')
-        changes=s['outputs']['implementation']['changes']
-        require(s.get('experiment_mode')!='baseline' or not changes,'Baseline must execute unchanged source; changes are forbidden.')
+        changes=assert_implementation(root,s,p)
         if 'experiment_mode' in s:
             _,selected=experiment_target(p,snap.records,s['run_context'],s['experiment_mode'])
             require(selected==s['baseline_id'],'Selected baseline changed.')
