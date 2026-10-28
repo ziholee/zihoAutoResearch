@@ -55,3 +55,5 @@ zar research setup --project ./my-ml-project --evaluation-path evaluate.py --pro
 실행 프로그램이 작성한 지표의 진실성은 별도 평가기·데이터 분리로 검증해야 합니다. 여기서는 실제 API 대신 임시 프로젝트·모의 공급자로 보호 경로 중복, 원문 추가 전송 없음, 동일 크기·수정 시각의 내용 변경, 실행 전후 변경, 구버전 및 중단 복구를 검사합니다.
 
 고정 파일끼리 또는 수정 허용 파일과 hardlink·대소문자 별칭으로 같은 실제 파일을 가리키는 경우도 거부합니다. `status`의 `file_provenance.status`는 manifest 존재 여부이며 현재 파일 검증 성공을 뜻하지 않습니다. 현재 파일은 승인·호출·실행·판단·복구 시 검사합니다. 실행 증거에는 `file-manifest.json`과 실행 후 검사 결과인 `file-manifest-result.json`의 해시를 연결합니다.
+
+Windows에서는 경로 조회와 열린 파일 핸들의 `ctime` 의미가 다를 수 있습니다([CPython #157671](https://github.com/python/cpython/issues/157671)). 두 조회 방식 사이에서는 파일 ID·형식·크기·수정 시각을 비교하고, 각 방식의 읽기 전후 비교에는 `ctime`도 유지합니다. 내용 해시·별칭 검사·승인과 복구 규칙은 동일합니다.

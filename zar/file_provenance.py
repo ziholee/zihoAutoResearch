@@ -9,6 +9,7 @@ MAX_FILES = 128
 MAX_FILE_BYTES = 32 * 1024 * 1024
 MAX_TOTAL_BYTES = 64 * 1024 * 1024
 CHUNK_BYTES = 64 * 1024
+_WINDOWS = os.name == 'nt'
 _HASH = re.compile(r'[0-9a-f]{64}\Z')
 
 
@@ -101,8 +102,11 @@ def validate_paths(root, policy, editable_paths):
         raise ValueError('File contract path is missing, unreadable or redirected.') from exc
 
 
-def _identity(info):
-    return (info.st_dev,info.st_ino,info.st_mode,info.st_size,info.st_mtime_ns,info.st_ctime_ns)
+def _identity(info, *, cross_api=False):
+    identity = (info.st_dev,info.st_ino,info.st_mode,info.st_size,info.st_mtime_ns)
+    # Windows path stat may expose birth time as ctime while fstat exposes
+    # change time (CPython #157671). Retain ctime for same-API comparisons.
+    return identity if cross_api and _WINDOWS else identity+(info.st_ctime_ns,)
 
 
 def snapshot(root, policy):
@@ -125,7 +129,7 @@ def snapshot(root, policy):
                 descriptor=os.open(path,flags)
                 try:
                     opened=os.fstat(descriptor)
-                    _require(_identity(opened)==_identity(before), 'Fixed input changed before reading.')
+                    _require(_identity(opened,cross_api=True)==_identity(before,cross_api=True), 'Fixed input changed before reading.')
                     hasher=hashlib.sha256();size=0
                     while True:
                         chunk=os.read(descriptor,CHUNK_BYTES)
@@ -135,7 +139,9 @@ def snapshot(root, policy):
                         hasher.update(chunk)
                     after=os.fstat(descriptor)
                     current=_path(root,name).lstat()
-                    _require(size==before.st_size and _identity(before)==_identity(after)==_identity(current),
+                    _require(size==before.st_size and _identity(opened)==_identity(after)
+                             and _identity(before)==_identity(current)
+                             and _identity(after,cross_api=True)==_identity(current,cross_api=True),
                              'Fixed input changed during reading.')
                 finally:os.close(descriptor)
                 files[name]=dict(role=role,size_bytes=size,sha256=hasher.hexdigest())

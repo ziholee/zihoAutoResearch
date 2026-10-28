@@ -4,6 +4,7 @@ import hashlib
 import os
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -105,6 +106,33 @@ class FileProvenanceTests(unittest.TestCase):
             return result
         with patch.object(fp.os, 'read', side_effect=changed):
             with self.assertRaises(ValueError):fp.snapshot(self.root, self.policy)
+
+    def test_windows_path_and_handle_ctime_can_differ(self):
+        original = fp.os.fstat
+        def handle_stat(fd):
+            info = original(fd)
+            values = {key: getattr(info, key) for key in
+                      ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns')}
+            values['st_ctime_ns'] += 1000000
+            return SimpleNamespace(**values)
+        with patch.object(fp, '_WINDOWS', True, create=True), patch.object(fp.os, 'fstat', side_effect=handle_stat):
+            result = fp.snapshot(self.root, self.policy)
+        self.assertEqual(result['files']['eval.py']['sha256'], hashlib.sha256(b'evaluation').hexdigest())
+
+    def test_windows_handle_ctime_change_during_read_is_rejected(self):
+        original = fp.os.fstat
+        calls = 0
+        def handle_stat(fd):
+            nonlocal calls
+            calls += 1
+            info = original(fd)
+            values = {key: getattr(info, key) for key in
+                      ('st_dev', 'st_ino', 'st_mode', 'st_size', 'st_mtime_ns', 'st_ctime_ns')}
+            values['st_ctime_ns'] += 1000000 * calls
+            return SimpleNamespace(**values)
+        with patch.object(fp, '_WINDOWS', True, create=True), patch.object(fp.os, 'fstat', side_effect=handle_stat):
+            with self.assertRaisesRegex(ValueError, 'during reading'):
+                fp.snapshot(self.root, self.policy)
 
     def test_malformed_manifest_is_not_accepted(self):
         manifest = fp.snapshot(self.root, self.policy)
