@@ -6,7 +6,7 @@
 
 | 기준 | 자동 검사 | 리뷰에서 확인할 내용 |
 | --- | --- | --- |
-| 기존 에이전트가 연구 판단·실행, CLI는 기록·검사 담당 | `scripts/check_contract.py`: 런타임 의존성 없음; `tests/test_mock_cycle.py`: 학습 sentinel 미실행 | 새 실행기·LLM 호출·자동 가중치가 범위를 넓히지 않는가 |
+| 공개 v0.3.0은 에이전트가 연구 판단·실행, CLI는 기록·검사 담당 | `scripts/check_contract.py`: 런타임 의존성 없음; `tests/test_mock_cycle.py`: 학습 sentinel 미실행 | 공개 기록 기능과 미배포 연구 루프의 범위를 구분하는가 |
 | JSON 원본 보존, 원자적 저장, 상태 전이 | `tests/test_experiments.py`, `tests/test_records.py`, `tests/test_review_fixes.py` | 실패 후 원본과 선택 상태가 유지되는가 |
 | 비교 조건·불명확한 근거·선택 분리 | `tests/test_comparisons.py`, `tests/test_reviews.py` | 숫자 개선만으로 유효성을 주장하지 않는가 |
 | 제한된 재개 맥락과 원문 근거 조회 | `tests/test_context.py`, `tests/test_evidence.py` | [조회 계약](context-and-evidence.md)의 경고·페이지·스냅샷 의미를 유지하는가 |
@@ -19,9 +19,20 @@
 | 스킬의 독립 설치·원본 일치·덮어쓰기 거부 | `tests/test_skill_install.py`, `scripts/verify_package.py`: wheel/sdist/export 바이트와 로컬 링크 확인 | 프로젝트 기록이나 기존 스킬을 수정하지 않는가 |
 | 공개 릴리스 파일만 PyPI로 전달 | `tests/test_release_assets.py`: 릴리스 상태·체크섬·소스 불일치 거부 | 활성화·환경 보호·OIDC 설정과 실제 업로드 검증을 구분하는가 |
 | 설치된 CLI에서도 전체 모의 흐름 동작 | `scripts/verify_package.py`: wheel 설치 후 sdist 연구 예제 두 시나리오·실패 기억·후보 근거·계보·full/proxy 중단 재개 예제 | 실제 ML·비용·성능 검증과 혼동하지 않는가 |
-| 문서·배포 지침 동기화 | `scripts/check_contract.py`: 로컬 링크, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 설명의 의미와 구현이 일치하는가 |
+| 문서·배포 지침 동기화 | `scripts/check_contract.py`: README 4종과 문서 로컬 링크, 공개/미배포 구분, 핵심 설치 안내, CLI 명령 언급, program 템플릿 일치, 스킬 기본 메타데이터 | 번역·설명의 의미와 구현, 실제 공개 상태가 일치하는가 |
 
 이 표는 주요 요구의 추적표이며 CI는 표의 일부 검사만 선택하지 않고 전체 unittest를 실행한다. 링크 검사는 파일 존재를 확인하며 Markdown anchor나 설명의 진위를 증명하지 않는다. 스킬 검사는 기본 필수 메타데이터만 검사하고 완전한 YAML/스킬 실행 검증을 대체하지 않는다.
+
+## README 4종의 누락 검사
+
+`README.md`, `README.en.md`, `README.zh-CN.md`, `README.ja.md`를 필수 파일로 검사합니다. 기존 `Document contracts` 작업에서 실행하므로 별도 워크플로나 외부 서비스가 필요하지 않습니다.
+
+- 네 파일의 로컬 링크 대상이 존재해야 합니다. 핵심 안내는 본문에서 직접 누를 수 있는 inline 링크로 제공하며, 사용 여부를 확인하지 않는 참조 정의만으로는 인정하지 않습니다. 대상은 `docs/uv-installation.md`, `docs/agent-installation.md`, `docs/first-run-and-resume.md`, `docs/research-api.md`입니다.
+- 각 언어의 공개 버전 표기와 미배포 개발 기능 제목, 개발 절의 `research`가 공개 버전에 포함되지 않는다는 안내를 확인합니다. 공개 버전은 네 파일에서 일치해야 합니다. 개발 중인 `pyproject.toml` 버전과 같도록 강제하지 않습니다.
+- 개발 기능 절 앞의 셸 코드 블록에 uv 설치, 가상환경 생성, pip 설치, `zar --help`, Codex·Claude Code 스킬 설치 예제가 있어야 합니다. 설명문이나 주석에만 남은 명령은 실행 예제로 인정하지 않습니다.
+- HTML 주석이나 코드 예제 안의 공개/미배포 설명은 사용자에게 보이는 안내를 대신하지 않습니다.
+
+`tests/test_contract_checks.py`는 정상 문서뿐 아니라 번역 파일·링크·버전 구분·설치 예제를 삭제하거나 변경한 경우를 검사합니다. 필수 표기를 바꿀 때에는 검사 규칙과 회귀 예제를 함께 갱신하세요. 번역 문장 전체를 같게 강제하지 않으며, 이 검사는 자연어의 의미나 실제 PyPI 공개 상태를 판정하지 않습니다. 외부 URL의 응답과 Markdown anchor도 검사하지 않습니다. 버전 공개 시 실제 배포 상태와 안내·고정 버전 예제의 일치 여부는 유지관리자와 독립 리뷰가 확인합니다.
 
 ## PR 검사와 머지 조건
 
