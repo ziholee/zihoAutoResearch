@@ -148,6 +148,10 @@ zar research run SESSION_ID --project ./my-ml-project --json
 
 역할 검토는 canonical review에 `unverifiable`로 보존하고 실험에 연결합니다. LLM의 pass를 독립적인 타당성 검증으로 기록하지 않습니다. 실제 실행 로그와 지표를 보관하고 canonical experiment에 연결합니다. 종료 코드가 0이어도 지표가 없거나 유효한 숫자가 아니면 성공 점수를 기록하지 않습니다. 실행 상태가 unknown이면 재실행하지 않습니다. 실행·API 횟수·시간 제한이 있으며 실제 금액 한도를 보장하지 않습니다. API 대기 마감 후에도 원격 서버가 요청을 처리·과금할 수 있습니다. 실행 로그는 종료 시 저장하므로 CLI를 강제 종료하면 로그가 비어 있을 수 있습니다. API 사용량이 없으면 미확인으로 남깁니다.
 
+## 평가 보호와 추가 출처 검증
+
+개발 소스에서 `research setup --evaluation-path <file> --provenance-path <file>`로 고정할 평가·추가 입력 파일을 설정할 수 있습니다. 원문 전송 목록과 별도로 해시를 확인하며 수정 허용 경로와 겹치면 거부합니다. 한도·비교·구버전·복구 조건은 [평가와 출처 검증](evaluation-provenance.md)을 따릅니다.
+
 ## 해석, 판단 확정, 기억
 
 ```sh

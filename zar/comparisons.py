@@ -28,6 +28,11 @@ def pair_reasons(base, candidate, records, *, superseded=None):
         if doc['baseline_id'] in superseded: reasons.append('baseline_superseded')
         if doc['execution']['status'] != 'succeeded': reasons.append(label + '_not_succeeded')
         if doc['decision'] and doc['decision']['validity'] != 'valid': reasons.append(label + '_invalid_decision')
+    if 'file_manifest' in base or 'file_manifest' in candidate:
+        if 'file_manifest' not in base or 'file_manifest' not in candidate:
+            reasons.append('file_manifest_unknown')
+        elif base['file_manifest'] != candidate['file_manifest']:
+            reasons.append('file_manifest_mismatch')
     if base['comparison'] != candidate['comparison']: reasons.append('comparison_mismatch')
     if base['environment'] != candidate['environment']: reasons.append('environment_mismatch')
     if any(v is None for doc in (base,candidate) for v in doc['environment'].values()):
@@ -59,7 +64,8 @@ def repeat_summary(anchor, records):
         if doc['id'] != anchor['id'] and not (doc['kind'] == 'confirmation' and doc['parent_id'] in anchor_ids):
             continue
         same_plan = (all(doc[key] == anchor[key] for key in ('code_ref','config_ref','comparison','environment','command'))
-                     and all(value is not None for value in doc['environment'].values()))
+                     and all(value is not None for value in doc['environment'].values())
+                     and doc.get('file_manifest') == anchor.get('file_manifest'))
         context, expected = doc.get('run_context'), anchor.get('run_context')
         known = context is not None and expected is not None
         compatible = known and all(context[key] == expected[key] for key in ('scope','budget_ref'))

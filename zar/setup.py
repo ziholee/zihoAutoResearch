@@ -13,7 +13,7 @@ class Cancelled(Exception):
     pass
 
 
-def setup(root, *, ask, emit, _revision=None, _next=None):
+def setup(root, *, ask, emit, _revision=None, _next=None, file_contract=None):
     """Collect settings without writes; save and transmission are separate consent."""
     root=root.resolve()
     research.require(root.is_dir(),'Project root must already exist.')
@@ -126,18 +126,28 @@ def setup(root, *, ask, emit, _revision=None, _next=None):
         research.require(metric.parent.is_dir() and not metric.exists(),'Metric destination must be new with an existing parent.')
         research.require(metric_file not in sources,'Metric output cannot be an input.')
         for path in p['editable_paths']:research.safe_path(root,path)
+        if file_contract is not None:p['file_contract']=deepcopy(file_contract)
+        file_manifest=None
+        if 'file_contract' in p:
+            from .file_provenance import validate_paths, snapshot as file_snapshot, assert_current
+            validate_paths(root,p['file_contract'],p['editable_paths'])
+            file_manifest=file_snapshot(root,p['file_contract'])
         if existing:
             with project_lock(store):
                 snap=cli.load_records(root,p)
                 cli.enforce(cli.inspect_project(root,p,snapshot=snap))
                 research.require(not any(e['execution']['status'] in ('running','unknown') for e in snap.records['experiment'].values()),'Resolve running/unknown experiments before starting.')
         mode,baseline=research.experiment_target(p,snap.records if existing else {'experiment':{}},dict(scope=scope,seed=seed,budget_ref=budget_ref),mode)
+        if baseline and file_manifest is not None:
+            research.require(snap.records['experiment'][baseline].get('file_manifest')==file_manifest,
+                'Selected baseline has missing or different fixed input provenance; acquire a new baseline.')
         emit(dumps(dict(experiment_mode=mode,baseline_id=baseline,project=p,profile=profile,read_paths=reads,metric_file=metric_file,metric_key=metric_key,
             scope=scope,seed=seed,budget_ref=budget_ref,max_calls=max_calls,session_seconds=seconds)))
         if not yes('save','Save these project settings and create a local session?'):
             result['cancelled']=True;return result
         research.require(research.snapshot(root,list(sources))==sources,'Source inputs changed during setup; start again.')
         research.require(metric.parent.is_dir() and not metric.exists(),'Metric destination changed during setup.')
+        if file_manifest is not None:assert_current(root,p['file_contract'],file_manifest)
         if not existing:
             research.require(not store.exists() and not store.is_symlink(),'Project appeared during setup; start again.')
             initialized,_=cli.initialize(root)
@@ -157,6 +167,7 @@ def setup(root, *, ask, emit, _revision=None, _next=None):
             research.require(research.digest(research.get_project(root))==original_hash,'Project settings changed during setup; start again.')
             research.require(research.records_identity(root)==records_hash,'Research records changed during setup; start again.')
             cli.enforce(cli.inspect_project(root,p,snapshot=cli.load_records(root,p)))
+            if file_manifest is not None:assert_current(root,p['file_contract'],file_manifest)
             p['revision']+=1;p['updated_at']=cli.now()
             cli.enforce(cli.validate_document(p,'project'))
             if _revision:

@@ -117,6 +117,7 @@ review/submission의 supersedes_id는 같은 종류의 존재하는 활성 기�
 | `commands` | Command 배열. 미설정 시 [] |
 | `budget` | `{max_experiments, max_run_seconds}`. 각 값 양의 정수 또는 null |
 | `editable_paths` | string 배열. 자동 추정해 허용 범위를 넓히지 않음 |
+| `file_contract` | 개발 소스의 선택적 고정 입력 정책. `version:1`, `evaluation_paths`, `provenance_paths`; [평가 보호·출처 검증](evaluation-provenance.md) 참고 |
 | `selected_experiment_id` | string 또는 null. 같은 프로젝트의 유효한 keep 실험 |
 | `next_action` | string 또는 null. 재개할 작업 요약 |
 
@@ -158,6 +159,7 @@ confirmed_issue와 passed_in_scope에는 비어 있지 않은 evidence가 필요
 | `candidate_id` | 선택적 string 또는 null. 실행 준비 시 선택한 정확한 후보 버전. 생성 후 불변·정정에도 보존 |
 | `review_ids` | string 배열. 존재하는 점검 기록 참조 |
 | `run_context` | 선택적 `{scope, seed, budget_ref}` 또는 null. 생성 시 선언하는 실행 조건; 생략은 미기록 |
+| `file_manifest` | 개발 소스의 선택적 파일별 역할·크기·SHA-256 기록. 생성 후 추가·삭제·변경 불가, 정정에도 보존 |
 | `execution` | 아래 Execution 객체 |
 | `decision` | null 또는 아래 Decision 객체 |
 | `decision_history` | DecisionHistory 배열. 생성 시 []; CLI만 갱신 |
@@ -197,6 +199,8 @@ schema_version 1의 호환 확장으로 correction과 run_context의 생략은 �
 ## 8. 비교와 submissions/<id>.json
 
 compare는 서로 다른 활성 실험이 succeeded, score 존재, 모든 Comparison 필드와 값이 채워진 environment 동일, run_context의 scope/budget_ref 동일, 알려진 invalid/not_comparable 판단 없음일 때 수치 차이를 계산합니다. run_context 생략/null, 환경 미기록, proxy/full 혼합, 예산 조건 차이, 정정으로 대체된 실험 또는 baseline 참조는 비교 제한 사유입니다. candidate.baseline_id가 대체됐다면 최신 baseline을 명시해도 재검토가 필요합니다. 원래 참조를 자동 교체하지 않으며 새 계획으로 기록해야 합니다. `raw_delta = candidate - base`, `improvement = direction이 maximize면 raw_delta, minimize면 -raw_delta`입니다.
+
+개발 소스에서는 한쪽이라도 `file_manifest`가 있으면 양쪽의 동일한 manifest가 필요합니다. 한쪽 누락은 `file_manifest_unknown`, 차이는 `file_manifest_mismatch`로 비교를 보류합니다. 양쪽 모두 생략한 기존 기록의 비교는 유지합니다.
 
 결과는 개선 폭과 min_delta 충족 여부를 보여주며 자동 keep하지 않습니다. 반복 변동·코드 복잡도·도메인 타당성은 스킬이 근거로 판단합니다. min_delta가 0이어도 동률을 개선으로 출력하지 않습니다. 조건이 다르면 비교 불가 사유를 반환하고 점수 차이를 개선 증거로 출력하지 않습니다.
 

@@ -193,6 +193,10 @@ def validate_document(doc, kind):
         fields[kind] += ' run_context'
     if kind == 'experiment' and isinstance(doc, dict) and 'candidate_id' in doc:
         fields[kind] += ' candidate_id'
+    if isinstance(doc, dict) and kind == 'project' and 'file_contract' in doc:
+        fields[kind] += ' file_contract'
+    if isinstance(doc, dict) and kind == 'experiment' and 'file_manifest' in doc:
+        fields[kind] += ' file_manifest'
     if not v.obj(doc, META + ' ' + fields[kind], '$'): return v.errors
     if type(doc['schema_version']) is not int or doc['schema_version'] != 1: v.error('$.schema_version', 'Only schema_version 1 is supported')
     v.scalar(doc['id'], 'id', '$.id')
@@ -206,6 +210,10 @@ def validate_document(doc, kind):
         v.environment(doc['environment'], '$.environment')
         v.array(doc['commands'], v.command, '$.commands')
         v.array(doc['editable_paths'], lambda x,p:v.scalar(x,'str',p), '$.editable_paths')
+        if 'file_contract' in doc:
+            from .file_provenance import validate_policy
+            try: validate_policy(doc['file_contract'], doc['editable_paths'])
+            except ValueError as exc: v.error('$.file_contract', str(exc))
         if v.obj(doc['budget'], 'max_experiments max_run_seconds', '$.budget'):
             for k in ('max_experiments','max_run_seconds'): v.scalar(doc['budget'][k], 'positive', '$.budget.' + k, True)
     elif kind == 'review':
@@ -213,6 +221,10 @@ def validate_document(doc, kind):
         for k in ('code_ref','data_ref'): v.scalar(doc[k], 'str', '$.' + k)
         v.array(doc['items'], v.finding, '$.items', True)
     elif kind == 'experiment':
+        if 'file_manifest' in doc:
+            from .file_provenance import validate_manifest
+            try: validate_manifest(doc['file_manifest'])
+            except ValueError as exc: v.error('$.file_manifest', str(exc))
         if 'candidate_id' in doc:
             v.scalar(doc['candidate_id'], 'id', '$.candidate_id', True)
         if doc.get('run_context') is not None:

@@ -16,7 +16,7 @@ TRANSITIONS = {
 
 def prepare_create(body, project, stamp):
     validator = Validator()
-    optional = ''.join(' ' + key for key in ('run_context', 'candidate_id') if isinstance(body, dict) and key in body)
+    optional = ''.join(' ' + key for key in ('run_context', 'candidate_id', 'file_manifest') if isinstance(body, dict) and key in body)
     validator.obj(body, CREATE_FIELDS + optional, '$')
     if validator.errors:
         return None, validator.errors
@@ -41,6 +41,8 @@ def validate_update(current, candidate):
     for field in current:
         if field not in ('execution', 'updated_at', 'correction', 'run_context') and candidate.get(field) != current[field]:
             conflict(field, f'{field} must match the stored record.')
+    if ('file_manifest' in candidate) != ('file_manifest' in current) or candidate.get('file_manifest') != current.get('file_manifest'):
+        conflict('file_manifest', 'Fixed-input provenance cannot be added, removed or changed by update.')
     if candidate.get('candidate_id') != current.get('candidate_id'):
         conflict('candidate_id', 'Candidate provenance cannot be changed by update.')
     if candidate.get('run_context') != current.get('run_context'):

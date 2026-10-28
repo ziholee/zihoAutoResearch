@@ -58,6 +58,12 @@ Approval tokens and connection profile hashes detect changes; they do not authen
 
 New sessions pin the normalized connection profile. The status label reports pin presence, not successful validation; action-time checks validate it. `transmission.contract_status=legacy_unpinned` means an older session has no original profile pin; review its current destination explicitly or start a new session. Do not silently upgrade its history. Execution rechecks the configured command and proposed allowed changes before writing files or launching. These checks are not an OS sandbox, evaluation integrity proof, or protection against malicious same-user code. See `docs/research-trust-boundary.md` in development source.
 
+## Protect evaluation and fixed local inputs
+
+In development source, opt in with `research setup --evaluation-path <file>` and optional repeated `--provenance-path <file>`, or a reviewed project draft's `file_contract` version 1. Both lists are fixed inputs and must be disjoint from editable paths and each other. These flags hash files locally; only explicitly selected read files transmit raw content. Path/hash metadata is not anonymized. Use exact ordinary project-relative files within the documented limits, not globs or hidden/symlink paths.
+
+Never repair changed-file failures by updating hashes or session JSON. Inspect the difference and use a new session/baseline with fresh consent where appropriate. A candidate in this mode needs a baseline with the same file manifest; missing prior evidence is unknown, not a match. Existing manifest-free history stays legacy and must not be relabeled as verified. During unknown execution or interrupted decision recovery, resolve the actual process and evidence first; do not use new settings to bypass recovery. This is not an independent scorer or OS sandbox. See `docs/evaluation-provenance.md` for limits and comparison rules.
+
 ## Compare one approved role variant
 
 For an explicit request to compare role instructions, use `research variant-prepare <session> --file <project-relative-file>` only while the parent has a pending role in planning, observed or remembering. The next pending role is selected automatically. Supply a complete replacement for that role's instructions, not a patch; shared constraints remain fixed. Inspect the returned bundle's role, original/variant instructions, hashes, context, profile and both requests before `variant-approve <variant-id> --token <token>`. Approval alone sends nothing; `variant-advance <variant-id> --send` transmits original then variant.
